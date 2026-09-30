@@ -1,0 +1,26 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── User drawing uploads ───────────────────────────────────────────────
+    // Path: uploads/{uid}/{filename}
+    //
+    // READ  — public, because Replicate must be able to fetch the source
+    //         image from a plain HTTPS URL with no auth headers.
+    //
+    // WRITE — owner-only, with guards:
+    //   • file ≤ 20 MB (floor plans can be large PNG exports)
+    //   • content-type must be an image or PDF (architectural drawings)
+    match /uploads/{uid}/{allPaths=**} {
+      allow read: if true;
+
+      allow write: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 20 * 1024 * 1024
+        && (
+             request.resource.contentType.matches('image/.*')
+          || request.resource.contentType == 'application/pdf'
+        );
+    }
+  }
+}

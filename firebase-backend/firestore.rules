@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── users ──────────────────────────────────────────────────────────────
+    // Each user owns only their own document.
+    // Cloud Functions (admin SDK) bypass these rules.
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── renderQueue ────────────────────────────────────────────────────────
+    // Clients may CREATE a job for themselves (status must start as 'pending').
+    // Clients may READ their own jobs for the polling loop.
+    // All status transitions come exclusively from Cloud Functions.
+    match /renderQueue/{jobId} {
+      allow create: if request.auth != null
+        && request.resource.data.uid    == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      allow read: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+
+      allow update, delete: if false;
+    }
+
+    // ── gallery ────────────────────────────────────────────────────────────
+    // Anyone may read public renders (community gallery).
+    // All writes come from Cloud Functions (admin SDK).
+    match /gallery/{docId} {
+      allow read:                    if true;
+      allow create, update, delete:  if false;
+    }
+
+    // ── leads ─────────────────────────────────────────────────────────────
+    // Leads are written by the trackLead Cloud Function (admin SDK).
+    // No direct client access.
+    match /leads/{docId} {
+      allow read, write: if false;
+    }
+
+    // ── contacts ──────────────────────────────────────────────────────────
+    // Contact form submissions are written by contactFormSubmit (admin SDK).
+    // No direct client access.
+    match /contacts/{docId} {
+      allow read, write: if false;
+    }
+
+    // ── usage ─────────────────────────────────────────────────────────────
+    // Usage events are written by processRenderJob (admin SDK).
+    // Authenticated users may read their own usage events.
+    match /usage/{docId} {
+      allow read: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+  }
+}

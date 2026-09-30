@@ -1,0 +1,88 @@
+name: Deploy Serene Arch Studio — Firebase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'firebase-backend/**'
+  workflow_dispatch:
+
+env:
+  FIREBASE_PROJECT: serene-arch-studio
+  NODE_VERSION: '18'
+
+jobs:
+  deploy:
+    name: Deploy Firebase Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: firebase-backend/functions/package-lock.json
+
+      - name: Install Cloud Function dependencies
+        working-directory: firebase-backend/functions
+        run: npm ci --omit=dev
+
+      - name: Install firebase-tools
+        run: npm install -g firebase-tools
+
+      - name: Write service account key
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' \
+            > firebase-backend/functions/service-account.json
+
+      - name: Configure Firebase Functions environment
+        working-directory: firebase-backend
+        run: |
+          firebase functions:config:set \
+            stripe.secret="${{ secrets.STRIPE_SECRET_KEY }}" \
+            stripe.webhook_secret="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
+            smtp.user="info@serenecreations.org" \
+            smtp.password="${{ secrets.SMTP_PASSWORD }}" \
+            replicate.token="${{ secrets.REPLICATE_TOKEN }}" \
+            proxy.secret="${{ secrets.WORKER_PROXY_SECRET }}" \
+            --project ${{ env.FIREBASE_PROJECT }} \
+            --token "${{ secrets.FIREBASE_TOKEN }}"
+
+      - name: Deploy Firestore rules & indexes
+        working-directory: firebase-backend
+        run: |
+          firebase deploy --only firestore \
+            --project ${{ env.FIREBASE_PROJECT }} \
+            --token "${{ secrets.FIREBASE_TOKEN }}"
+
+      - name: Deploy Storage rules
+        working-directory: firebase-backend
+        run: |
+          firebase deploy --only storage \
+            --project ${{ env.FIREBASE_PROJECT }} \
+            --token "${{ secrets.FIREBASE_TOKEN }}"
+
+      - name: Deploy Cloud Functions (all 10)
+        working-directory: firebase-backend
+        run: |
+          firebase deploy --only functions \
+            --project ${{ env.FIREBASE_PROJECT }} \
+            --token "${{ secrets.FIREBASE_TOKEN }}"
+
+      - name: Remove service account key from workspace
+        if: always()
+        run: rm -f firebase-backend/functions/service-account.json
+
+      - name: Deployment summary
+        run: |
+          echo "✅ serene-arch-studio deployment complete"
+          echo "   Functions: processRenderJob, onUserCreated, trackLead"
+          echo "              getUsageStats, contactFormSubmit, adminStats"
+          echo "              scheduledCleanup, stripeWebhook, approveRender"
+          echo "              exportUsageCSV"
+          echo "   Firestore rules + Storage rules updated"
