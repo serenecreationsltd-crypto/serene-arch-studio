@@ -48,19 +48,35 @@ jobs:
           ENVEOF
           echo "Wrote .env with $(grep -c '=' .env) keys"
 
-      - name: Deploy to Firebase
+      - name: Deploy Cloud Functions (required — AI render engine)
         working-directory: firebase-backend
         env:
           GOOGLE_APPLICATION_CREDENTIALS: functions/service-account.json
         run: |
           set +e
-          firebase deploy \
-            --only functions,firestore:rules,storage \
+          firebase deploy --only functions \
             --project ${{ env.FIREBASE_PROJECT }} \
             --non-interactive 2>&1 | tee deploy.log
           code=${PIPESTATUS[0]}
           if [ "$code" -ne 0 ]; then
-            echo "::error::firebase deploy failed (exit $code) — tail below"
+            echo "::error::functions deploy failed (exit $code) — tail below"
             tail -n 25 deploy.log | while IFS= read -r l; do echo "::error::$l"; done
           fi
           exit "$code"
+
+      - name: Deploy Firestore & Storage rules (best-effort)
+        if: always()
+        working-directory: firebase-backend
+        continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: functions/service-account.json
+        run: |
+          set +e
+          firebase deploy --only firestore:rules,storage \
+            --project ${{ env.FIREBASE_PROJECT }} \
+            --non-interactive 2>&1 | tee rules.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            echo "::warning::rules/storage deploy skipped (exit $code). The deploy service account needs the 'Firebase Rules Admin' (roles/firebaserules.admin) role, or deploy rules manually from the Firebase console."
+          fi
+          exit 0
