@@ -55,6 +55,16 @@ const SMTP_USER  = "info@serenecreations.org";
 const FROM_EMAIL = "Serene Arch Studio <info@serenecreations.org>";
 const REPLY_TO   = "info@serenecreations.org";
 
+// Email signature — injected into every customer-facing outbound email
+const EMAIL_SIGNATURE = `
+  <div style="border-top:1px solid #e0e0e0;margin:24px 0 0;padding-top:16px;color:#555;font-size:13px;line-height:1.7">
+    <p style="margin:0 0 2px"><strong>Warm regards,</strong></p>
+    <p style="margin:0 0 2px"><strong>Bwambale Godfrey Lubangula</strong></p>
+    <p style="margin:0 0 2px">Director, Serene Creations Ltd</p>
+    <p style="margin:0 0 2px;font-size:12px;color:#777">BSc (Hons) Civil &amp; Environmental Engineering (Uganda Christian University, 2015); PGDip Project Management (UMI, 2018) | UIPE GM/3664</p>
+    <p style="margin:0">📞 +256 783 691337</p>
+  </div>`;
+
 /** Build a configured Zoho SMTP transporter. */
 function getMailer() {
   const pass = (cfg.smtp && cfg.smtp.password) || "";
@@ -292,6 +302,7 @@ exports.processRenderJob = functions
                     You have used <strong>${newDailyCount}</strong> of your
                     <strong>${dailyLimit}</strong> daily renders (${tier} plan).
                   </p>
+                  ${EMAIL_SIGNATURE}
                 </div>
                 <div style="background:#f4f4f4;padding:16px 24px;font-size:12px;color:#888;text-align:center">
                   Serene Creations Ltd · Kampala, Uganda ·
@@ -384,6 +395,9 @@ exports.onUserCreated = functions.firestore
                             padding:14px 36px;border-radius:6px;font-weight:bold;
                             text-decoration:none;font-size:16px">Open Your Studio →</a>
                 </div>
+              </div>
+              <div style="padding:0 24px 24px">
+                ${EMAIL_SIGNATURE}
               </div>
               <div style="background:#f4f4f4;padding:16px 24px;font-size:12px;color:#888;text-align:center">
                 Serene Creations Ltd · Kampala, Uganda ·
@@ -580,6 +594,7 @@ exports.contactFormSubmit = functions.https.onRequest(async (req, res) => {
                         padding:12px 28px;border-radius:6px;font-weight:bold;text-decoration:none">
                 Try the Studio →</a>
             </div>
+            ${EMAIL_SIGNATURE}
           </div>
           <div style="background:#f4f4f4;padding:16px 24px;font-size:12px;color:#888;text-align:center">
             Serene Creations Ltd · Kampala, Uganda ·
@@ -783,6 +798,7 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 <p style="color:#888;font-size:12px">
                   Questions? Reply to this email or contact us at info@serenecreations.org
                 </p>
+                ${EMAIL_SIGNATURE}
               </div>`,
           });
         }
@@ -895,6 +911,7 @@ exports.approveRender = functions.https.onRequest(async (req, res) => {
                 style="background:#4A6741;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block">
                 View in Gallery</a></p>` : ""}
               <p style="color:#888;font-size:12px">Questions? Contact info@serenecreations.org</p>
+              ${EMAIL_SIGNATURE}
             </div>`,
         });
       } catch (emailErr) {

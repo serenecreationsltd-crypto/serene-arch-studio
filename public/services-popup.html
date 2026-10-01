@@ -1,0 +1,514 @@
+<!--
+  Serene Creations Ltd — Free Consultation Popup (v2)
+  Green button-grid style — matches website existing popup
+
+  Submits to:
+    1. Firebase contactFormSubmit Cloud Function  (email + Firestore storage)
+    2. Activepieces LEAD_HOOK                     (CRM pipeline)
+-->
+<style>
+  /* ── Floating trigger button ── */
+  #sas-trigger {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 9998;
+    background: #2d6b45;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 22px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(45,107,69,.45);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform .18s, box-shadow .18s, background .15s;
+  }
+  #sas-trigger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(45,107,69,.55);
+    background: #256039;
+  }
+  #sas-trigger svg { flex-shrink: 0; }
+
+  /* ── Overlay ── */
+  #sas-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,22,40,.72);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(3px);
+  }
+  #sas-overlay.open { display: flex; }
+
+  /* ── Modal card ── */
+  #sas-modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    font-family: Arial, sans-serif;
+    color: #222;
+    animation: sasFadeIn .22s ease;
+  }
+  @keyframes sasFadeIn {
+    from { opacity: 0; transform: translateY(14px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);   }
+  }
+
+  /* ── Modal header ── */
+  #sas-modal .sas-head {
+    background: #2d6b45;
+    border-radius: 14px 14px 0 0;
+    padding: 20px 22px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .sas-badge {
+    display: inline-block;
+    background: #dff0e5;
+    color: #2d6b45;
+    border: 1px solid #c8e0d4;
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  #sas-modal .sas-head h2 {
+    margin: 0 0 4px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  #sas-modal .sas-head p {
+    margin: 0;
+    color: rgba(255,255,255,.68);
+    font-size: 12.5px;
+  }
+  #sas-close {
+    background: rgba(255,255,255,.15);
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    font-size: 16px;
+    line-height: 1;
+    padding: 6px 8px;
+    border-radius: 6px;
+    margin-left: 12px;
+    margin-top: 0;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  #sas-close:hover { background: rgba(255,255,255,.28); }
+
+  /* ── Form body ── */
+  .sas-body { padding: 20px 22px 18px; }
+
+  /* ── Service grid ── */
+  .sas-section-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #2d6b45;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin: 0 0 9px;
+  }
+  .sas-services {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-bottom: 18px;
+  }
+  .sas-svc-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 11px;
+    border: 1.5px solid #c8e0d4;
+    border-radius: 8px;
+    background: #f7fbf8;
+    cursor: pointer;
+    font-size: 12.5px;
+    font-family: Arial, sans-serif;
+    color: #2d6b45;
+    font-weight: 600;
+    text-align: left;
+    transition: background .13s, border-color .13s, color .13s;
+    line-height: 1.3;
+  }
+  .sas-svc-btn:hover {
+    background: #e8f5ee;
+    border-color: #2d6b45;
+  }
+  .sas-svc-btn.selected {
+    background: #2d6b45;
+    border-color: #2d6b45;
+    color: #fff;
+  }
+  .sas-svc-btn.selected .sas-svc-icon { stroke: #fff; }
+  .sas-svc-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    stroke: #2d6b45;
+  }
+
+  /* ── Fields ── */
+  .sas-row { display: flex; gap: 12px; }
+  .sas-row .sas-field { flex: 1; }
+  .sas-field { margin-bottom: 12px; }
+  .sas-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 5px;
+  }
+  .sas-field label span { color: #c0392b; }
+  .sas-field input,
+  .sas-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1.5px solid #c8e0d4;
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+    color: #222;
+    background: #f7fbf8;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  .sas-field input:focus,
+  .sas-field textarea:focus {
+    border-color: #2d6b45;
+    box-shadow: 0 0 0 3px rgba(45,107,69,.12);
+    background: #fff;
+  }
+  .sas-field textarea { resize: vertical; min-height: 76px; }
+
+  /* ── Submit ── */
+  #sas-submit {
+    width: 100%;
+    background: #2d6b45;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: Arial, sans-serif;
+    cursor: pointer;
+    transition: background .15s, transform .15s;
+    margin-top: 4px;
+    letter-spacing: .2px;
+  }
+  #sas-submit:hover:not(:disabled) { background: #256039; transform: translateY(-1px); }
+  #sas-submit:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* ── Status ── */
+  #sas-status { margin-top: 10px; font-size: 13px; text-align: center; min-height: 18px; }
+  #sas-status.err { color: #c0392b; }
+  #sas-status.ok  { color: #27ae60; }
+
+  /* ── Success panel ── */
+  #sas-success {
+    display: none;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  #sas-success .sas-tick {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: #e8f5ee;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+  #sas-success h3 { color: #2d6b45; margin: 0 0 8px; font-size: 20px; }
+  #sas-success p  { color: #555; margin: 0 0 22px; font-size: 14px; line-height: 1.6; }
+  #sas-done-btn {
+    background: #2d6b45;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: Arial, sans-serif;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  #sas-done-btn:hover { background: #256039; }
+
+  /* ── Privacy ── */
+  .sas-privacy {
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 480px) {
+    .sas-row { flex-direction: column; gap: 0; }
+    #sas-trigger { bottom: 16px; right: 16px; padding: 12px 18px; font-size: 13px; }
+  }
+  @media (max-width: 360px) {
+    .sas-services { grid-template-columns: 1fr; }
+  }
+</style>
+
+<!-- Floating trigger button -->
+<button id="sas-trigger" onclick="document.getElementById('sas-overlay').classList.add('open')">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+  Free Consultation
+</button>
+
+<!-- Overlay + Modal -->
+<div id="sas-overlay" onclick="if(event.target===this)sasClose()">
+  <div id="sas-modal" role="dialog" aria-modal="true" aria-labelledby="sas-title">
+
+    <!-- Header -->
+    <div class="sas-head">
+      <div>
+        <span class="sas-badge">Free Consultation</span>
+        <h2 id="sas-title">Start Your Free Consultation</h2>
+        <p>Serene Creations Ltd · Mukono, Uganda</p>
+      </div>
+      <button id="sas-close" onclick="sasClose()" aria-label="Close">&#x2715;</button>
+    </div>
+
+    <!-- Form panel -->
+    <div class="sas-body" id="sas-form-panel">
+      <form id="sas-form" onsubmit="sasSubmit(event)" novalidate>
+
+        <p class="sas-section-label">Select a Service <span style="color:#c0392b">*</span></p>
+        <div class="sas-services" id="sas-services">
+
+          <button type="button" class="sas-svc-btn" data-service="House Plan / 3D Render" onclick="sasSelectService(this)">
+            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            House Plan / 3D Render
+          </button>
+
+          <button type="button" class="sas-svc-btn" data-service="Land / Plot" onclick="sasSelectService(this)">
+            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+            </svg>
+            Land / Plot
+          </button>
+
+          <button type="button" class="sas-svc-btn" data-service="BOQ & Costing" onclick="sasSelectService(this)">
+            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+              <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
+            </svg>
+            BOQ &amp; Costing
+          </button>
+
+          <button type="button" class="sas-svc-btn" data-service="Quantity Surveying" onclick="sasSelectService(this)">
+            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="2" y1="20" x2="22" y2="20"/>
+              <rect x="4" y="14" width="4" height="6"/><rect x="10" y="10" width="4" height="10"/><rect x="16" y="6" width="4" height="14"/>
+            </svg>
+            Quantity Surveying
+          </button>
+
+          <button type="button" class="sas-svc-btn" data-service="Structural Design" onclick="sasSelectService(this)">
+            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="6" y1="2" x2="6" y2="22"/><line x1="18" y1="2" x2="18" y2="22"/>
+              <line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="6" x2="18" y2="6"/><line x1="6" y1="18" x2="18" y2="18"/>
+            </svg>
+            Structural Design
+          </button>
+
+          <button type="button" class="sas-svc-btn" data-service="Construction" onclick="sasSelectService(this)">
+            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 20h20M4 20V10l8-8 8 8v10"/><path d="M10 20v-6h4v6"/>
+            </svg>
+            Construction
+          </button>
+
+          <button type="button" class="sas-svc-btn" data-service="Buy a Design" onclick="sasSelectService(this)">
+            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            Buy a Design
+          </button>
+
+          <button type="button" class="sas-svc-btn" data-service="Book Site Visit" onclick="sasSelectService(this)">
+            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Book Site Visit
+          </button>
+
+        </div>
+
+        <!-- Contact details -->
+        <div class="sas-row">
+          <div class="sas-field">
+            <label for="sas-name">Full Name <span>*</span></label>
+            <input id="sas-name" type="text" placeholder="Your full name" required>
+          </div>
+          <div class="sas-field">
+            <label for="sas-phone">Phone / WhatsApp</label>
+            <input id="sas-phone" type="tel" placeholder="+256 …">
+          </div>
+        </div>
+
+        <div class="sas-field">
+          <label for="sas-email">Email Address <span>*</span></label>
+          <input id="sas-email" type="email" placeholder="you@example.com" required>
+        </div>
+
+        <div class="sas-field">
+          <label for="sas-desc">Project Details <small style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(optional)</small></label>
+          <textarea id="sas-desc" placeholder="Location, timeline, budget range or anything else helpful…"></textarea>
+        </div>
+
+        <button type="submit" id="sas-submit">Request Free Consultation &#8594;</button>
+        <div id="sas-status"></div>
+        <p class="sas-privacy">&#128274; No spam &mdash; your details are used only to respond to your enquiry.</p>
+
+      </form>
+    </div>
+
+    <!-- Success state -->
+    <div id="sas-success">
+      <div class="sas-tick">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2d6b45" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h3>Consultation Request Sent!</h3>
+      <p>Thank you &mdash; we&rsquo;ve received your request and will respond within <strong>24 hours</strong>.<br>
+         Check your inbox for a confirmation from <em>info@serenecreations.org</em>.</p>
+      <button id="sas-done-btn" onclick="sasClose()">Close</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var CONTACT_ENDPOINT = 'https://us-central1-serene-arch-studio.cloudfunctions.net/contactFormSubmit';
+  var LEAD_HOOK        = 'https://cloud.activepieces.com/api/v1/webhooks/gaqpTTBjcrwCpNPukckrm';
+
+  var selectedService = '';
+
+  window.sasSelectService = function (btn) {
+    document.querySelectorAll('.sas-svc-btn').forEach(function (b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    selectedService = btn.getAttribute('data-service');
+    // Clear service-validation error if any
+    var s = document.getElementById('sas-status');
+    if (s && s.className === 'err') { s.textContent = ''; s.className = ''; }
+  };
+
+  window.sasClose = function () {
+    document.getElementById('sas-overlay').classList.remove('open');
+    setTimeout(function () {
+      document.getElementById('sas-form').reset();
+      document.getElementById('sas-status').textContent = '';
+      document.getElementById('sas-status').className = '';
+      document.getElementById('sas-form-panel').style.display = '';
+      document.getElementById('sas-success').style.display = 'none';
+      document.getElementById('sas-submit').disabled = false;
+      document.getElementById('sas-submit').innerHTML = 'Request Free Consultation &#8594;';
+      document.querySelectorAll('.sas-svc-btn').forEach(function (b) { b.classList.remove('selected'); });
+      selectedService = '';
+    }, 280);
+  };
+
+  window.sasSubmit = function (e) {
+    e.preventDefault();
+    var name  = document.getElementById('sas-name').value.trim();
+    var email = document.getElementById('sas-email').value.trim();
+    var phone = document.getElementById('sas-phone').value.trim();
+    var desc  = document.getElementById('sas-desc').value.trim();
+    var btn   = document.getElementById('sas-submit');
+
+    if (!selectedService) { sasErr('Please select a service above.'); return; }
+    if (!name)             { sasErr('Please enter your full name.');   return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+                           { sasErr('Please enter a valid email address.'); return; }
+
+    var message = desc
+      ? 'Service: ' + selectedService + '\n\n' + desc
+      : 'Interested in: ' + selectedService + '. Please get in touch.';
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    document.getElementById('sas-status').textContent = '';
+    document.getElementById('sas-status').className = '';
+
+    var payload = { name: name, email: email, phone: phone, subject: selectedService, message: message };
+
+    var main = fetch(CONTACT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    var lead = fetch(LEAD_HOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function () { /* pipeline failure is non-fatal */ });
+
+    Promise.all([main, lead])
+      .then(function (results) {
+        if (!results[0].ok) throw new Error('HTTP ' + results[0].status);
+        return results[0].json();
+      })
+      .then(function () {
+        document.getElementById('sas-form-panel').style.display = 'none';
+        document.getElementById('sas-success').style.display = 'block';
+      })
+      .catch(function (err) {
+        sasErr('Something went wrong — please try again or email info@serenecreations.org directly.');
+        btn.disabled = false;
+        btn.innerHTML = 'Request Free Consultation &#8594;';
+        console.error('[SAS popup]', err);
+      });
+  };
+
+  function sasErr(msg) {
+    var s = document.getElementById('sas-status');
+    s.textContent = msg;
+    s.className = 'err';
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') sasClose();
+  });
+})();
+</script>
