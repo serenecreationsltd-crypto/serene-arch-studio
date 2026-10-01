@@ -46,6 +46,7 @@ jobs:
             smtp.user="info@serenecreations.org" \
             smtp.password="${{ secrets.SMTP_PASSWORD }}" \
             replicate.token="${{ secrets.REPLICATE_TOKEN }}" \
+            replicate.model_version="${{ secrets.REPLICATE_MODEL_VERSION }}" \
             proxy.secret="${{ secrets.WORKER_PROXY_SECRET }}" \
             --project ${{ env.FIREBASE_PROJECT }}
 
