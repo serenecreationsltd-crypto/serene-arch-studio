@@ -10,15 +10,17 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CONFIG  —  set all secrets before deploying:
+// CONFIG  —  via environment variables (functions.config() is decommissioned).
 //
-//   firebase functions:config:set \
-//     replicate.token="r8_YOUR_TOKEN" \
-//     replicate.model_version="HASH" \
-//     smtp.password="j2ecJ7seT2Nu" \
-//     stripe.secret="sk_live_YOUR_STRIPE_SECRET_KEY" \
-//     stripe.webhook_secret="whsec_YOUR_STRIPE_WEBHOOK_SECRET"
-//
+// Locally / in CI, write firebase-backend/functions/.env (gitignored) with:
+//   REPLICATE_TOKEN=r8_YOUR_TOKEN
+//   REPLICATE_MODEL_VERSION=THE_VERSION_HASH
+//   SMTP_PASSWORD=your_zoho_password
+//   STRIPE_SECRET=sk_live_...
+//   STRIPE_WEBHOOK_SECRET=whsec_...
+// Firebase loads this .env automatically on `firebase deploy` and exposes each
+// key as process.env.<KEY> at runtime. In CI, the deploy workflow generates
+// this .env from GitHub repo secrets of the same names.
 // ═══════════════════════════════════════════════════════════════════════════
 // ── AI render engine (Replicate) ───────────────────────────────────────────
 // The render pipeline expects a ControlNet / img2img model whose input schema
@@ -28,21 +30,16 @@ const db = admin.firestore();
 // Recommended model for sketch/floor-plan → photoreal architecture:
 //   • batouresearch/sdxl-controlnet-lora   (SDXL, strong on buildings)
 //   • jagilley/controlnet-hough            (MLSD line-guided, great for plans)
-// Open the chosen model on replicate.com, copy its current "Version" hash, then:
-//
-//   firebase functions:config:set \
-//     replicate.token="r8_YOUR_TOKEN" \
-//     replicate.model_version="THE_VERSION_HASH"
-//
+// Open the chosen model on replicate.com, copy its current "Version" hash, and
+// set REPLICATE_TOKEN + REPLICATE_MODEL_VERSION (see CONFIG block above).
 // Until both are set, renders return a friendly "engine not configured" message.
-const cfg = functions.config();
-const REPLICATE_TOKEN         = (cfg.replicate && cfg.replicate.token)         || "";
-const REPLICATE_MODEL_VERSION = (cfg.replicate && cfg.replicate.model_version) ||
+const REPLICATE_TOKEN         = process.env.REPLICATE_TOKEN || "";
+const REPLICATE_MODEL_VERSION = process.env.REPLICATE_MODEL_VERSION ||
                                 "TODO_REPLACE_WITH_REPLICATE_VERSION_HASH";
 
 // Stripe — subscription tier management
-const STRIPE_SECRET         = (cfg.stripe && cfg.stripe.secret)         || "";
-const STRIPE_WEBHOOK_SECRET = (cfg.stripe && cfg.stripe.webhook_secret) || "";
+const STRIPE_SECRET         = process.env.STRIPE_SECRET         || "";
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const stripe = STRIPE_SECRET ? new Stripe(STRIPE_SECRET, { apiVersion: "2023-10-16" }) : null;
 
 // Tier name mapping from Stripe price IDs / metadata
@@ -82,7 +79,7 @@ const EMAIL_SIGNATURE = `
 
 /** Build a configured Zoho SMTP transporter. */
 function getMailer() {
-  const pass = (cfg.smtp && cfg.smtp.password) || "";
+  const pass = process.env.SMTP_PASSWORD || "";
   return nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,

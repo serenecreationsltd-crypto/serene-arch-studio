@@ -35,20 +35,18 @@ jobs:
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > firebase-backend/functions/service-account.json
 
-      - name: Configure Firebase Functions environment
-        working-directory: firebase-backend
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: functions/service-account.json
+      - name: Write Functions .env (replaces decommissioned functions:config)
+        working-directory: firebase-backend/functions
         run: |
-          firebase functions:config:set \
-            stripe.secret="${{ secrets.STRIPE_SECRET_KEY }}" \
-            stripe.webhook_secret="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
-            smtp.user="info@serenecreations.org" \
-            smtp.password="${{ secrets.SMTP_PASSWORD }}" \
-            replicate.token="${{ secrets.REPLICATE_TOKEN }}" \
-            replicate.model_version="${{ secrets.REPLICATE_MODEL_VERSION }}" \
-            proxy.secret="${{ secrets.WORKER_PROXY_SECRET }}" \
-            --project ${{ env.FIREBASE_PROJECT }}
+          cat > .env <<ENVEOF
+          SMTP_USER=info@serenecreations.org
+          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          STRIPE_SECRET=${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          REPLICATE_TOKEN=${{ secrets.REPLICATE_TOKEN }}
+          REPLICATE_MODEL_VERSION=${{ secrets.REPLICATE_MODEL_VERSION }}
+          ENVEOF
+          echo "Wrote .env with $(grep -c '=' .env) keys"
 
       - name: Deploy to Firebase
         working-directory: firebase-backend
