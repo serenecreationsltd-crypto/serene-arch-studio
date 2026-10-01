@@ -85,6 +85,31 @@
     'border-radius:8px;padding:11px 24px;font:700 .9rem/1 system-ui,sans-serif;',
     'cursor:pointer;transition:background .2s,color .2s}',
     '.scw-btn-outline:hover{background:#2d6b45;color:#fff}',
+    /* studio promo – home banner */
+    '.scw-studio-home{background:linear-gradient(135deg,#0F1729,#1A2540 55%,#0B3330);border:1px solid rgba(10,126,115,.4);border-radius:16px;padding:36px 40px;margin:32px 0;position:relative;overflow:hidden;font-family:system-ui,sans-serif;box-sizing:border-box}',
+    '.scw-studio-glow{position:absolute;top:-80px;right:-80px;width:280px;height:280px;background:radial-gradient(circle,rgba(20,184,166,.18) 0%,transparent 70%);pointer-events:none}',
+    '.scw-studio-glow2{position:absolute;bottom:-40px;left:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(200,146,15,.08) 0%,transparent 70%);pointer-events:none}',
+    '.scw-studio-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(10,126,115,.22);border:1px solid rgba(20,184,166,.35);border-radius:20px;padding:4px 14px;color:#14B8A6;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:18px}',
+    '.scw-studio-h2{color:#E2E8F0;font-size:clamp(22px,4vw,34px);font-weight:700;margin:0 0 10px;line-height:1.25}',
+    '.scw-studio-p{color:#94A3B8;font-size:15px;line-height:1.65;margin:0 0 24px;max-width:500px}',
+    '.scw-studio-stats{display:flex;gap:28px;flex-wrap:wrap;margin-bottom:24px}',
+    '.scw-studio-stat strong{font-size:20px;font-weight:700;color:#14B8A6;display:block}',
+    '.scw-studio-stat span{font-size:12px;color:#94A3B8}',
+    '.scw-studio-actions{display:flex;gap:12px;flex-wrap:wrap}',
+    '.scw-studio-launch{display:inline-block;background:linear-gradient(135deg,#0A7E73,#14B8A6);color:#fff;text-decoration:none;border-radius:8px;padding:13px 28px;font:700 15px/1 system-ui,sans-serif;transition:opacity .2s}',
+    '.scw-studio-launch:hover{opacity:.82}',
+    '.scw-studio-consult{background:transparent;color:#14B8A6;border:2px solid rgba(20,184,166,.45);border-radius:8px;padding:11px 24px;font:700 15px/1 system-ui,sans-serif;cursor:pointer;transition:background .2s}',
+    '.scw-studio-consult:hover{background:rgba(20,184,166,.1)}',
+    /* studio promo – resources card */
+    '.scw-studio-resource{display:flex;flex-direction:column;gap:10px;text-decoration:none;background:#fff;border:1.5px solid #d4eddb;border-left:4px solid #2d6b45;border-radius:12px;padding:20px 24px;margin:12px 0;transition:box-shadow .2s,transform .15s;font-family:system-ui,sans-serif;box-sizing:border-box}',
+    '.scw-studio-resource:hover{box-shadow:0 6px 20px rgba(45,107,69,.12);transform:translateY(-1px)}',
+    '.scw-studio-res-hd{display:flex;align-items:center;gap:12px}',
+    '.scw-studio-res-icon{font-size:26px;flex-shrink:0}',
+    '.scw-studio-res-meta{flex:1;min-width:0}',
+    '.scw-studio-res-title{font-weight:700;color:#1a4528;font-size:16px;margin-bottom:2px}',
+    '.scw-studio-res-url{font-size:11px;color:#2d6b45;font-weight:600;letter-spacing:.05em;text-transform:uppercase}',
+    '.scw-studio-res-arrow{color:#2d6b45;font-size:20px;flex-shrink:0;font-weight:300}',
+    '.scw-studio-res-desc{color:#4b5563;font-size:14px;margin:0;line-height:1.55}',
   ].join('');
 
   /* ── POPUP HTML ─────────────────────────────────────────── */
@@ -129,6 +154,43 @@
   /* ── FLOATING BUTTON HTML ───────────────────────────────── */
   function buildTriggerHTML() {
     return '<button id="scw-trigger" onclick="scwOpen()" aria-label="Open Free Consultation">💬 Free Consultation</button>';
+  }
+
+  /* ── STUDIO PROMO HTML ──────────────────────────────────── */
+  function buildHomePromoHTML() {
+    return [
+      '<div class="scw-studio-home">',
+      '<div class="scw-studio-glow"></div><div class="scw-studio-glow2"></div>',
+      '<span class="scw-studio-badge">🤖 NEW · AI FEATURE</span>',
+      '<h2 class="scw-studio-h2">AI Architecture Studio</h2>',
+      '<p class="scw-studio-p">Generate professional house plans, 3D renders, and structural drawings with AI. Describe your vision — get precise architectural drawings in minutes.</p>',
+      '<div class="scw-studio-stats">',
+      '<div class="scw-studio-stat"><strong>500+</strong><span>Projects Delivered</span></div>',
+      '<div class="scw-studio-stat"><strong>24h</strong><span>Turnaround</span></div>',
+      '<div class="scw-studio-stat"><strong>Free</strong><span>Consultation</span></div>',
+      '</div>',
+      '<div class="scw-studio-actions">',
+      '<a href="' + STUDIO_URL + '" target="_blank" rel="noopener" class="scw-studio-launch">Launch AI Studio →</a>',
+      '<button class="scw-studio-consult" onclick="if(typeof scwOpen===\'function\')scwOpen()">Free Consultation</button>',
+      '</div>',
+      '</div>',
+    ].join('');
+  }
+
+  function buildResourcesCardHTML() {
+    return [
+      '<a href="' + STUDIO_URL + '" target="_blank" rel="noopener" class="scw-studio-resource">',
+      '<div class="scw-studio-res-hd">',
+      '<span class="scw-studio-res-icon">🤖</span>',
+      '<div class="scw-studio-res-meta">',
+      '<div class="scw-studio-res-title">AI Architecture Studio</div>',
+      '<div class="scw-studio-res-url">Free Tool · serene-arch-studio.web.app</div>',
+      '</div>',
+      '<span class="scw-studio-res-arrow">↗</span>',
+      '</div>',
+      '<p class="scw-studio-res-desc">Generate professional house plans, 3D renders &amp; structural drawings with AI. Describe your vision and get precise architectural output in minutes.</p>',
+      '</a>',
+    ].join('');
   }
 
   /* ── NAV TAB INJECTION ──────────────────────────────────── */
@@ -278,6 +340,14 @@
     });
   }
 
+  /* ── STUDIO PROMO INJECTION ─────────────────────────────── */
+  function injectStudioPromos() {
+    var homes = document.querySelectorAll('[data-scw-studio="home"],[data-scw-studio-promo="home"]');
+    homes.forEach(function (el) { el.innerHTML = buildHomePromoHTML(); });
+    var ress = document.querySelectorAll('[data-scw-studio="resources"],[data-scw-studio-promo="resources"]');
+    ress.forEach(function (el) { el.innerHTML = buildResourcesCardHTML(); });
+  }
+
   /* ── INIT ───────────────────────────────────────────────── */
   function init() {
     // Inject CSS
@@ -300,6 +370,9 @@
 
     // Wire existing CTA buttons
     wireExistingButtons();
+
+    // Studio promo injection
+    injectStudioPromos();
   }
 
   if (document.readyState === 'loading') {
