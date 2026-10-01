@@ -1041,41 +1041,41 @@ footer{
         <div>
           <div class="ro-label">Render Style</div>
           <select class="ro-select" id="renderStyle">
-            <option>Photorealistic</option>
-            <option>Architectural Illustration</option>
-            <option>Watercolor Sketch</option>
-            <option>Technical Line</option>
-            <option>Night Scene</option>
-            <option>Aerial View</option>
+            <option value="photorealistic">Photorealistic</option>
+            <option value="illustration">Architectural Illustration</option>
+            <option value="watercolor">Watercolor Sketch</option>
+            <option value="technical">Technical Line</option>
+            <option value="night-scene">Night Scene</option>
+            <option value="aerial">Aerial View</option>
           </select>
         </div>
         <div>
           <div class="ro-label">Environment</div>
           <select class="ro-select" id="renderEnv">
-            <option>Golden Hour</option>
-            <option>Overcast Day</option>
-            <option>Clear Noon</option>
-            <option>Night Lighting</option>
-            <option>Interior Studio</option>
-            <option>Tropical Landscape</option>
+            <option value="golden-hour">Golden Hour</option>
+            <option value="overcast">Overcast Day</option>
+            <option value="day">Clear Noon</option>
+            <option value="night">Night Lighting</option>
+            <option value="interior">Interior Studio</option>
+            <option value="tropical">Tropical Landscape</option>
           </select>
         </div>
         <div>
           <div class="ro-label">Material Palette</div>
-          <select class="ro-select">
-            <option>Concrete &amp; Glass</option>
-            <option>Brick &amp; Timber</option>
-            <option>Steel &amp; Curtain Wall</option>
-            <option>Traditional African</option>
-            <option>Minimalist White</option>
+          <select class="ro-select" id="renderMaterial">
+            <option value="concrete-glass">Concrete &amp; Glass</option>
+            <option value="brick-timber">Brick &amp; Timber</option>
+            <option value="steel-curtain">Steel &amp; Curtain Wall</option>
+            <option value="african">Traditional African</option>
+            <option value="minimalist-white">Minimalist White</option>
           </select>
         </div>
         <div>
           <div class="ro-label">Resolution</div>
-          <select class="ro-select">
-            <option>HD 1080p (Free)</option>
-            <option>4K Ultra (Pro)</option>
-            <option>Print Ready 300dpi (Pro)</option>
+          <select class="ro-select" id="renderResolution">
+            <option value="hd">HD 1080p (Free)</option>
+            <option value="4k">4K Ultra (Pro)</option>
+            <option value="print">Print Ready 300dpi (Pro)</option>
           </select>
         </div>
       </div>
@@ -1934,8 +1934,10 @@ async function handleRender() {
   const file = fileInput.files[0];
   if (!file) { toast('Please upload a drawing or floor plan first'); return; }
 
-  const style = document.getElementById('renderStyle').value;
-  const env   = document.getElementById('renderEnv').value;
+  const style      = document.getElementById('renderStyle').value;
+  const env        = document.getElementById('renderEnv').value;
+  const material   = document.getElementById('renderMaterial').value;
+  const resolution = document.getElementById('renderResolution').value;
 
   if (!fbReady || !auth.currentUser) {
     toast('Sign in or create a free account to generate AI renders ✨');
@@ -2010,7 +2012,7 @@ async function handleRender() {
     }, { merge: true }).catch(() => {});
 
     const jobRef = await db.collection('renderQueue').add({
-      uid, sourceURL, style, environment: env,
+      uid, sourceURL, style, environment: env, material, resolution,
       status: 'pending',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });

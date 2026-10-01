@@ -20,6 +20,21 @@ const db = admin.firestore();
 //     stripe.webhook_secret="whsec_YOUR_STRIPE_WEBHOOK_SECRET"
 //
 // ═══════════════════════════════════════════════════════════════════════════
+// ── AI render engine (Replicate) ───────────────────────────────────────────
+// The render pipeline expects a ControlNet / img2img model whose input schema
+// accepts: image, prompt, negative_prompt, controlnet_conditioning_scale,
+// strength, num_inference_steps, guidance_scale (see processRenderJob below).
+//
+// Recommended model for sketch/floor-plan → photoreal architecture:
+//   • batouresearch/sdxl-controlnet-lora   (SDXL, strong on buildings)
+//   • jagilley/controlnet-hough            (MLSD line-guided, great for plans)
+// Open the chosen model on replicate.com, copy its current "Version" hash, then:
+//
+//   firebase functions:config:set \
+//     replicate.token="r8_YOUR_TOKEN" \
+//     replicate.model_version="THE_VERSION_HASH"
+//
+// Until both are set, renders return a friendly "engine not configured" message.
 const cfg = functions.config();
 const REPLICATE_TOKEN         = (cfg.replicate && cfg.replicate.token)         || "";
 const REPLICATE_MODEL_VERSION = (cfg.replicate && cfg.replicate.model_version) ||
@@ -79,46 +94,96 @@ function getMailer() {
 // ═══════════════════════════════════════════════════════════════════════════
 // RENDER STYLE / ENVIRONMENT PROMPTS
 // ═══════════════════════════════════════════════════════════════════════════
+// Render STYLE — sets the medium/character. Keys MUST match the front-end
+// <option value="…"> values in public/ai-studio.html (#renderStyle).
 const STYLE_PROMPTS = {
-  modernist:
-    "ultra-modern minimalist architecture, clean geometric lines, " +
-    "glass curtain walls, steel structure, open floor plan",
-  biophilic:
-    "biophilic architecture, organic curved shapes, natural materials, " +
-    "living green walls, exposed timber, stone cladding",
-  industrial:
-    "industrial architecture, exposed raw concrete, structural steel beams, " +
-    "warehouse conversion, polished concrete floors",
-  mediterranean:
-    "Mediterranean architecture, white lime-render walls, terracotta clay tiles, " +
-    "arched doorways, blue accents, shaded courtyard",
-  "afro-contemporary":
-    "contemporary African architecture, warm earth tones, rammed earth walls, " +
-    "geometric carved timber screens, vernacular materials",
+  photorealistic:
+    "photorealistic exterior architectural rendering, professional CGI visualization, " +
+    "hyperrealistic physically-based materials, award-winning architecture, " +
+    "architectural photography, ultra-detailed",
+  illustration:
+    "architectural illustration, hand-drawn concept-art rendering, clean confident linework, " +
+    "subtle color washes, elegant presentation-board aesthetic, editorial quality",
+  watercolor:
+    "architectural watercolor painting, soft translucent washes, loose expressive brushwork, " +
+    "visible paper texture, muted artistic palette, hand-painted concept sketch",
+  technical:
+    "technical architectural line drawing, precise ink linework, orthographic clarity, " +
+    "construction-document style, clean hatching, crisp monochrome presentation",
+  "night-scene":
+    "dramatic night-time architectural rendering, glowing warm interior lighting, " +
+    "illuminated facade, reflective wet surfaces, cinematic contrast, professional CGI visualization",
+  aerial:
+    "aerial bird's-eye architectural rendering, elevated drone perspective, full site context, " +
+    "surrounding landscape, roads and greenery, professional CGI visualization, ultra-detailed",
 };
 
+// Lighting / ENVIRONMENT — keys match #renderEnv <option value="…">.
 const ENV_PROMPTS = {
-  day:
-    "bright midday sunlight, clear blue sky, crisp well-defined shadows, vibrant colors",
   "golden-hour":
     "golden hour warm lighting, amber and orange tones, long dramatic shadows, sunset glow",
+  overcast:
+    "soft overcast sky, even diffused lighting, muted palette, no harsh shadows, calm mood",
+  day:
+    "bright clear midday sunlight, deep blue sky, crisp well-defined shadows, vibrant colors",
   night:
     "night exterior, warm architectural lighting, softly glowing windows, " +
-    "city ambient light, dramatic contrast",
-  overcast:
-    "soft overcast sky, even diffused lighting, muted palette, " +
-    "no harsh shadows, photographic grey mood",
+    "ambient city light, dramatic contrast",
+  interior:
+    "interior studio setting, controlled soft studio lighting, clean neutral backdrop, product-shot clarity",
+  tropical:
+    "lush tropical landscape setting, palm trees and greenery, warm equatorial sunlight, vivid natural colors",
 };
 
-function buildPrompt(style, environment) {
-  const s = STYLE_PROMPTS[style] || style || "modern architecture";
-  const e = ENV_PROMPTS[environment] || environment || "daylight";
-  return (
-    `Photorealistic exterior architectural rendering, ${s}, ${e}, ` +
-    "8K resolution, professional CGI visualization, award-winning architecture, " +
-    "hyperrealistic materials, sharp focus, high dynamic range, " +
-    "architectural photography"
-  );
+// MATERIAL palette — keys match #renderMaterial <option value="…">.
+const MATERIAL_PROMPTS = {
+  "concrete-glass":
+    "exposed board-formed concrete and floor-to-ceiling glass with steel detailing",
+  "brick-timber":
+    "warm clay brickwork and natural timber cladding, richly textured masonry",
+  "steel-curtain":
+    "structural steel frame with full glass curtain-wall facade, high-tech detailing",
+  african:
+    "contemporary African materiality, rammed-earth and laterite walls, " +
+    "carved timber screens, warm earth tones",
+  "minimalist-white":
+    "minimalist pure white rendered walls, smooth plaster, clean unadorned surfaces",
+};
+
+// Styles that read as artistic media rather than photoreal CGI — these get a
+// lighter negative prompt so the painterly / line-drawing look is not penalised.
+const ARTISTIC_STYLES = new Set(["illustration", "watercolor", "technical"]);
+
+// img2img denoise strength per style — lower keeps closer to the uploaded
+// drawing (good for technical line work), higher allows a bolder reimagining.
+const STYLE_STRENGTH = {
+  technical: 0.55,
+  illustration: 0.68,
+  photorealistic: 0.75,
+  "night-scene": 0.78,
+  aerial: 0.80,
+  watercolor: 0.82,
+};
+
+function buildPrompt(style, environment, material) {
+  const s = STYLE_PROMPTS[style] || style || "photorealistic exterior architectural rendering";
+  const e = ENV_PROMPTS[environment] || environment || "natural daylight";
+  const m = MATERIAL_PROMPTS[material] || material || "";
+  const parts = [s];
+  if (m) parts.push(m);
+  parts.push(e);
+  parts.push("8K resolution, sharp focus, high dynamic range, highly detailed");
+  return parts.join(", ");
+}
+
+function buildNegativePrompt(style) {
+  if (ARTISTIC_STYLES.has(style)) {
+    // Keep artefacts out but allow painterly / illustrative character.
+    return "deformed, bad anatomy, distorted proportions, blurry, " +
+           "watermark, signature, text, logo, duplicated, low quality";
+  }
+  return "deformed, ugly, bad anatomy, blurry, distorted, cartoon, " +
+         "illustration, painting, watermark, text, logo, oversaturated, low quality";
 }
 
 /** @param {number} ms @return {Promise<void>} */
@@ -135,7 +200,7 @@ exports.processRenderJob = functions
   .firestore.document("renderQueue/{jobId}")
   .onCreate(async (snap, context) => {
     const jobRef = snap.ref;
-    const { uid, sourceURL, style, environment } = snap.data();
+    const { uid, sourceURL, style, environment, material } = snap.data();
     const jobId = context.params.jobId;
     functions.logger.info("Render job received", { jobId, uid });
 
@@ -183,19 +248,19 @@ exports.processRenderJob = functions
 
     try {
       // ── 1e. Submit to Replicate ──────────────────────────────────────────
-      const prompt = buildPrompt(style, environment);
+      const prompt   = buildPrompt(style, environment, material);
+      const negative = buildNegativePrompt(style);
+      const strength = STYLE_STRENGTH[style] || 0.75;
       const { data: prediction } = await axios.post(
         "https://api.replicate.com/v1/predictions",
         {
           version: REPLICATE_MODEL_VERSION,
           input: {
-            image:     sourceURL,
+            image:               sourceURL,
             prompt,
-            negative_prompt:
-              "deformed, ugly, bad anatomy, blurry, distorted, " +
-              "cartoon, watermark, text, logo, oversaturated",
+            negative_prompt:     negative,
             controlnet_conditioning_scale: 0.8,
-            strength:            0.75,
+            strength,
             num_inference_steps: 30,
             guidance_scale:      7.5,
           },
@@ -246,8 +311,9 @@ exports.processRenderJob = functions
         jobId, uid,
         authorName: displayName,
         sourceURL, imageURL: outputURL,
-        style:       style       || "modernist",
+        style:       style       || "photorealistic",
         environment: environment || "day",
+        material:    material     || "",
         title:       `${capitalStyle} · ${capitalEnv}`,
         createdAt:   admin.firestore.FieldValue.serverTimestamp(),
         featured: false, likes: 0, public: true,
