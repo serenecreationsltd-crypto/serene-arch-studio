@@ -61,8 +61,12 @@ jobs:
             --non-interactive 2>&1 | tee deploy.log
           code=${PIPESTATUS[0]}
           if [ "$code" -ne 0 ]; then
-            echo "::error::functions deploy failed (exit $code) — tail below"
-            tail -n 25 deploy.log | while IFS= read -r l; do echo "::error::$l"; done
+            echo "::error::functions deploy failed (exit $code)"
+            echo "--- lines matching Error/permission/HTTP ---"
+            grep -iE "error|permission|HTTP [0-9]|denied|not enabled|serviceusage|SERVICE_DISABLED|quota" deploy.log \
+              | sed 's/\x1b\[[0-9;]*m//g' | while IFS= read -r l; do echo "::error::$l"; done
+            echo "--- last 40 lines ---"
+            tail -n 40 deploy.log | sed 's/\x1b\[[0-9;]*m//g' | while IFS= read -r l; do echo "::error::$l"; done
           fi
           exit "$code"
 
