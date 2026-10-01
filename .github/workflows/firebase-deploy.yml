@@ -5,6 +5,8 @@ on:
     branches: [ main ]
     paths:
       - 'firebase-backend/**'
+      - '.github/workflows/firebase-deploy.yml'
+  workflow_dispatch: {}
 
 env:
   FIREBASE_PROJECT: serene-arch-studio
