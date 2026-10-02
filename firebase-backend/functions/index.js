@@ -524,6 +524,31 @@ exports.trackLead = functions.https.onRequest(async (req, res) => {
     functions.logger.warn("Lead hook failed (non-fatal)", { error: err.message });
   }
 
+  // Auto-enroll into drip campaign if source maps to one
+  if (body.email && SOURCE_CAMPAIGN_MAP[body.source]) {
+    const campaignId = SOURCE_CAMPAIGN_MAP[body.source];
+    try {
+      const subRef = db.collection("campaignSubscriptions")
+        .doc(`${body.email.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${campaignId}`);
+      const existing = await subRef.get();
+      if (!existing.exists || existing.data().completed) {
+        await subRef.set({
+          email:        body.email.toLowerCase(),
+          name:         body.name || "",
+          campaignId,
+          stage:        0,
+          nextSendAt:   admin.firestore.Timestamp.now(),
+          source:       body.source,
+          subscribedAt: admin.firestore.FieldValue.serverTimestamp(),
+          completed:    false,
+        });
+        functions.logger.info("trackLead: auto-enrolled in campaign", { email: body.email, campaignId });
+      }
+    } catch (enrollErr) {
+      functions.logger.warn("trackLead: campaign enroll failed (non-fatal)", { error: enrollErr.message });
+    }
+  }
+
   res.status(200).json({ success: true });
 });
 
@@ -1063,3 +1088,461 @@ exports.exportUsageCSV = functions.https.onRequest(async (req, res) => {
   functions.logger.info("exportUsageCSV", { rows: snap.size, requestedBy: adminUser.uid });
   return res.send(csvContent);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRIP CAMPAIGN SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Campaign sequence definitions.
+ * Each sequence has 4 stages. `delayDays` is how many days to wait BEFORE
+ * sending that stage (stage 0 = send immediately on subscription).
+ */
+const CAMPAIGNS = {
+  "costs-uganda": {
+    name: "Building Costs in Uganda 2026",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "What does it really cost to build a home in Uganda? (2026 guide)",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>One of the most common questions we get at Serene Creations is: <em>"How much will it cost to build my house?"</em> It seems simple, but the honest answer is — it depends on a lot of factors. Let me give you a realistic breakdown for Uganda in 2026.</p>
+  <h3 style="color:#2c5f2e">Typical Cost Ranges Per Square Metre (2026)</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr style="background:#f5f5f0"><th style="padding:8px;text-align:left;border:1px solid #ddd">Finish Level</th><th style="padding:8px;text-align:right;border:1px solid #ddd">Cost (UGX / m²)</th><th style="padding:8px;text-align:right;border:1px solid #ddd">Cost (USD / m²)</th></tr>
+    <tr><td style="padding:8px;border:1px solid #ddd">Basic / walling only</td><td style="padding:8px;text-align:right;border:1px solid #ddd">800,000 – 1,000,000</td><td style="padding:8px;text-align:right;border:1px solid #ddd">~$210 – $260</td></tr>
+    <tr style="background:#f9f9f9"><td style="padding:8px;border:1px solid #ddd">Standard residential</td><td style="padding:8px;text-align:right;border:1px solid #ddd">1,200,000 – 1,800,000</td><td style="padding:8px;text-align:right;border:1px solid #ddd">~$315 – $475</td></tr>
+    <tr><td style="padding:8px;border:1px solid #ddd">High quality / imported finishes</td><td style="padding:8px;text-align:right;border:1px solid #ddd">2,000,000 – 3,500,000</td><td style="padding:8px;text-align:right;border:1px solid #ddd">~$525 – $920</td></tr>
+  </table>
+  <p style="font-size:13px;color:#666;margin-top:4px">*Rates reflect Kampala and major urban areas. Rural builds may be 10–20% lower on materials but higher on transport.</p>
+  <h3 style="color:#2c5f2e">What Drives the Cost Up?</h3>
+  <ul>
+    <li><strong>Floor tiles and kitchen fittings</strong> — imported brands can add 15–25% to the total</li>
+    <li><strong>Roofing material</strong> — clay tiles cost 2–3× more than iron sheets but last far longer</li>
+    <li><strong>Storey construction</strong> — adding a second floor typically costs 60–70% of what the ground floor cost (not 100%, because the slab already exists)</li>
+    <li><strong>Site conditions</strong> — a sloping plot or black cotton soil means more earthworks and a deeper foundation</li>
+    <li><strong>Timing</strong> — starting construction in the dry season (June–August or December–February) reduces weather delays and mud-related rework</li>
+  </ul>
+  <h3 style="color:#2c5f2e">A Simple Rule of Thumb</h3>
+  <p>For a well-finished 3-bedroom bungalow (~150 m²), budget <strong>UGX 180–270 million</strong> for the structure alone, before land, professional fees, and contingency. Always add at least <strong>15% contingency</strong> — surprises are not a risk, they are a certainty.</p>
+  <p>In the next email, I'll walk through the hidden costs most homeowners discover only halfway through construction.</p>
+  <p>Meanwhile, if you'd like a <strong>free preliminary cost estimate</strong> for your specific project, just reply to this email with the number of rooms, your plot location, and any sketches or floor plans you have.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "The hidden costs of building in Uganda (most people learn these too late)",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Last time I shared the headline cost ranges. Today, let's talk about what most builders <em>don't</em> budget for — the costs that turn a UGX 200M project into a UGX 260M project.</p>
+  <h3 style="color:#2c5f2e">1. Professional Fees (often skipped entirely)</h3>
+  <p>Architectural drawings, structural engineering, and approval fees typically run <strong>8–12% of construction cost</strong>. Trying to save here is penny-wise, pound-foolish — a poorly designed structure costs far more to correct mid-build.</p>
+  <h3 style="color:#2c5f2e">2. Site Preparation &amp; Foundation</h3>
+  <p>If your plot has poor drainage, black cotton soil, or a slope greater than 1:10, expect to spend an extra <strong>UGX 15–40 million</strong> on earthworks, retaining walls, or a raft foundation before a single wall goes up.</p>
+  <h3 style="color:#2c5f2e">3. Electrical &amp; Plumbing Rough-In</h3>
+  <p>Many clients budget for the visible fixtures but not the pipes and conduits inside the walls. Full electrical and plumbing rough-in for a 3-bedroom house typically costs <strong>UGX 18–35 million</strong> — before a single switch plate or tap is installed.</p>
+  <h3 style="color:#2c5f2e">4. Water &amp; Electricity Connection</h3>
+  <p>NWSC connection fees, a borehole, or a rainwater harvesting tank; UMEME transformer contribution if you're on a new plot — budget <strong>UGX 5–20 million</strong> depending on location.</p>
+  <h3 style="color:#2c5f2e">5. Security, Gate &amp; Perimeter Wall</h3>
+  <p>A perimeter wall and gate rarely makes it into the initial BOQ but almost always gets built. For a standard 50×100ft plot: <strong>UGX 20–40 million</strong>.</p>
+  <h3 style="color:#2c5f2e">The Honest Total</h3>
+  <p>Add these up and a "200M house" realistically becomes a <strong>260–290M project</strong>. Knowing this upfront lets you pace construction in stages rather than stopping halfway.</p>
+  <p>Next email: how to read a Bill of Quantities (BOQ) so you can hold your contractor accountable line by line.</p>
+  <p>Questions? Just hit reply — I read every message personally.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "How to read a BOQ — and catch a contractor overcharging you",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>A Bill of Quantities (BOQ) is the single most important financial document in your construction project. It lists every item of work with its quantity, unit, rate, and total. If you don't understand it, you're handing your contractor a blank cheque.</p>
+  <h3 style="color:#2c5f2e">What a BOQ Should Contain</h3>
+  <p>A complete BOQ is divided into sections matching the construction sequence:</p>
+  <ol>
+    <li><strong>Preliminaries</strong> — site establishment, temporary facilities, insurance, contractor's overhead &amp; profit</li>
+    <li><strong>Substructure / Foundation</strong> — excavation (m³), blinding concrete, foundation walls, floor slab</li>
+    <li><strong>Superstructure / Walling</strong> — brick/block quantities in m², lintel beams, columns, ring beam</li>
+    <li><strong>Roofing</strong> — timber trusses, battens, roofing material per m², gutters and downpipes</li>
+    <li><strong>Finishes</strong> — floor tiles (m²), wall plaster (m²), ceiling (m²), paint</li>
+    <li><strong>Joinery</strong> — doors (no.), windows (no.), hardware</li>
+    <li><strong>Plumbing &amp; Drainage</strong> — fixtures, pipes, manholes, septic/biogas</li>
+    <li><strong>Electrical</strong> — consumer unit, points count, conduit metres, light fittings</li>
+    <li><strong>External Works</strong> — paving, gate, perimeter wall, landscaping</li>
+  </ol>
+  <h3 style="color:#2c5f2e">Red Flags to Watch For</h3>
+  <ul>
+    <li>Rates with no unit (e.g. "walling — lumpsum UGX 30M") — demand a breakdown</li>
+    <li>Preliminaries exceeding 12% of construction cost — often inflated</li>
+    <li>Missing sections (e.g. no electrical or plumbing) — hidden future extras</li>
+    <li>Quantities that don't match the drawings — measure yourself or have your engineer check</li>
+  </ul>
+  <h3 style="color:#2c5f2e">A Simple Check</h3>
+  <p>Total up the walling section. Divide by the number of m² of walling on your drawings. If the rate per m² is wildly different from market rates (UGX 120,000–180,000/m² for standard brickwork in Kampala), ask why.</p>
+  <p>Next and final email in this series: how to get your own cost estimate from Serene Creations — and what information we'll need from you.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "Ready to know exactly what your project will cost?",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Over the past few weeks I've walked you through construction costs in Uganda, the hidden expenses most builders miss, and how to read a BOQ. I hope it's been useful.</p>
+  <p>Now I'd like to offer something more concrete: a <strong>preliminary cost estimate for your specific project</strong>, prepared by our team at no charge.</p>
+  <h3 style="color:#2c5f2e">What You Get</h3>
+  <ul>
+    <li>A structured BOQ outline tailored to your house design and location</li>
+    <li>Cost ranges for each major section based on 2026 market rates</li>
+    <li>Honest flagging of any site or design features likely to add cost</li>
+    <li>Phasing suggestions if you want to build in stages</li>
+  </ul>
+  <h3 style="color:#2c5f2e">What We Need From You</h3>
+  <ol>
+    <li>Number of bedrooms and storeys</li>
+    <li>Approximate floor area, or the floor plan if you have it</li>
+    <li>Plot location (district/town)</li>
+    <li>Any finish-level preferences (basic, standard, high-end)</li>
+  </ol>
+  <p>Simply reply to this email with those details, or book a free 30-minute call at <a href="https://serenecreations.org/contact" style="color:#2c5f2e">serenecreations.org/contact</a>.</p>
+  <p>We've helped homeowners and investors across Uganda plan builds that stayed on budget. We'd love to help you do the same.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
+  "approvals-uganda": {
+    name: "Building Approvals in Uganda",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "How to get building plan approval in Uganda — the complete 2026 guide",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Building without approved plans is one of the most common mistakes Ugandan homeowners make — and one of the most expensive to fix. Authorities can order you to demolish an unapproved structure, refuse you a loan against it, or withhold your occupancy permit. Let me walk you through how approvals actually work.</p>
+  <h3 style="color:#2c5f2e">Who Approves Your Plans?</h3>
+  <ul>
+    <li><strong>Kampala Capital City Authority (KCCA)</strong> — for plots within Kampala City</li>
+    <li><strong>Municipal Councils</strong> (Entebbe, Jinja, Mbarara, Gulu etc.) — for municipality plots</li>
+    <li><strong>District Local Governments</strong> — for peri-urban and rural areas</li>
+    <li><strong>Physical Planning Committees</strong> — sit under the above; they review the technical drawings</li>
+  </ul>
+  <h3 style="color:#2c5f2e">The Approval Process (Typical Steps)</h3>
+  <ol>
+    <li>Engage a registered architect to prepare drawings</li>
+    <li>Obtain land title or consent letter from the registered owner</li>
+    <li>Submit drawings + application form + title copy to the relevant authority</li>
+    <li>Pay the prescribed fees (based on project cost/area)</li>
+    <li>Technical review — this can take <strong>3–8 weeks</strong> if your drawings are complete</li>
+    <li>Receive comments/conditions or approval stamp</li>
+    <li>Address any comments and resubmit if required</li>
+    <li>Approved drawings stamped — keep originals on site during construction</li>
+  </ol>
+  <h3 style="color:#2c5f2e">Timeline Reality</h3>
+  <p>In Kampala, expect <strong>4–12 weeks</strong> from submission to approval if your drawings are in order. In municipalities, <strong>6–16 weeks</strong>. Planning this into your project timeline prevents the common mistake of starting construction while waiting (and then having to change designs mid-build).</p>
+  <p>Next email: exactly which drawings you must submit, and what each one shows.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "Which drawings are required for building approval in Uganda?",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>When you submit for building approval, the authority needs a complete set of drawings. Submitting an incomplete set is the biggest cause of delays. Here's exactly what's required:</p>
+  <h3 style="color:#2c5f2e">Required Architectural Drawings</h3>
+  <ul>
+    <li><strong>Site plan / block plan</strong> — shows your plot boundaries, setbacks from roads and neighbours, and the building's footprint position. Scale typically 1:500 or 1:200.</li>
+    <li><strong>Floor plan(s)</strong> — each level separately. Shows room layout, door/window positions, wall thickness. Scale 1:100 or 1:50.</li>
+    <li><strong>Elevations</strong> — front, rear, and both sides. Shows the building's external appearance and heights.</li>
+    <li><strong>Sections</strong> — at least one longitudinal and one cross-section through the building. Shows internal heights, roof pitch, floor-to-ceiling clearances.</li>
+    <li><strong>Roof plan</strong> — shows ridge, valleys, drainage direction, eaves overhang.</li>
+  </ul>
+  <h3 style="color:#2c5f2e">Required Structural Drawings (for buildings over 1 storey, or large ground-floor spans)</h3>
+  <ul>
+    <li>Foundation plan and details (footing dimensions, reinforcement schedule)</li>
+    <li>Column and beam schedule</li>
+    <li>Slab reinforcement plan</li>
+    <li>Structural engineer's calculations and stamp</li>
+  </ul>
+  <h3 style="color:#2c5f2e">What Makes a Drawing Set "Complete"</h3>
+  <p>All sheets must carry: the architect's name and UARB registration number, the engineer's name and UIE/UIPE number, the plot number and block/zone, north point, scale bar, and revision history. Missing any of these → automatic rejection.</p>
+  <p>Next email: the three most common mistakes that get plan approvals rejected or delayed — and how to avoid them.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "3 mistakes that get building plans rejected in Uganda (and how to avoid them)",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>After reviewing dozens of submissions with KCCA and municipal councils over the years, I've seen the same mistakes again and again. Here are the top three and what to do instead.</p>
+  <h3 style="color:#2c5f2e">Mistake 1: Setback Violations</h3>
+  <p>Every plot has prescribed setbacks — minimum distances the building must keep from property boundaries. In Kampala, typical setbacks are 6m from the road, 3m from side boundaries, and 4.5m from the rear. Building within these zones means the authority will ask you to redesign, or worse, demolish what's already built.</p>
+  <p><strong>Fix:</strong> Confirm the setbacks applicable to your zone before designing. Your architect should do this as the first step.</p>
+  <h3 style="color:#2c5f2e">Mistake 2: Plot Coverage Exceeded</h3>
+  <p>Most residential zones allow a maximum of 30–40% of the plot area to be covered by buildings. A 50×100ft plot (464 m²) at 30% coverage means no more than 139 m² of footprint. Many clients want bigger buildings on smaller plots — this triggers a rejection or requires a variance application.</p>
+  <p><strong>Fix:</strong> Calculate your allowable footprint before committing to a floor plan size. Going vertical (adding a storey) is often the solution.</p>
+  <h3 style="color:#2c5f2e">Mistake 3: Using an Unregistered Draughtsperson</h3>
+  <p>Plans must be signed and stamped by an architect registered with the Uganda Registration Board (URB) or an engineer registered with UIE/UIPE. Plans from an unregistered draughtsperson are automatically invalid, no matter how good the drawings are.</p>
+  <p><strong>Fix:</strong> Always ask for your professional's registration number. You can verify registration on the URB website.</p>
+  <p>Next and final email: how Serene Creations handles the entire approvals process for you — from drawing preparation to approval receipt.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "Let us handle your building approvals — start to finish",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>The approvals process is often the most frustrating part of building — not because it's technically difficult, but because it requires coordination between your architect, the authority, and sometimes the structural engineer, often over many weeks.</p>
+  <p>At Serene Creations, we manage this entire process for our clients so they can focus on the bigger picture.</p>
+  <h3 style="color:#2c5f2e">What We Do</h3>
+  <ul>
+    <li>Prepare a complete architectural drawing set (plans, elevations, sections, site plan)</li>
+    <li>Coordinate structural drawings and engineer's stamp where required</li>
+    <li>Submit to the relevant authority on your behalf</li>
+    <li>Track progress, respond to technical queries, and resubmit with corrections</li>
+    <li>Deliver your stamped approved drawings ready for construction</li>
+  </ul>
+  <h3 style="color:#2c5f2e">Typical Turnaround</h3>
+  <p>We target approved drawings within <strong>6–10 weeks</strong> of receiving your site information and design brief, assuming a complete land title. For clients with urgent timelines, we can often fast-track preparation.</p>
+  <h3 style="color:#2c5f2e">Ready to Start?</h3>
+  <p>Reply to this email or visit <a href="https://serenecreations.org/contact" style="color:#2c5f2e">serenecreations.org/contact</a> to book a free consultation. We'll assess your plot, confirm the applicable setbacks and coverage limits, and give you a clear brief on what your approval process will look like.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
+  "smart-design-uganda": {
+    name: "Smart & Sustainable Design for Uganda",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "Design your Uganda home to stay cool without air conditioning",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Uganda's equatorial climate means high temperatures, high humidity, and intense sun — but it also means consistent trade winds and regular rainfall. Designing with rather than against this climate can make your home significantly more comfortable at zero ongoing energy cost.</p>
+  <h3 style="color:#2c5f2e">1. Building Orientation</h3>
+  <p>Orient your house so the long axis runs roughly east-west. This exposes the smallest face of the building to the direct morning and afternoon sun, reducing solar heat gain by up to 30%.</p>
+  <h3 style="color:#2c5f2e">2. Wide Eaves and Verandahs</h3>
+  <p>A 1.2–1.5m eave overhang shades windows from high midday sun while allowing low-angle morning and evening light in. A wraparound verandah buffers the building envelope from direct radiation — one of the most effective (and oldest) passive cooling strategies in the region.</p>
+  <h3 style="color:#2c5f2e">3. Cross-Ventilation</h3>
+  <p>Position windows and doors on opposite sides of rooms along the prevailing wind direction (generally south-westerly in Uganda). High-level openings (clerestory windows, roof vents) exhaust hot air by buoyancy while low-level openings draw in cooler air.</p>
+  <h3 style="color:#2c5f2e">4. Ceiling Height</h3>
+  <p>Every extra 300mm of ceiling height above the standard 2.4m creates a significant buffer of warm air above the living zone. Ceilings at 3.0–3.3m are noticeably cooler, especially under an iron-sheet roof.</p>
+  <h3 style="color:#2c5f2e">5. Roof Colour and Material</h3>
+  <p>A light-coloured or clay-tile roof reflects 30–40% more solar radiation than a standard dark iron sheet. Combined with roof insulation or a ceiling void, this can drop indoor temperatures by 4–6°C during peak afternoon heat.</p>
+  <p>Next email: how to integrate rainwater harvesting and solar power into your build — and what it actually costs.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "Rainwater harvesting + solar power in Uganda: real costs and real returns",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Uganda receives 900–2,000mm of rainfall per year — enough to supply a family's water needs for much of the year from a properly designed catchment system. Meanwhile, with an average of 5–6 peak sun hours per day, a modest solar installation can eliminate your grid electricity bill for daytime use. Here's what's realistic.</p>
+  <h3 style="color:#2c5f2e">Rainwater Harvesting</h3>
+  <p>A 200 m² roof in Kampala (1,200mm annual rainfall) collects approximately <strong>200,000 litres per year</strong> — around 550 litres per day on average. Accounting for losses, a family of 5–6 can cover most domestic water needs (cooking, drinking with treatment, washing) from a 10,000–20,000 litre tank.</p>
+  <p><strong>Typical costs:</strong></p>
+  <ul>
+    <li>Gutters and downpipes: UGX 2–4M</li>
+    <li>First-flush diverter: UGX 300,000–600,000</li>
+    <li>10,000L underground tank: UGX 8–15M (concrete) or UGX 4–7M (plastic)</li>
+    <li>Pump and filtration for drinking water: UGX 2–4M</li>
+  </ul>
+  <h3 style="color:#2c5f2e">Solar Power</h3>
+  <p>A basic solar system for lighting and phone charging (4 × 15W points + USB): <strong>UGX 3–6M</strong>. A full hybrid system powering lighting, fans, TV, fridge, and router (2–3 kWp, 200Ah battery bank): <strong>UGX 18–35M</strong>. Payback period on UMEME savings: typically <strong>4–7 years</strong>, with panels lasting 20–25 years.</p>
+  <p><strong>Design tip:</strong> Integrate the solar cable conduit, battery room, and inverter location during the building phase — retrofitting costs 30–50% more and looks ugly.</p>
+  <p>Next email: which local materials to specify for durability and cost savings — without compromising quality.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "Local building materials in Uganda: what to use and what to avoid",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;line-height:1.7;margin:0 auto;color:#222">
+  <p>Hi ${name || "there"},</p>
+  <p>Specifying local materials where appropriate can cut your construction cost by 15–25% and support local supply chains. But not all local options are equal. Here's a practical guide.</p>
+  <h3 style="color:#2c5f2e">Walling</h3>
+  <p><strong>Burnt clay bricks</strong> — Uganda's most widely used walling material. Good thermal mass, widely available, reasonable cost (UGX 700–900 per brick in Kampala). Quality varies significantly by kiln; specify that bricks must ring when struck and show no visible cracks. Average 3-bedroom house uses 30,000–45,000 bricks.</p>
+  <p><strong>Interlocking compressed earth blocks (ICEB)</strong> — made from stabilised soil, no firing needed. Lower embodied energy, good thermal performance, no mortar needed for most courses. Gaining popularity in Wakiso, Mukono, Jinja districts. Typically 15–25% cheaper than burnt brick for the wall complete.</p>
+  <p><strong>Concrete blocks</strong> — faster to lay than brick but more expensive per m² and have lower thermal performance. Best used for boundary walls and foundations rather than living spaces.</p>
+  <h3 style="color:#2c5f2e">Roofing</h3>
+  <p><strong>Local clay tiles</strong> (e.g. from Mubende or Luwero districts) — beautiful, long-lasting (50+ years), excellent thermal performance. Cost ~3× iron sheets but zero maintenance and no rust. Ideal for permanent family homes.</p>
+  <p><strong>Corrugated iron sheets</strong> — ubiquitous and cheap (UGX 35,000–55,000 per sheet). Specify 0.4–0.5mm gauge minimum; thinner sheets dent, rust, and leak within 5–8 years.</p>
+  <h3 style="color:#2c5f2e">What to Always Import</h3>
+  <p>Electrical fittings, plumbing fittings, and structural steel: local substitutes for these are often below standard. It's a small fraction of total cost but a place where quality control really matters.</p>
+  <p>Final email in this series: a free design consultation to put these principles to work for your specific project.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "Let's design your home the smart way — free consultation",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Over the past few weeks I've shared passive cooling strategies, rainwater and solar integration, and local material guidance. All of this is most powerful when designed in from the start — retrofitting climate-smart features later costs 2–3× more and rarely works as well.</p>
+  <p>Our design approach at Serene Creations puts these principles at the centre of every project, not as an expensive add-on, but as the default way we design for Uganda's climate.</p>
+  <h3 style="color:#2c5f2e">What a Free Consultation Covers</h3>
+  <ul>
+    <li>Review of your plot orientation and prevailing wind direction</li>
+    <li>Discussion of your brief — rooms, lifestyle, budget, timeline</li>
+    <li>Preliminary thoughts on layout and material strategy</li>
+    <li>Honest assessment of what's achievable within your budget</li>
+  </ul>
+  <h3 style="color:#2c5f2e">How to Book</h3>
+  <p>Reply to this email with a brief description of your project, or reach us directly:</p>
+  <ul>
+    <li>📞 <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a></li>
+    <li>🌐 <a href="https://serenecreations.org/contact" style="color:#2c5f2e">serenecreations.org/contact</a></li>
+  </ul>
+  <p>We work with clients across Uganda — Kampala, Entebbe, Wakiso, Mukono, Jinja, and beyond. If your site is remote, we can do an initial consultation by video call.</p>
+  <p>Looking forward to hearing about your project.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+};
+
+/** Map from lead source slug → campaign id */
+const SOURCE_CAMPAIGN_MAP = {
+  "blog-costs-uganda":    "costs-uganda",
+  "blog-approvals-uganda": "approvals-uganda",
+  "blog-smart-design":    "smart-design-uganda",
+  "widget-costs":         "costs-uganda",
+  "widget-approvals":     "approvals-uganda",
+  "studio-promo":         "costs-uganda",
+};
+
+// ─── 11. subscribeToCampaign ─────────────────────────────────────────────────
+exports.subscribeToCampaign = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+
+  const { email, name, campaignId, source } = req.body || {};
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ error: "email required" });
+  }
+  const resolvedCampaign = campaignId || SOURCE_CAMPAIGN_MAP[source] || "costs-uganda";
+  if (!CAMPAIGNS[resolvedCampaign]) {
+    return res.status(400).json({ error: `Unknown campaign: ${resolvedCampaign}` });
+  }
+
+  try {
+    const subRef = db.collection("campaignSubscriptions")
+      .doc(`${email.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${resolvedCampaign}`);
+    const existing = await subRef.get();
+    if (existing.exists && !existing.data().completed) {
+      return res.status(200).json({ status: "already_subscribed" });
+    }
+
+    await subRef.set({
+      email: email.toLowerCase(),
+      name: name || "",
+      campaignId: resolvedCampaign,
+      stage: 0,
+      nextSendAt: admin.firestore.Timestamp.now(),
+      source: source || "direct",
+      subscribedAt: admin.firestore.FieldValue.serverTimestamp(),
+      completed: false,
+    });
+
+    functions.logger.info("subscribeToCampaign", { email, campaign: resolvedCampaign, source });
+    return res.status(200).json({ status: "subscribed", campaign: resolvedCampaign });
+  } catch (err) {
+    functions.logger.error("subscribeToCampaign error", { err: err.message });
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// ─── 12. scheduledDripSend ──────────────────────────────────────────────────
+exports.scheduledDripSend = functions
+  .runWith({ timeoutSeconds: 300, memory: "256MB" })
+  .pubsub.schedule("0 8 * * *")
+  .timeZone("Africa/Kampala")
+  .onRun(async () => {
+    const now = admin.firestore.Timestamp.now();
+    const snap = await db.collection("campaignSubscriptions")
+      .where("completed", "==", false)
+      .where("nextSendAt", "<=", now)
+      .limit(200)
+      .get();
+
+    if (snap.empty) {
+      functions.logger.info("scheduledDripSend: no pending subscriptions");
+      return null;
+    }
+
+    const mailer = getMailer();
+    let sent = 0;
+    let errors = 0;
+
+    await Promise.allSettled(snap.docs.map(async (doc) => {
+      const sub = doc.data();
+      const campaign = CAMPAIGNS[sub.campaignId];
+      if (!campaign) {
+        await doc.ref.update({ completed: true });
+        return;
+      }
+
+      const stage = sub.stage || 0;
+      const emailDef = campaign.emails[stage];
+      if (!emailDef) {
+        await doc.ref.update({ completed: true });
+        return;
+      }
+
+      try {
+        await mailer.sendMail({
+          from: FROM_EMAIL,
+          to: sub.email,
+          replyTo: REPLY_TO,
+          subject: emailDef.subject,
+          html: emailDef.html(sub.name || ""),
+        });
+        sent++;
+      } catch (mailErr) {
+        functions.logger.error("dripSend mail error", { email: sub.email, err: mailErr.message });
+        errors++;
+        return; // don't advance stage on mail failure
+      }
+
+      const nextStage = stage + 1;
+      const isLast = nextStage >= campaign.emails.length;
+
+      if (isLast) {
+        await doc.ref.update({ stage: nextStage, completed: true });
+      } else {
+        const nextEmail = campaign.emails[nextStage];
+        const delayMs = (nextEmail.delayDays || 4) * 24 * 60 * 60 * 1000;
+        const nextSendAt = admin.firestore.Timestamp.fromMillis(Date.now() + delayMs);
+        await doc.ref.update({ stage: nextStage, nextSendAt, lastSentAt: now });
+      }
+    }));
+
+    functions.logger.info("scheduledDripSend complete", { sent, errors, total: snap.size });
+    return null;
+  });
