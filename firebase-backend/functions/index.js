@@ -1475,6 +1475,716 @@ const CAMPAIGNS = {
     ],
   },
 
+  "boq-follow-up": {
+    name: "BOQ & Cost Estimation Deep Dive",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "Your BOQ question — here's exactly what we need to prepare yours",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>You reached out about construction costs — and the most useful thing we can give you isn't a general range, it's a <strong>Bill of Quantities (BOQ) specific to your project</strong>. Here's what that looks like and what we need from you to prepare one.</p>
+  <h3 style="color:#2c5f2e">What a BOQ Gives You</h3>
+  <p>A BOQ breaks your project into every line item — foundations, walling, roofing, finishes, M&amp;E — each with quantities, units, and current market rates. It lets you:</p>
+  <ul>
+    <li>Compare contractor quotes on a like-for-like basis</li>
+    <li>Identify which items are priced fairly and which are inflated</li>
+    <li>Plan phased construction by knowing exactly what each stage costs</li>
+    <li>Track expenditure against a clear baseline throughout the build</li>
+  </ul>
+  <h3 style="color:#2c5f2e">What We Need from You</h3>
+  <ol>
+    <li><strong>Floor plan</strong> — even a rough sketch or downloaded plan is useful as a starting point</li>
+    <li><strong>Number of bedrooms, bathrooms, and storeys</strong></li>
+    <li><strong>Plot location</strong> — district/town (affects transport and labour costs)</li>
+    <li><strong>Target finish level</strong> — basic, standard, or high-end finishes</li>
+    <li><strong>Any specific requirements</strong> — solar, borehole, large compound, staff quarters etc.</li>
+  </ol>
+  <p>Reply to this email with these details and we'll prepare a preliminary cost estimate within 3 business days — at no charge.</p>
+  <p>Next email: why two contractors can quote you 40% differently for the exact same house.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "Why two contractors quote 40% differently for the same house",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>One of the most confusing experiences in Uganda construction is getting two quotes for the same house and finding a 30–50% difference. Both contractors have looked at the same drawings. So why the gap?</p>
+  <h3 style="color:#2c5f2e">Reason 1: Different Scope Assumptions</h3>
+  <p>The cheap quote almost always excludes items the expensive one includes: electrical rough-in, plumbing drainage, external works, or the perimeter wall. It's not dishonesty — it's ambiguity in the brief. Without a BOQ defining the exact scope, each contractor prices what they think you mean.</p>
+  <h3 style="color:#2c5f2e">Reason 2: Different Quality Assumptions</h3>
+  <p>One contractor prices Italian tiles; another prices local. One includes 0.47mm roofing iron; another quotes 0.30mm (which buckles and leaks within a few years). Same line item, wildly different cost and lifespan.</p>
+  <h3 style="color:#2c5f2e">Reason 3: Different Overhead Structures</h3>
+  <p>A large established contractor has insurance, payroll, equipment costs, and a site manager on salary. A smaller contractor has lower overhead but potentially less supervision. This is a legitimate difference — neither is wrong, but you need to know which you're hiring.</p>
+  <h3 style="color:#2c5f2e">Reason 4: Loss-Leader Pricing</h3>
+  <p>Some contractors deliberately under-price to win the contract, then recover margin through variations once you're committed. The tell: a quote with very few line items and no BOQ attachment.</p>
+  <h3 style="color:#2c5f2e">The Fix</h3>
+  <p>Issue a detailed BOQ to every contractor you invite to tender. Require them to price each line item at the specified quantity and spec. Now the comparison is apples to apples.</p>
+  <p>Next email: the 9 items every contractor's quote must include — and how to check each one.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "BOQ checklist: 9 items every contractor's quote must include",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Before you accept any contractor's quote, run it through this checklist. A quote missing these items will almost certainly generate expensive variations later.</p>
+  <ol>
+    <li>
+      <strong>Preliminaries with a capped percentage</strong><br>
+      Site establishment, temporary toilet, security, builder's risk insurance. Should be stated as a lump sum or % of construction cost — reject "TBC" here.
+    </li>
+    <li>
+      <strong>Foundation to DPC (damp-proof course)</strong><br>
+      Excavation in m³, blinding concrete, foundation strip/raft, foundation wall, DPC. Each separately priced.
+    </li>
+    <li>
+      <strong>Walling in m² with brick/block spec</strong><br>
+      Should state brick type, mortar mix, and a rate per m². If it says "walling — lump sum", reject it.
+    </li>
+    <li>
+      <strong>Structural concrete (columns, beams, ring beam, slab)</strong><br>
+      With concrete grade (C20 minimum for structural) and reinforcement schedule.
+    </li>
+    <li>
+      <strong>Roofing — trusses, battens, covering material, gutters</strong><br>
+      Iron sheet gauge or tile type specified. Gutter and downpipe material and size.
+    </li>
+    <li>
+      <strong>Finishes — floor, walls, ceiling</strong><br>
+      Tile size, brand category, and adhesive. Paint coats and primer. Ceiling board type.
+    </li>
+    <li>
+      <strong>Joinery — doors and windows with hardware</strong><br>
+      Number of each type. Door frame material. Window frame material, glazing type.
+    </li>
+    <li>
+      <strong>Plumbing and drainage</strong><br>
+      Fixture schedule, pipe material (CPVC/PPR vs. PVC), septic or biogas tank.
+    </li>
+    <li>
+      <strong>Electrical</strong><br>
+      Number of points, consumer unit rating, conduit material, earthing arrangement.
+    </li>
+  </ol>
+  <p>If a quote covers all 9 in detail, you're dealing with a professional. If it doesn't, ask for the missing items before comparing it with anything.</p>
+  <p>Next email: how to get your own project-specific BOQ from Serene Creations — and what we'll need to prepare it.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "Ready for a BOQ built around your specific project?",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Over the past two weeks I've walked you through what a BOQ is, why contractor quotes vary so dramatically, and what every quote must include. Now let me show you what a proper BOQ looks like for your actual project.</p>
+  <h3 style="color:#2c5f2e">Our BOQ Service</h3>
+  <p>We prepare Bills of Quantities for homeowners and developers who want to enter the tender process with a robust, independently prepared cost document — not one prepared by the contractor they're about to hire.</p>
+  <ul>
+    <li>Based on your approved drawings or design brief</li>
+    <li>Priced at current 2026 Uganda market rates</li>
+    <li>Detailed enough to issue to 3–5 contractors for competitive tender</li>
+    <li>Annotated to flag items with high price variability so you know where to negotiate</li>
+  </ul>
+  <h3 style="color:#2c5f2e">What It Costs</h3>
+  <p>BOQ preparation fees typically run <strong>1–2% of estimated construction cost</strong>, depending on project complexity. For a 3-bedroom house at UGX 200M construction value, that's UGX 2–4M — a fraction of what a single poorly-priced variation can cost you.</p>
+  <h3 style="color:#2c5f2e">Get Started</h3>
+  <p>Reply with your floor plan (even a rough sketch), plot location, and target finish level. We'll come back to you with a scope confirmation and fee proposal within 2 business days.</p>
+  <p>Alternatively, book a call at <a href="https://serenecreations.org/contact" style="color:#2c5f2e">serenecreations.org/contact</a> and we can discuss your project in detail.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
+  "house-design-nurture": {
+    name: "House Plan & Design Nurture",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "3 things that make a house plan actually work for Uganda living",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>A good-looking floor plan on paper and a house that works well to live in are not the same thing. Over the years we've seen hundreds of Uganda homes — and certain principles consistently separate the comfortable, functional ones from the frustrating ones.</p>
+  <h3 style="color:#2c5f2e">1. The Kitchen Should Connect to the Outdoor Kitchen</h3>
+  <p>Many Ugandan households prepare heavy meals outdoors — grilling, frying, or cooking with wood. A floor plan that ignores this results in a beautiful indoor kitchen that nobody uses for serious cooking. The best layouts provide a covered outdoor cooking area directly accessible from the indoor kitchen, with a shared prep counter and storage.</p>
+  <h3 style="color:#2c5f2e">2. A Separate Sitting Room Changes How You Live</h3>
+  <p>Open-plan living looks impressive in renders. But in a family home in Uganda, it means your living room becomes the waiting room, the children's study, and the TV room simultaneously. A dedicated parlour or reception room — separate from the family sitting area — lets you receive guests without disrupting the household.</p>
+  <h3 style="color:#2c5f2e">3. Every Bedroom Needs Cross-Ventilation</h3>
+  <p>A room with a window on only one wall is a room that will be hot in March and April. Every bedroom should have openings on at least two walls — a window and a high-level louvre is enough. This simple decision makes a 5°C difference in sleeping temperature without any mechanical cooling.</p>
+  <p>Next email: open plan vs. rooms — which layout model actually works better in Ugandan homes?</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "Open plan vs. rooms: which works better in a Ugandan home?",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Open-plan living has dominated international design trends for 20 years. It works beautifully in the climates and lifestyles it was designed for. The question is whether it works for yours.</p>
+  <h3 style="color:#2c5f2e">The Case for Open Plan</h3>
+  <p>A combined kitchen, dining, and living space feels generous even in a modest footprint. Light travels further. The family stays connected. It's easier to supervise children. For a couple or small family, it's often the right choice — and it photographs exceptionally well.</p>
+  <h3 style="color:#2c5f2e">The Case for Separate Rooms</h3>
+  <p>In a large or extended family household, open plan creates noise and privacy conflicts. The cooking smells, the TV, the children, and the guests all compete in the same space. Separate rooms let different family members use different spaces simultaneously without conflict. A properly ventilated closed kitchen doesn't get hotter than an open-plan one — it just smells better from the sitting room.</p>
+  <h3 style="color:#2c5f2e">A Middle Ground That Works Well</h3>
+  <p>The most successful layouts we've done for Uganda family homes combine: a <em>separate kitchen</em> (noise and odour control), a <em>semi-open dining and family room</em> (daily family use), and a <em>separate formal sitting room</em> (guests). This gives you connection where you want it and separation where you need it.</p>
+  <h3 style="color:#2c5f2e">Questions to Ask Yourself</h3>
+  <ul>
+    <li>How often do you receive formal guests (relatives, visitors)?</li>
+    <li>Do you cook with charcoal or wood regularly?</li>
+    <li>How many people will live in the house at peak occupancy?</li>
+    <li>Do children study at home in the evenings?</li>
+  </ul>
+  <p>Next email: the most common floor plan mistakes in Uganda homes — and how to spot them before you build.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "The 5 most common floor plan mistakes in Uganda homes",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>We've reviewed a lot of floor plans. Some are excellent. Many repeat the same mistakes — mistakes that seem minor on paper but become daily frustrations once you're living in the house. Here are the five most common.</p>
+  <h3 style="color:#2c5f2e">1. The Bathroom You Can't Reach Without Walking Through a Bedroom</h3>
+  <p>In a properly designed house, at least one bathroom should be accessible from the main living areas without passing through any bedroom. Building a family home where guests must walk through your bedroom to reach the toilet is a layout that can never be fixed without demolition.</p>
+  <h3 style="color:#2c5f2e">2. The Corridor That Goes Nowhere</h3>
+  <p>Long corridors that end at a single bedroom add floor area without adding function. Every metre of corridor costs as much as every metre of bedroom — make sure corridors distribute traffic to at least two or three destinations.</p>
+  <h3 style="color:#2c5f2e">3. Bedroom Windows Facing the Road</h3>
+  <p>For security, privacy, and noise, bedrooms should be positioned away from the main road boundary. Locate the living areas and kitchen toward the front access, bedrooms toward the rear or side.</p>
+  <h3 style="color:#2c5f2e">4. A Kitchen with No Work Triangle</h3>
+  <p>The refrigerator, cooker, and sink form the three points of a kitchen work triangle. If any two of these are more than 2.5m apart, or separated by a walking path, the kitchen is inefficient. This costs nothing to fix in the design phase and everything to fix after construction.</p>
+  <h3 style="color:#2c5f2e">5. Only One Entry Door</h3>
+  <p>In a family home, a secondary service entrance — separate from the main front door — allows deliveries, domestic staff access, and kitchen traffic to bypass the formal entrance. It doesn't need to be large; a 900mm door off the kitchen or utility area is enough.</p>
+  <p>Next email: see what we can design for your specific plot — a free design consultation with no strings attached.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "See what's possible for your plot — free design consultation",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Over the past couple of weeks I've shared what makes Uganda homes work, the open plan question, and the most common layout mistakes. All of this is most useful when applied to your specific brief and your specific plot.</p>
+  <p>At Serene Creations, we start every design engagement with a free consultation — not a sales pitch, a genuine professional conversation about your project.</p>
+  <h3 style="color:#2c5f2e">What the Consultation Covers</h3>
+  <ul>
+    <li>Your brief — rooms, lifestyle, family size, priorities</li>
+    <li>Your plot — size, orientation, access, any constraints</li>
+    <li>Your budget — what's achievable at your investment level</li>
+    <li>Design principles we'd apply for comfort, ventilation, and flow</li>
+    <li>Honest timeline from brief to approved drawings to breaking ground</li>
+  </ul>
+  <h3 style="color:#2c5f2e">AI Architecture Preview</h3>
+  <p>Before committing to a full design, you can use our <strong>AI Architecture Studio</strong> to explore design possibilities for your plot — generate visualisations in seconds, try different styles and layouts, and arrive at a brief you're confident in before a single drawing is commissioned.</p>
+  <p>Try it at <a href="https://serenecreations.org" style="color:#2c5f2e">serenecreations.org</a>, or reach us directly to book a consultation:</p>
+  <ul>
+    <li>📞 <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a></li>
+    <li>✉️ <a href="mailto:info@serenecreations.org" style="color:#2c5f2e">info@serenecreations.org</a></li>
+  </ul>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
+  "construction-ready": {
+    name: "Construction Readiness Series",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "About to break ground? Run through this checklist first",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>You're close to starting — exciting. But the weeks just before breaking ground are also when the most expensive mistakes get made. Here's the checklist we use with every client before the first shovel goes in.</p>
+  <h3 style="color:#2c5f2e">Legal & Documentation</h3>
+  <ul>
+    <li>✅ Approved drawings in hand (stamped by the relevant authority)</li>
+    <li>✅ Signed contract with contractor — not just a verbal agreement</li>
+    <li>✅ Land title or lease confirmed (no encumbrances or disputes)</li>
+    <li>✅ Structural engineer's certificate signed off</li>
+  </ul>
+  <h3 style="color:#2c5f2e">Financial</h3>
+  <ul>
+    <li>✅ Full construction budget confirmed including 15% contingency</li>
+    <li>✅ Payment schedule agreed and tied to construction milestones, not dates</li>
+    <li>✅ First phase funding confirmed and accessible (not "in principle")</li>
+    <li>✅ BOQ issued to contractor so variations have a documented baseline</li>
+  </ul>
+  <h3 style="color:#2c5f2e">Site</h3>
+  <ul>
+    <li>✅ Site pegged and surveyed (plot boundaries confirmed)</li>
+    <li>✅ Access route for material delivery confirmed</li>
+    <li>✅ Water source for construction confirmed (borehole, tanks, NWSC)</li>
+    <li>✅ Temporary site office and security arrangement agreed</li>
+  </ul>
+  <h3 style="color:#2c5f2e">People</h3>
+  <ul>
+    <li>✅ Site supervisor (yours, not just the contractor's foreman) identified</li>
+    <li>✅ Architect's site visit schedule agreed in writing</li>
+    <li>✅ Your own contact list: contractor's direct number, site foreman, engineer</li>
+  </ul>
+  <p>Missing even one of these has derailed projects we've seen. The good news: all of them are fixable before you start, and none are hard to fix at this stage.</p>
+  <p>Next email: how to choose a contractor in Uganda — beyond accepting the cheapest quote.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "How to choose a contractor in Uganda — beyond the cheapest quote",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>The contractor decision is the single most consequential choice in your project. Choose well and you get quality work, honest reporting, and a building you're proud of. Choose poorly and no amount of good design or careful budgeting will save you.</p>
+  <h3 style="color:#2c5f2e">Visit Their Current Site</h3>
+  <p>Don't just look at photos — visit a site they're actively working on. Is it organised? Is the scaffolding solid? Are workers wearing safety boots? Is the foreman present and clearly in charge? A chaotic site produces a chaotic building.</p>
+  <h3 style="color:#2c5f2e">Talk to a Previous Client</h3>
+  <p>Ask for three recent client references and call all three. Ask specifically: "Did they finish on time? Did the final cost match the quote? Would you hire them again?" One enthusiastic reference can be coached; three honest ones can't.</p>
+  <h3 style="color:#2c5f2e">Check Their Subcontractor Network</h3>
+  <p>Most general contractors subcontract electrical and plumbing. Ask who their subcontractors are and whether they're registered. A good general contractor has long-term relationships with competent subs; a weak one will find whoever is cheap and available when the time comes.</p>
+  <h3 style="color:#2c5f2e">Understand Their Payment Expectations</h3>
+  <p>Legitimate contractors expect milestone-based payments — foundation complete, walling complete, roof on, finishes complete. Be very cautious of any contractor who asks for 50% or more upfront before work begins. That's the structure of a scam, not a contract.</p>
+  <h3 style="color:#2c5f2e">The Cheapest Quote</h3>
+  <p>The lowest quote is almost never the best value. It's either missing scope, underpricing labour (meaning workers won't be paid on time and will abandon the site), or loss-leader pricing designed to generate variations. Budget to the mid-range of serious tenders, not the bottom.</p>
+  <p>Next email: the specific contract clauses that protect your money and your timeline.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "The contract clauses that protect your money on a Uganda build",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>A construction contract doesn't need to be long. But it needs certain clauses. Without them, you have no legal basis for action when things go wrong — and they always go at least a little wrong. Here's what to insist on.</p>
+  <h3 style="color:#2c5f2e">1. Scope of Works with BOQ Reference</h3>
+  <p>The contract must specifically reference the approved drawings and BOQ as the defined scope. "Build a 3-bedroom house" is not a scope — it's an invitation to dispute everything.</p>
+  <h3 style="color:#2c5f2e">2. Milestone-Based Payment Schedule</h3>
+  <p>Payments tied to measurable milestones: foundation at DPC level (20%), walling at lintel level (20%), roof complete (15%), plastering and screed complete (15%), finishes complete (20%), practical completion and snag sign-off (10%). Adjust percentages to your project; the principle is the same.</p>
+  <h3 style="color:#2c5f2e">3. Variation Order Procedure</h3>
+  <p>Any change to the original scope must be documented as a Variation Order (VO), priced before the work starts, and signed by both parties. No signed VO = no obligation to pay for the extra. This single clause prevents most construction disputes.</p>
+  <h3 style="color:#2c5f2e">4. Defects Liability Period</h3>
+  <p>A 12-month defects liability period after practical completion, during which the contractor must fix any defects at their own cost. Withhold 5–10% of the final payment until the defects period expires without outstanding issues.</p>
+  <h3 style="color:#2c5f2e">5. Dispute Resolution</h3>
+  <p>Specify arbitration in Uganda before litigation. Nominate an arbitrator (e.g. the Uganda Institution of Professional Engineers UIPE, or a named arbitrator you both agree on). Courts are slow; arbitration is faster and cheaper.</p>
+  <p>Next email: one conversation that could save you millions — how Serene Creations can support your build from here.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "Starting construction soon? Let's connect before you do",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>I've shared a pre-construction checklist, how to evaluate contractors, and the contract clauses that protect you. All of this is useful background — but the most valuable thing we can offer right now is a direct conversation about your specific situation.</p>
+  <h3 style="color:#2c5f2e">Where We Can Help</h3>
+  <ul>
+    <li><strong>Construction drawings review</strong> — if you have existing plans, we can assess whether they're complete enough to build from and flag any missing details that will generate costly variations</li>
+    <li><strong>BOQ and tender management</strong> — prepare your BOQ and manage the contractor tender process, ensuring you're comparing like-for-like</li>
+    <li><strong>Site supervision</strong> — periodic or full-time site visits to monitor quality, progress, and adherence to specification</li>
+    <li><strong>Contract review</strong> — check the contractor's proposed agreement before you sign</li>
+  </ul>
+  <h3 style="color:#2c5f2e">The Value of Independent Oversight</h3>
+  <p>Your contractor, however excellent, has a natural incentive to maximise their margin. An independent professional working for you alone — reviewing invoices, checking work against drawings, approving payment milestones — typically saves clients 10–20% of construction cost in prevented overruns and quality failures. That's rarely a bad return on supervision fees.</p>
+  <p>Reply to this email or call <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a> to speak directly with our team.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
+  "rental-property": {
+    name: "Rental Property Development in Uganda",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "Rental property in Uganda: what yields are actually realistic in 2026?",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Rental property in Uganda can be an excellent long-term investment — but the numbers matter. Let me give you a realistic picture of what yields look like in 2026, and what drives them up or down.</p>
+  <h3 style="color:#2c5f2e">Typical Gross Yields by Property Type</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr style="background:#f5f5f0"><th style="padding:8px;text-align:left;border:1px solid #ddd">Property Type</th><th style="padding:8px;text-align:right;border:1px solid #ddd">Gross Yield</th><th style="padding:8px;text-align:right;border:1px solid #ddd">Key Market</th></tr>
+    <tr><td style="padding:8px;border:1px solid #ddd">Self-contained units (1 bed)</td><td style="padding:8px;text-align:right;border:1px solid #ddd">10–16%</td><td style="padding:8px;text-align:right;border:1px solid #ddd">Kampala suburbs</td></tr>
+    <tr style="background:#f9f9f9"><td style="padding:8px;border:1px solid #ddd">2–3 bed apartments</td><td style="padding:8px;text-align:right;border:1px solid #ddd">8–13%</td><td style="padding:8px;text-align:right;border:1px solid #ddd">Ntinda, Najjera, Kyanja</td></tr>
+    <tr><td style="padding:8px;border:1px solid #ddd">Standalone 3-bed house</td><td style="padding:8px;text-align:right;border:1px solid #ddd">5–9%</td><td style="padding:8px;text-align:right;border:1px solid #ddd">Wakiso, Entebbe</td></tr>
+    <tr style="background:#f9f9f9"><td style="padding:8px;border:1px solid #ddd">Commercial ground floor + residential above</td><td style="padding:8px;text-align:right;border:1px solid #ddd">12–18%</td><td style="padding:8px;text-align:right;border:1px solid #ddd">High-traffic corridors</td></tr>
+  </table>
+  <p style="font-size:13px;color:#666;margin-top:4px">*Gross yield = annual rent ÷ total development cost. Net yield after management, maintenance, and void periods is typically 20–30% lower.</p>
+  <h3 style="color:#2c5f2e">What Drives Yield Up</h3>
+  <ul>
+    <li><strong>Self-contained units</strong> — each unit pays its own utilities; lower tenant friction and faster re-letting</li>
+    <li><strong>Proximity to employment nodes</strong> — proximity to Kampala CBD, hospitals, universities drives tenant demand</li>
+    <li><strong>Low maintenance specification</strong> — tiled floors, simple fixtures, no carpets or wallpaper</li>
+    <li><strong>Security and parking</strong> — a perimeter wall, gate, and adequate parking are now baseline expectations for most tenants</li>
+  </ul>
+  <p>Next email: how to design rental units for maximum occupancy and minimum maintenance cost.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "How to design Uganda rental units that tenants stay in longer",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Rental yield depends on two things: rental income and occupancy rate. Design decisions at the building stage directly affect both. Here's how to optimise your rental development before construction begins.</p>
+  <h3 style="color:#2c5f2e">Unit Mix: Smaller Units, Higher Total Return</h3>
+  <p>On a 50×100ft plot, four self-contained one-bedroom units generate more total rent than one large four-bedroom house — even at a lower rent per unit. Smaller units have a larger tenant pool, shorter re-letting periods, and lower individual tenant risk. For pure investment returns, resist the temptation to build the large house.</p>
+  <h3 style="color:#2c5f2e">Design Every Unit for Practical Use</h3>
+  <ul>
+    <li><strong>Separate kitchen</strong> — open-plan is unsuitable for rental tenants cooking with charcoal or heavy spices</li>
+    <li><strong>Dedicated storage</strong> — even a 1m deep closet per bedroom dramatically reduces tenant dissatisfaction</li>
+    <li><strong>Own meter per unit</strong> — pre-paid electricity meters eliminate utility disputes between tenants and landlord; pay once during construction, save years of arguments</li>
+    <li><strong>Private outdoor space</strong> — even a 2×2m balcony or yard per unit gives tenants somewhere to dry clothes and cook; units without this have higher turnover</li>
+  </ul>
+  <h3 style="color:#2c5f2e">Materials: Choose for Longevity, Not Cheapness</h3>
+  <p>The cost difference between standard and cheap materials at construction time is 5–15%. The cost difference in maintenance over 10 years is enormous. For rental property specifically: hardwood window frames (not softwood), ceramic or porcelain floor tiles (not vinyl), glazed wall tiles in kitchens and bathrooms, and durable paints on external walls. These choices pay for themselves within 3–5 years of reduced maintenance.</p>
+  <h3 style="color:#2c5f2e">Security as a Differentiator</h3>
+  <p>In middle-income rental markets, tenants will pay 15–25% more for a compound with controlled access, CCTV at the gate, and adequate lighting. This costs far less to build properly from the start than to retrofit.</p>
+  <p>Next email: financing your Uganda rental development — what options exist beyond cash.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "Financing your Uganda rental development: what's actually available",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Most rental property in Uganda is financed from personal savings — and that's often the right choice, given interest rates. But there are alternatives worth understanding, especially if you're building at scale or want to accelerate.</p>
+  <h3 style="color:#2c5f2e">Option 1: Phased Self-Finance</h3>
+  <p>Build one or two units first, rent them, use rental income to fund the next phase. This is slower but zero-risk. A 4-unit development built in two phases over 3 years is better than a 4-unit development half-finished because funds ran out.</p>
+  <h3 style="color:#2c5f2e">Option 2: Bank Mortgage (Construction Loan)</h3>
+  <p>Several Ugandan banks offer construction financing against land title — Stanbic, dfcu, Equity, Absa, and others. Rates currently run <strong>18–24% per annum</strong> in UGX. At those rates, a rental project only makes financial sense if your gross yield substantially exceeds your borrowing cost. Run the numbers honestly before committing.</p>
+  <h3 style="color:#2c5f2e">Option 3: Diaspora Remittance Strategy</h3>
+  <p>For Ugandan diaspora investors, combining remittance savings with a smaller local bank loan (to cover the portion you can demonstrate rental income against) is a common structure. The key is to build only to the extent you can service debt from confirmed rent, not projected rent.</p>
+  <h3 style="color:#2c5f2e">Option 4: Joint Venture</h3>
+  <p>If you have land but limited construction capital, a joint venture with an investor or a build-to-rent developer can work — you contribute the land, they contribute the construction cost, you share the rental income and eventual sale proceeds. These require careful legal structuring; never do one without a registered advocate reviewing the agreement.</p>
+  <p>Next email: a free investor consultation — how Serene Creations can help you plan and execute your rental development.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "Ready to plan your Uganda rental development? Let's talk numbers",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Over the past two weeks I've shared realistic yield benchmarks, design principles for higher occupancy, and financing options for rental development. The next step is applying all of this to your specific land, budget, and investment goals.</p>
+  <h3 style="color:#2c5f2e">What a Free Investor Consultation Covers</h3>
+  <ul>
+    <li>Plot assessment — site size, zoning, and allowable development density</li>
+    <li>Unit mix recommendation based on your location and target market</li>
+    <li>Preliminary development cost estimate</li>
+    <li>Projected rental income and indicative yields</li>
+    <li>Phasing options if you want to build in stages</li>
+  </ul>
+  <h3 style="color:#2c5f2e">What We Need from You</h3>
+  <ul>
+    <li>Your plot size and location</li>
+    <li>Land title status</li>
+    <li>Your total investment budget (construction only, excluding land)</li>
+    <li>Target tenant type — students, families, professionals, expatriates?</li>
+  </ul>
+  <p>We work with rental developers at every scale — from a first 4-unit block to multi-building mixed-use developments. Every project starts with the same honest conversation about what the numbers actually look like.</p>
+  <p>Reply to this email, call <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a>, or book a consultation at <a href="https://serenecreations.org/contact" style="color:#2c5f2e">serenecreations.org/contact</a>.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
+  "land-buyer": {
+    name: "Land Buyer Preparation Series",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "Bought land in Uganda? Here's what to check before you build",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Owning land is the first step toward building. But several due diligence steps between purchase and construction can save you from expensive surprises — or worse, building on land with legal complications. Here's the checklist.</p>
+  <h3 style="color:#2c5f2e">1. Confirm the Title is Clean</h3>
+  <p>Have your advocate conduct a search at the Ministry of Lands (or the relevant Zonal Land Office) to confirm:</p>
+  <ul>
+    <li>The title is genuine and not a forgery</li>
+    <li>There are no caveats, encumbrances, or mortgages registered against it</li>
+    <li>The registered owner matches who sold it to you</li>
+    <li>The plot boundaries on the title match what you were shown on the ground</li>
+  </ul>
+  <h3 style="color:#2c5f2e">2. Confirm the Zoning</h3>
+  <p>Check the Physical Development Plan for your area. Your plot may be zoned residential, commercial, agricultural, or mixed-use — and that determines what you can build, how tall, and how much of the plot you can cover. An architect or town planner can pull this for you from the relevant authority.</p>
+  <h3 style="color:#2c5f2e">3. Peg and Survey the Boundaries</h3>
+  <p>Before any construction begins, have a licensed surveyor peg the exact corners of your plot. This prevents boundary disputes with neighbours and ensures your building setbacks are calculated from the correct boundary, not an assumed one. Survey certificate copies should be lodged with your building approval.</p>
+  <h3 style="color:#2c5f2e">4. Check Service Availability</h3>
+  <p>Confirm proximity and cost of: NWSC water connection, UMEME electricity (is there a transformer nearby, or will you pay a large contribution?), road access (gravel or tarmac, and who maintains it?). These affect both construction logistics and long-term livability.</p>
+  <p>Next email: how to read a Uganda land title — and the most common fraud types to watch for.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "How to read a Uganda land title — and the fraud types that catch people out",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Uganda has multiple land tenure types, and understanding what you have — and what it means — is essential before you build. Here's a plain-language guide.</p>
+  <h3 style="color:#2c5f2e">The Four Tenure Types</h3>
+  <ul>
+    <li><strong>Freehold</strong> — outright ownership in perpetuity. The strongest title. Can be mortgaged, subdivided, and passed to heirs without restriction.</li>
+    <li><strong>Mailo</strong> — a Buganda-specific tenure where the registered owner holds the land but lawful occupants (kibanja holders) have use rights. Complex — always involve an advocate before building if there's a kibanja occupant.</li>
+    <li><strong>Leasehold</strong> — a registered long lease, typically 49 or 99 years from the Uganda Land Commission or local authority. Renewable. Common in Kampala and towns. Confirm the unexpired term before buying or building — a lease with less than 20 years remaining significantly limits your financing options.</li>
+    <li><strong>Customary</strong> — communal tenure, unregistered. Not suitable as a mortgage security. If you're buying customary land, convert it to freehold or leasehold before building a permanent structure.</li>
+  </ul>
+  <h3 style="color:#2c5f2e">Common Fraud Patterns</h3>
+  <ul>
+    <li><strong>Forged titles</strong> — photocopied or reprinted titles with altered details. Always do an official Ministry of Lands search; do not rely on a copy shown by the seller.</li>
+    <li><strong>Sold by the wrong person</strong> — the seller presents power of attorney that is forged or expired. Verify any power of attorney independently.</li>
+    <li><strong>Double-sold plots</strong> — the same plot sold to two buyers. Whoever registers first wins. Register your transfer immediately after completion.</li>
+    <li><strong>Boundary misrepresentation</strong> — you are shown a neighbouring (larger or better-located) plot, then the transaction is executed for a different plot number.</li>
+  </ul>
+  <p>None of these are obscure risks — they're reported regularly. An advocate and a Ministry search cost very little relative to the land price. Use both every time.</p>
+  <p>Next email: soil survey and site assessment — why it matters before you design.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "Soil survey and site assessment: what to check before you design",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Most homeowners in Uganda skip the soil survey. It feels like an unnecessary cost — until they're halfway through foundation construction and discover black cotton soil, a high water table, or old fill that can't support a standard strip foundation. Here's what a proper site assessment covers and why it matters.</p>
+  <h3 style="color:#2c5f2e">What Soil Survey Includes</h3>
+  <ul>
+    <li><strong>Trial pits</strong> — hand-dug or machine-excavated pits at 3–5 positions across the plot to expose the soil profile at foundation depth</li>
+    <li><strong>Soil identification</strong> — black cotton soil (expansive clay), murram, laterite, made ground (fill), or rock. Each requires a different foundation approach.</li>
+    <li><strong>Water table depth</strong> — if groundwater is within 1–1.5m of surface, you need a waterproofed or elevated foundation strategy</li>
+    <li><strong>Bearing capacity estimate</strong> — the load the soil can carry per m², which directly determines your foundation type and dimensions</li>
+  </ul>
+  <h3 style="color:#2c5f2e">What Poor Soil Means for Your Budget</h3>
+  <p>A standard strip foundation works on good bearing soil. On poor or expansive soil you may need: a raft (floating slab) foundation, driven or bored piles, or extensive soil replacement. Each adds UGX 15–50M to foundation cost. Knowing this before you design means your architect can optimise the structural scheme for the soil condition rather than discovering the problem after the foundation work has begun.</p>
+  <h3 style="color:#2c5f2e">The Slope and Drainage Assessment</h3>
+  <p>A site visit by your engineer before design should also document: natural drainage paths (where does rain runoff go?), slope direction and gradient, any existing trees with deep roots near the proposed building line, and flood risk from neighbouring plots or roads.</p>
+  <p>A soil investigation for a standard residential plot typically costs <strong>UGX 1.5–3.5M</strong>. It's money you cannot afford not to spend.</p>
+  <p>Next email: your land is ready — here's how to move forward into design and approvals with Serene Creations.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "Your land is ready — let's design your home",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>I've walked you through land title due diligence, fraud prevention, and site assessment. If you've worked through that checklist and your land is confirmed clear, you're ready for the design phase — the part where your vision starts to become a real building.</p>
+  <h3 style="color:#2c5f2e">The Design Journey from Here</h3>
+  <ol>
+    <li><strong>Design brief</strong> — we document your requirements, lifestyle, and priorities in detail</li>
+    <li><strong>Concept design</strong> — floor plan options, with 3D visualisations so you can feel the spaces before anything is built</li>
+    <li><strong>Design development</strong> — refine the chosen concept into a fully resolved scheme</li>
+    <li><strong>Working drawings</strong> — the complete set required for building approval and construction</li>
+    <li><strong>Approvals submission</strong> — we manage the submission and follow-up</li>
+    <li><strong>BOQ preparation</strong> — detailed bill of quantities for contractor tendering</li>
+  </ol>
+  <h3 style="color:#2c5f2e">AI Architecture Studio</h3>
+  <p>Before committing to a full design engagement, explore what's possible on your plot with our AI Architecture Studio at <a href="https://serenecreations.org" style="color:#2c5f2e">serenecreations.org</a>. Generate design visualisations in seconds, try different styles and configurations, and arrive at your brief with confidence.</p>
+  <h3 style="color:#2c5f2e">Free Initial Consultation</h3>
+  <p>Book a free 30-minute consultation with our team — bring your title document, any survey records, and your brief notes. We'll give you an honest assessment of what's achievable, a clear timeline, and a fee proposal.</p>
+  <ul>
+    <li>📞 <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a></li>
+    <li>🌐 <a href="https://serenecreations.org/contact" style="color:#2c5f2e">serenecreations.org/contact</a></li>
+  </ul>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
+  "re-engage": {
+    name: "Dormant Lead Re-engagement",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "Still thinking about building? Here's what's changed in Uganda construction",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>It's been a while since we were in touch. Building projects get put on hold — that's completely normal. Sometimes finances need time to accumulate. Sometimes the right plot takes time to find. Sometimes life just intervenes.</p>
+  <p>If you're still thinking about building — or starting to think about it again — I wanted to share a few things that have changed recently that might affect your planning.</p>
+  <h3 style="color:#2c5f2e">Construction Costs in 2026</h3>
+  <p>Material costs have stabilised after significant increases in 2023–2024. Cement prices have moderated; steel is broadly flat. Labour costs in Kampala and Wakiso have continued to rise. Overall, a well-managed project in 2026 can be executed at broadly similar costs to 2024 in real terms — the crisis-level premiums have largely passed.</p>
+  <h3 style="color:#2c5f2e">What's New at Serene Creations</h3>
+  <ul>
+    <li>Our <strong>AI Architecture Studio</strong> is now live — explore design possibilities for your plot before committing to a full design brief</li>
+    <li>We've expanded our <strong>site supervision</strong> service to peri-urban areas (Mukono, Masaka road corridor, Entebbe road)</li>
+    <li>We now offer <strong>phased project planning</strong> — detailed guidance on how to build in stages as your finances allow, without compromising the final result</li>
+  </ul>
+  <p>No ask today — just an update in case your plans are moving again. Reply to this email if you'd like to pick up the conversation.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "The real cost of waiting to build in Uganda",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>I don't want to pressure you — but I do want to share an honest calculation that often changes how people think about timing their project.</p>
+  <h3 style="color:#2c5f2e">The Inflation Argument</h3>
+  <p>Construction costs in Uganda have averaged roughly <strong>8–12% annual increase</strong> in UGX terms over the past decade (materials, labour, and professional fees combined). That means a project costing UGX 250M today may cost UGX 275–280M in 12 months if you wait. The money you've saved doesn't necessarily grow at the same rate.</p>
+  <h3 style="color:#2c5f2e">The Rent-vs-Build Calculation</h3>
+  <p>If you're currently renting while saving to build, consider: every month of rent is a month of permanent housing cost you'll never recover. A family paying UGX 1.5M/month in rent over 5 years spends UGX 90M — money that could have been building equity in their own property instead.</p>
+  <h3 style="color:#2c5f2e">Phased Building as an Alternative to Waiting</h3>
+  <p>You don't have to wait until you have the full construction budget. A well-planned phased build — structure complete first, finishes later — lets you start now at a lower initial cost, move in at shell stage, and complete finishes as funds become available. We've helped dozens of clients do exactly this.</p>
+  <p>The question is never just "can I afford to build?" — it's also "what does waiting actually cost?"</p>
+  <p>Happy to run the numbers with you. Just reply or call <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a>.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "Where are you in your building journey? We'd love to hear",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>No new information today — just a genuine check-in. We've shared a lot over the past few emails and I don't want to keep sending material if your situation has changed or if what we're sending isn't useful right now.</p>
+  <p>If you're open to it, a one-line reply would be genuinely helpful:</p>
+  <ul>
+    <li>"Still planning but not ready yet" — and we'll keep the updates light and infrequent</li>
+    <li>"My project is on hold until [timeframe]" — and we'll check back then</li>
+    <li>"I'm actually ready to move forward" — and we'll get on a call this week</li>
+    <li>"Not planning to build anymore" — and we'll stop sending and wish you well</li>
+  </ul>
+  <p>There's no wrong answer. We'd just rather have a real conversation than send emails into the void.</p>
+  <p>Either way, if you ever want to talk about your project — even just to think through the numbers or options — we're available. No obligation, no pressure.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "A final note — and an open invitation",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>This is the last email in this series from me. I won't keep sending if there's been no response — that's not how we want to show up in your inbox.</p>
+  <p>But I do want to leave one thing on the table: <strong>the invitation is always open</strong>.</p>
+  <p>Whether your project is 3 months away or 3 years away, we're here when you're ready. Building a home or an investment property is a significant undertaking, and having a professional you trust on your side from the beginning makes a real difference to the outcome.</p>
+  <h3 style="color:#2c5f2e">What We Offer</h3>
+  <ul>
+    <li>Free initial consultation — no commitment required</li>
+    <li>Preliminary cost estimation — get a realistic number before you commit to anything</li>
+    <li>AI Architecture Studio — explore design options for your plot at no cost</li>
+    <li>Full design and approvals service when you're ready</li>
+  </ul>
+  <p>
+    📞 <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a><br>
+    🌐 <a href="https://serenecreations.org" style="color:#2c5f2e">serenecreations.org</a><br>
+    ✉️ <a href="mailto:info@serenecreations.org" style="color:#2c5f2e">info@serenecreations.org</a>
+  </p>
+  <p>Wishing you the best with your plans, whenever you're ready to move them forward.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
+  "past-client": {
+    name: "Past Client Referral & Return Business",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "Thank you for building with us — and a small favour",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>It's been some time since we worked together, and I hope you and your family are well and enjoying your home.</p>
+  <p>I wanted to reach out for two reasons. First, simply to say thank you — clients who trust us with a project as personal as their home are the reason Serene Creations exists, and we don't take that lightly.</p>
+  <p>Second, a small favour to ask: <strong>do you know someone who is thinking about building in Uganda?</strong> A friend planning a home, a family member looking at rental units, a colleague who's been talking about buying land?</p>
+  <p>The most valuable thing you can do for someone going into construction is connect them with professionals they can trust before they make decisions that are hard to undo. If you're happy with the work we did together, a simple introduction would mean a lot to us — and could make a real difference for them.</p>
+  <p>All they need to do is reply to this email, call <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a>, or mention your name when they get in touch and we'll give them the same attention we gave you.</p>
+  <p>Thank you again.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "How to refer a friend to Serene Creations (and why it helps them)",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>A quick follow-up to my last message. The single most common feedback we get from clients who referred someone is: "I wish I'd connected them sooner."</p>
+  <p>The reason: the decisions made in the first few weeks of a building project — before any contractor is engaged, before any drawings are commissioned, even before a plot is purchased — have the biggest impact on the final outcome. And most people make those early decisions without professional input.</p>
+  <h3 style="color:#2c5f2e">What Your Referral Gets</h3>
+  <p>Anyone you send to us will receive a <strong>free initial consultation</strong> — a genuine professional conversation about their project, their budget, and what's realistically achievable. No sales pressure. No commitment required. Just honest guidance from people who know Uganda construction well.</p>
+  <h3 style="color:#2c5f2e">The Easiest Way to Refer</h3>
+  <p>Forward this email to them, or share our contact details:</p>
+  <ul>
+    <li>📞 <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a></li>
+    <li>🌐 <a href="https://serenecreations.org" style="color:#2c5f2e">serenecreations.org</a></li>
+  </ul>
+  <p>Ask them to mention your name — it ensures we know to give them particular care.</p>
+  <p>Thank you for thinking of us.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "What's new at Serene Creations — things that might interest you",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>In case it's useful, here's a brief update on what we've been working on since we last spoke.</p>
+  <h3 style="color:#2c5f2e">AI Architecture Studio</h3>
+  <p>We've launched an AI-powered design tool at <a href="https://serenecreations.org" style="color:#2c5f2e">serenecreations.org</a> that lets anyone explore architectural possibilities for their plot — generate visualisations instantly, try different styles and configurations, and use the results to refine a design brief. It's free to use and takes minutes, not weeks.</p>
+  <h3 style="color:#2c5f2e">Site Supervision Services</h3>
+  <p>We've expanded our site supervision offering to cover more of the greater Kampala area including Mukono, Masaka road, and Entebbe road corridor. If you or anyone you know is building in those areas and needs independent oversight, we can help.</p>
+  <h3 style="color:#2c5f2e">Rental Development Planning</h3>
+  <p>We now offer a dedicated investor consultation for those considering rental property — unit mix optimisation, yield modelling, and phased development planning.</p>
+  <p>If any of these are relevant to your next project — an extension, a staff quarter, a rental block — we'd love to work with you again.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "Thinking about extending, developing, or building again?",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>As time passes after a build, many of our clients start thinking about the next phase — an extension to the existing house, staff quarters or a guard's house on the plot, rental units on the remaining land, or a completely separate new project.</p>
+  <p>If any of that sounds like where your thinking is going, we'd love to be part of it again.</p>
+  <h3 style="color:#2c5f2e">For Existing Clients, We Offer</h3>
+  <ul>
+    <li><strong>Extension and renovation drawings</strong> — working from our knowledge of your existing building, which saves time and ensures the extension is designed to match</li>
+    <li><strong>Post-occupancy review</strong> — a site visit to review the completed building and document any defects or snags still outstanding under your contractor's defects liability period</li>
+    <li><strong>New project on the same plot</strong> — additional units, staff housing, or income-generating improvements</li>
+  </ul>
+  <h3 style="color:#2c5f2e">Pick Up the Conversation</h3>
+  <p>Reply to this email with whatever you're considering — even if it's just an early idea — or call us directly:</p>
+  <ul>
+    <li>📞 <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a></li>
+    <li>✉️ <a href="mailto:info@serenecreations.org" style="color:#2c5f2e">info@serenecreations.org</a></li>
+  </ul>
+  <p>It's always good to work with people we already know.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
   "smart-design-uganda": {
     name: "Smart & Sustainable Design for Uganda",
     emails: [
@@ -1574,6 +2284,7 @@ const CAMPAIGNS = {
 
 /** Map from lead source slug → campaign id */
 const SOURCE_CAMPAIGN_MAP = {
+  // Original sequences
   "blog-costs-uganda":       "costs-uganda",
   "blog-approvals-uganda":   "approvals-uganda",
   "blog-smart-design":       "smart-design-uganda",
@@ -1582,6 +2293,42 @@ const SOURCE_CAMPAIGN_MAP = {
   "widget-approvals":        "approvals-uganda",
   "widget-build-planning":   "build-planning-uganda",
   "studio-promo":            "costs-uganda",
+
+  // BOQ & Cost Follow-Up
+  "blog-boq":                "boq-follow-up",
+  "blog-bill-of-quantities": "boq-follow-up",
+  "widget-boq":              "boq-follow-up",
+  "form-boq":                "boq-follow-up",
+
+  // House Plan & Design Nurture
+  "blog-house-design":       "house-design-nurture",
+  "blog-floor-plans":        "house-design-nurture",
+  "widget-design":           "house-design-nurture",
+  "form-design":             "house-design-nurture",
+
+  // Construction Readiness
+  "blog-construction":       "construction-ready",
+  "blog-contractors":        "construction-ready",
+  "widget-construction":     "construction-ready",
+  "form-construction":       "construction-ready",
+
+  // Rental Property Development
+  "blog-rental":             "rental-property",
+  "blog-investment":         "rental-property",
+  "widget-rental":           "rental-property",
+  "form-rental":             "rental-property",
+
+  // Land Buyer Preparation
+  "blog-land":               "land-buyer",
+  "blog-land-title":         "land-buyer",
+  "widget-land":             "land-buyer",
+  "form-land":               "land-buyer",
+
+  // Dormant Lead Re-engagement (triggered programmatically, not by source)
+  "re-engage-dormant":       "re-engage",
+
+  // Past Client Referral (triggered programmatically after project completion)
+  "past-client-followup":    "past-client",
 };
 
 // ─── 11. subscribeToCampaign ─────────────────────────────────────────────────
