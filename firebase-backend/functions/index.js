@@ -50,7 +50,7 @@ const STRIPE_TIER_MAP = {
 };
 
 // Activepieces automation webhooks
-const WELCOME_HOOK = "https://cloud.activepieces.com/api/v1/webhooks/DdrUpk3GiVuV4iHXuotOj";
+const WELCOME_HOOK = "https://cloud.activepieces.com/api/v1/webhooks/uusAJlkobrnDCeGwdQITw";
 const LEAD_HOOK    = "https://cloud.activepieces.com/api/v1/webhooks/gaqpTTBjcrwCpNPukckrm";
 
 // Subscription tier limits (renders / day)
@@ -2339,7 +2339,7 @@ exports.subscribeToCampaign = functions.https.onRequest(async (req, res) => {
   if (req.method === "OPTIONS") return res.status(204).send("");
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
-  const { email, name, campaignId, source } = req.body || {};
+  const { email, name, campaignId, source, consentGiven, consentText } = req.body || {};
   if (!email || typeof email !== "string") {
     return res.status(400).json({ error: "email required" });
   }
@@ -2365,7 +2365,21 @@ exports.subscribeToCampaign = functions.https.onRequest(async (req, res) => {
       source: source || "direct",
       subscribedAt: admin.firestore.FieldValue.serverTimestamp(),
       completed: false,
+      consentGiven: consentGiven === true,
+      consentText: consentText || "",
     });
+
+    // Fire welcome email via ActivePieces (fire-and-forget; never blocks the 200 response)
+    axios.post(WELCOME_HOOK, {
+      email: email.toLowerCase(),
+      name: name || "",
+      source: source || "direct",
+      campaignId: resolvedCampaign,
+      consentGiven: consentGiven === true,
+      consentText: consentText || "",
+    }).catch((err) =>
+      functions.logger.warn("WELCOME_HOOK post failed", { err: err.message })
+    );
 
     functions.logger.info("subscribeToCampaign", { email, campaign: resolvedCampaign, source });
     return res.status(200).json({ status: "subscribed", campaign: resolvedCampaign });
