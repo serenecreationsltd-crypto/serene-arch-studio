@@ -541,6 +541,9 @@ exports.trackLead = functions.https.onRequest(async (req, res) => {
           source:       body.source,
           subscribedAt: admin.firestore.FieldValue.serverTimestamp(),
           completed:    false,
+          unsubscribed: false,
+          consentGiven: false,
+          consentText:  "",
         });
         functions.logger.info("trackLead: auto-enrolled in campaign", { email: body.email, campaignId });
       }
