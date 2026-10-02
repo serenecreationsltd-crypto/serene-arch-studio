@@ -9,41 +9,34 @@ on:
   workflow_dispatch: {}
 
 env:
-  FIREBASE_PROJECT: serene-arch-studio
+  PROJECT: serene-arch-studio
+  REGION: us-central1
+  RUNTIME: nodejs20
 
 jobs:
   deploy:
-    name: Deploy Firebase Backend
+    name: Deploy Cloud Functions
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          node-version: '20'
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
 
-      - name: Install firebase-tools
-        # Pin to 12.x — v13+ added an Artifact Registry pre-check that requires
-        # roles/serviceusage.serviceUsageAdmin, which Gen 1 functions don't need.
-        # v12.9.1 deploys Gen 1 functions via Cloud Storage (no AR needed).
-        run: npm install -g firebase-tools@12.9.1
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT }}
 
-      - name: Install Cloud Function dependencies
-        working-directory: firebase-backend/functions
-        run: npm install --omit=dev
-
-      - name: Write service account key
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > firebase-backend/functions/service-account.json
-
-      - name: Write Functions .env (replaces decommissioned functions:config)
+      - name: Write Functions .env
         working-directory: firebase-backend/functions
         run: |
-          cat > .env <<ENVEOF
+          cat > .env <<'ENVEOF'
           SMTP_USER=info@serenecreations.org
           SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
           STRIPE_SECRET=${{ secrets.STRIPE_SECRET_KEY }}
@@ -51,41 +44,154 @@ jobs:
           REPLICATE_TOKEN=${{ secrets.REPLICATE_TOKEN }}
           REPLICATE_MODEL_VERSION=${{ secrets.REPLICATE_MODEL_VERSION }}
           ENVEOF
-          echo "Wrote .env with $(grep -c '=' .env) keys"
 
-      - name: Deploy Cloud Functions (required — AI render engine)
-        working-directory: firebase-backend
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: functions/service-account.json
+      - name: Create .gcloudignore (include .env, exclude node_modules)
+        working-directory: firebase-backend/functions
         run: |
-          set +e
-          firebase deploy --only functions \
-            --project ${{ env.FIREBASE_PROJECT }} \
-            --non-interactive 2>&1 | tee deploy.log
-          code=${PIPESTATUS[0]}
-          if [ "$code" -ne 0 ]; then
-            echo "::error::functions deploy failed (exit $code)"
-            echo "--- lines matching Error/permission/HTTP ---"
-            grep -iE "error|permission|HTTP [0-9]|denied|not enabled|serviceusage|SERVICE_DISABLED|quota" deploy.log \
-              | sed 's/\x1b\[[0-9;]*m//g' | while IFS= read -r l; do echo "::error::$l"; done
-            echo "--- last 40 lines ---"
-            tail -n 40 deploy.log | sed 's/\x1b\[[0-9;]*m//g' | while IFS= read -r l; do echo "::error::$l"; done
-          fi
-          exit "$code"
+          cat > .gcloudignore <<'EOF'
+          .git
+          .gitignore
+          node_modules
+          EOF
+
+      - name: Install Cloud Function dependencies
+        working-directory: firebase-backend/functions
+        run: npm install --omit=dev
+
+      - name: Deploy HTTPS functions
+        working-directory: firebase-backend/functions
+        run: |
+          ARGS=(
+            --project="${{ env.PROJECT }}"
+            --region="${{ env.REGION }}"
+            --runtime="${{ env.RUNTIME }}"
+            --source=.
+            --trigger-http
+            --allow-unauthenticated
+            --quiet
+          )
+          for fn in \
+            trackLead \
+            getUsageStats \
+            contactFormSubmit \
+            adminStats \
+            stripeWebhook \
+            approveRender \
+            exportUsageCSV \
+            subscribeToCampaign \
+            unsubscribeEmail; do
+            echo "▶ Deploying $fn ..."
+            gcloud functions deploy "$fn" "${ARGS[@]}" --entry-point="$fn"
+          done
+
+      - name: Deploy processRenderJob (Firestore trigger)
+        working-directory: firebase-backend/functions
+        run: |
+          gcloud functions deploy processRenderJob \
+            --project="${{ env.PROJECT }}" \
+            --region="${{ env.REGION }}" \
+            --runtime="${{ env.RUNTIME }}" \
+            --source=. \
+            --trigger-event="providers/cloud.firestore/eventTypes/document.create" \
+            --trigger-resource="projects/${{ env.PROJECT }}/databases/(default)/documents/renderQueue/{jobId}" \
+            --memory=512MB \
+            --timeout=300s \
+            --entry-point=processRenderJob \
+            --quiet
+
+      - name: Deploy onUserCreated (Firestore trigger)
+        working-directory: firebase-backend/functions
+        run: |
+          gcloud functions deploy onUserCreated \
+            --project="${{ env.PROJECT }}" \
+            --region="${{ env.REGION }}" \
+            --runtime="${{ env.RUNTIME }}" \
+            --source=. \
+            --trigger-event="providers/cloud.firestore/eventTypes/document.create" \
+            --trigger-resource="projects/${{ env.PROJECT }}/databases/(default)/documents/users/{uid}" \
+            --entry-point=onUserCreated \
+            --quiet
+
+      - name: Deploy scheduledCleanup (Pub/Sub + Cloud Scheduler)
+        working-directory: firebase-backend/functions
+        run: |
+          TOPIC="firebase-schedule-scheduledCleanup-${{ env.REGION }}"
+
+          # Ensure Pub/Sub topic exists (no-op if already there)
+          gcloud pubsub topics create "$TOPIC" \
+            --project="${{ env.PROJECT }}" 2>/dev/null \
+            || echo "  Topic $TOPIC already exists"
+
+          # Deploy the function
+          gcloud functions deploy scheduledCleanup \
+            --project="${{ env.PROJECT }}" \
+            --region="${{ env.REGION }}" \
+            --runtime="${{ env.RUNTIME }}" \
+            --source=. \
+            --trigger-topic="$TOPIC" \
+            --memory=256MB \
+            --timeout=540s \
+            --entry-point=scheduledCleanup \
+            --quiet
+
+          # Create or update the Cloud Scheduler job
+          gcloud scheduler jobs create pubsub "$TOPIC" \
+            --project="${{ env.PROJECT }}" \
+            --location="${{ env.REGION }}" \
+            --schedule="0 2 * * *" \
+            --time-zone="Africa/Kampala" \
+            --topic="$TOPIC" \
+            --message-body="{}" 2>/dev/null \
+          || gcloud scheduler jobs update pubsub "$TOPIC" \
+            --project="${{ env.PROJECT }}" \
+            --location="${{ env.REGION }}" \
+            --schedule="0 2 * * *" \
+            --time-zone="Africa/Kampala" 2>/dev/null \
+          || echo "  Scheduler job for scheduledCleanup — verify in GCP Console"
+
+      - name: Deploy scheduledDripSend (Pub/Sub + Cloud Scheduler)
+        working-directory: firebase-backend/functions
+        run: |
+          TOPIC="firebase-schedule-scheduledDripSend-${{ env.REGION }}"
+
+          # Ensure Pub/Sub topic exists (no-op if already there)
+          gcloud pubsub topics create "$TOPIC" \
+            --project="${{ env.PROJECT }}" 2>/dev/null \
+            || echo "  Topic $TOPIC already exists"
+
+          # Deploy the function
+          gcloud functions deploy scheduledDripSend \
+            --project="${{ env.PROJECT }}" \
+            --region="${{ env.REGION }}" \
+            --runtime="${{ env.RUNTIME }}" \
+            --source=. \
+            --trigger-topic="$TOPIC" \
+            --memory=256MB \
+            --timeout=300s \
+            --entry-point=scheduledDripSend \
+            --quiet
+
+          # Create or update the Cloud Scheduler job
+          gcloud scheduler jobs create pubsub "$TOPIC" \
+            --project="${{ env.PROJECT }}" \
+            --location="${{ env.REGION }}" \
+            --schedule="0 8 * * *" \
+            --time-zone="Africa/Kampala" \
+            --topic="$TOPIC" \
+            --message-body="{}" 2>/dev/null \
+          || gcloud scheduler jobs update pubsub "$TOPIC" \
+            --project="${{ env.PROJECT }}" \
+            --location="${{ env.REGION }}" \
+            --schedule="0 8 * * *" \
+            --time-zone="Africa/Kampala" 2>/dev/null \
+          || echo "  Scheduler job for scheduledDripSend — verify in GCP Console"
 
       - name: Deploy Firestore & Storage rules (best-effort)
         if: always()
-        working-directory: firebase-backend
         continue-on-error: true
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: functions/service-account.json
+        working-directory: firebase-backend
         run: |
-          set +e
+          npm install -g firebase-tools@12.9.1 --quiet 2>&1 | tail -5
           firebase deploy --only firestore:rules,storage \
-            --project ${{ env.FIREBASE_PROJECT }} \
-            --non-interactive 2>&1 | tee rules.log
-          code=${PIPESTATUS[0]}
-          if [ "$code" -ne 0 ]; then
-            echo "::warning::rules/storage deploy skipped (exit $code). The deploy service account needs the 'Firebase Rules Admin' (roles/firebaserules.admin) role, or deploy rules manually from the Firebase console."
-          fi
-          exit 0
+            --project "${{ env.PROJECT }}" \
+            --non-interactive 2>&1 | tail -20 || true
