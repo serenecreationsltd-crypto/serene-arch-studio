@@ -2607,23 +2607,37 @@ exports.chatbaseWebhook = functions.https.onRequest(async (req, res) => {
       return res.status(200).json({ status: "already_subscribed", campaignId });
     }
 
-    // Enroll
+    // Enroll — fields must match what subscribeToCampaign writes so
+    // scheduledDripSend picks this up correctly.
     await db.collection("campaignSubscriptions").add({
-      email:      email.toLowerCase().trim(),
-      name:       name || "",
+      email:          email.toLowerCase().trim(),
+      name:           name || "",
       campaignId,
-      source:     "chatbase",
-      enrolledAt: admin.firestore.FieldValue.serverTimestamp(),
-      nextEmailIndex: 0,
-      unsubscribed: false,
+      stage:          0,
+      nextSendAt:     admin.firestore.Timestamp.now(),
+      source:         "chatbase",
+      subscribedAt:   admin.firestore.FieldValue.serverTimestamp(),
+      completed:      false,
+      unsubscribed:   false,
+      consentGiven:   false,
+      consentText:    "",
     });
 
-    // Also fire the lead hook so ActivePieces sees it
-    const LEAD_HOOK_URL = "https://cloud.activepieces.com/api/v1/webhooks/gaqpTTBjcrwCpNPukckrm";
-    axios.post(LEAD_HOOK_URL, {
+    // Fire lead hook (contact form pipeline) — fire-and-forget
+    axios.post(LEAD_HOOK, {
       email, name, source: "chatbase", campaign: campaignId,
       conversationId: conversation.id || body.conversationId || "",
     }).catch(err => functions.logger.warn("chatbaseWebhook: lead hook failed", { err: err.message }));
+
+    // Fire welcome hook (lead magnet email) — fire-and-forget
+    axios.post(WELCOME_HOOK, {
+      email:      email.toLowerCase().trim(),
+      name:       name || "",
+      source:     "chatbase",
+      campaignId,
+      consentGiven: false,
+      consentText:  "",
+    }).catch(err => functions.logger.warn("chatbaseWebhook: welcome hook failed", { err: err.message }));
 
     functions.logger.info("chatbaseWebhook: enrolled", { email, campaignId });
     return res.status(200).json({ status: "enrolled", campaignId });
