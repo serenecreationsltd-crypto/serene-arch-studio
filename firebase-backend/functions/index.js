@@ -1094,6 +1094,19 @@ exports.exportUsageCSV = functions.https.onRequest(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Unsubscribe footer appended to every drip email.
+ * @param {string} unsubUrl - Unique unsubscribe link for this subscription doc.
+ */
+const UNSUB_FOOTER = (unsubUrl) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:32px auto 0;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#999;line-height:1.6">
+  You're receiving this because you opted in to receive building insights from
+  <strong>Serene Creations</strong>. We'll never share your email.<br>
+  <a href="${unsubUrl}" style="color:#999;text-decoration:underline">Unsubscribe</a>
+  &nbsp;·&nbsp;
+  <a href="https://serenecreations.org" style="color:#999;text-decoration:underline">serenecreations.org</a>
+</div>`;
+
+/**
  * Campaign sequence definitions.
  * Each sequence has 4 stages. `delayDays` is how many days to wait BEFORE
  * sending that stage (stage 0 = send immediately on subscription).
@@ -1327,6 +1340,141 @@ const CAMPAIGNS = {
     ],
   },
 
+  "build-planning-uganda": {
+    name: "Build Planning Starter Series",
+    emails: [
+      {
+        delayDays: 0,
+        subject: "Thinking of building in Uganda? Here's where to start",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Whether you've been dreaming about building your own home for years or just started exploring the idea, the first challenge is always the same: where do you begin?</p>
+  <p>Over the next few weeks I'll walk you through the key phases of planning a build in Uganda — from working out your budget and brief, to choosing a contractor and breaking ground. Each email is short and practical, based on what we've learned helping homeowners across Uganda.</p>
+  <h3 style="color:#2c5f2e">Phase 1: Define Your Brief</h3>
+  <p>Before any drawings, before any contractor quotes, before any site visits — you need a written brief. It doesn't have to be long. Answer these questions:</p>
+  <ol>
+    <li><strong>Who will live in the house?</strong> Number of adults, children, any elderly or special-needs occupants.</li>
+    <li><strong>How many bedrooms and bathrooms?</strong> Be specific — "3 beds, 2 baths, plus a study" is more useful than "a 3-bedroom house".</li>
+    <li><strong>What's your absolute budget limit?</strong> Not "I'd like to spend X" but the maximum you can mobilise including contingency.</li>
+    <li><strong>What's your timeline?</strong> Are you aiming to move in within 12 months, 2 years, or longer?</li>
+    <li><strong>Do you have a plot?</strong> If yes, note the size, location, and whether you have a title deed.</li>
+  </ol>
+  <p>Writing these answers down forces clarity and surfaces conflicts early — much better to discover that your brief and your budget don't match at this stage than six months in.</p>
+  <p>Next email: how to turn your brief into a realistic budget estimate before engaging anyone.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 3,
+        subject: "How to budget your Uganda build before you talk to anyone",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Most people go to architects or contractors first and get a quote — then discover the number is far higher than expected. Starting with a realistic self-generated budget prevents that shock and puts you in a much stronger position when you do engage professionals.</p>
+  <h3 style="color:#2c5f2e">A Simple Budget Framework (2026 Uganda)</h3>
+  <p>Work out your approximate floor area first: number of bedrooms × 20–25 m² per bedroom, plus shared spaces (living, dining, kitchen at 40–60 m² total). A 3-bedroom home typically runs <strong>120–160 m²</strong>.</p>
+  <p>Then apply a cost-per-m² estimate based on your target finish:</p>
+  <ul>
+    <li><strong>Basic:</strong> UGX 900,000–1,100,000 / m²</li>
+    <li><strong>Standard:</strong> UGX 1,200,000–1,800,000 / m²</li>
+    <li><strong>High-end:</strong> UGX 2,000,000–3,500,000 / m²</li>
+  </ul>
+  <p>For a standard 140 m² 3-bedroom house: <strong>UGX 168M – 252M</strong>. Add:</p>
+  <ul>
+    <li>Professional fees (architect + engineer): ~10% → +UGX 17–25M</li>
+    <li>Approval fees and land survey: UGX 3–8M</li>
+    <li>Contingency (non-negotiable): 15% of construction cost</li>
+    <li>External works (gate, perimeter, paving): UGX 20–40M</li>
+    <li>Water + electrical connection: UGX 5–15M</li>
+  </ul>
+  <p><strong>Realistic total for a quality 3-bedroom home in Kampala / Wakiso: UGX 220–320M.</strong> If your budget is lower, either reduce the spec, reduce the floor area, or plan to build in phases.</p>
+  <p>Next email: how to choose the right architect and what to look for beyond price.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 7,
+        subject: "How to choose an architect for your Uganda build",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>The architect you choose sets the direction of everything: the quality of your drawings, the efficiency of your layout, the accuracy of your BOQ, and how smooth your approvals process will be. Here's how to evaluate candidates seriously.</p>
+  <h3 style="color:#2c5f2e">Verify Registration First</h3>
+  <p>Your architect must be registered with the <strong>Uganda Registration Board (URB)</strong> — this is a legal requirement for plan submissions. Ask for their registration number and verify it on the URB website before signing anything. An unregistered draughtsperson, however talented, cannot get your plans approved.</p>
+  <h3 style="color:#2c5f2e">Look at Built Work, Not Renders</h3>
+  <p>Ask to see completed buildings — not just 3D renders. Visit a project they've done if possible. Renders can look beautiful regardless of whether the actual construction worked well. A completed building tells you whether the design was practical, the details were resolved, and the client relationship was managed.</p>
+  <h3 style="color:#2c5f2e">Ask These Questions</h3>
+  <ul>
+    <li>"Who specifically will be doing my drawings — you or a junior?" Get a name.</li>
+    <li>"Have you worked with plots/projects similar to mine?" A firm that mostly does commercial work may not understand residential priorities.</li>
+    <li>"How do you handle plan approval submissions?" They should know the process in your specific jurisdiction.</li>
+    <li>"What does your fee cover, and what will I pay extra for?" Get this in writing.</li>
+  </ul>
+  <h3 style="color:#2c5f2e">On Fees</h3>
+  <p>Architectural fees in Uganda typically run <strong>5–8% of construction cost</strong> for a full service (schematic design, working drawings, approvals, site supervision). Very low fees usually mean junior staff, incomplete drawings, or no site visits. The architect is the cheapest professional on your project relative to the problems they prevent.</p>
+  <p>Next email: understanding the building approval process — and how to plan your project timeline around it.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 14,
+        subject: "Build approvals in Uganda: how to plan your timeline",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>One of the most common mistakes in Uganda construction projects is starting on site while waiting for approvals — or not realising that approvals take significant time to budget into the project schedule. Here's a realistic look at the timeline.</p>
+  <h3 style="color:#2c5f2e">The Approval Sequence</h3>
+  <ol>
+    <li><strong>Design phase</strong> — 4–8 weeks for a 3-bedroom house (longer for multi-storey or complex briefs)</li>
+    <li><strong>Drawing preparation</strong> — 2–4 weeks for a complete set ready for submission</li>
+    <li><strong>Submission and technical review</strong> — 4–12 weeks depending on the authority and completeness of your drawings</li>
+    <li><strong>Comments/resubmission</strong> — add 2–4 weeks if corrections are required</li>
+    <li><strong>Approval in hand</strong> — you can now begin construction legally</li>
+  </ol>
+  <p>Total from starting design to breaking ground: realistically <strong>3–6 months</strong>. Projects that try to cut this short by starting construction before approval risk stop-work orders, fines, and in extreme cases, demolition of unapproved structures.</p>
+  <h3 style="color:#2c5f2e">Use the Waiting Time Productively</h3>
+  <p>While your plans are under review, you can: source materials and get current price quotes, interview and pre-qualify contractors, prepare your contract and payment schedule, and sort out your financing. Good planning during the approval wait period saves weeks during construction.</p>
+  <h3 style="color:#2c5f2e">A Realistic Project Calendar</h3>
+  <p>Month 1–2: Finalise brief, engage architect, begin design<br>
+  Month 3–4: Complete drawings, submit for approval<br>
+  Month 4–6: Approval process; pre-qualify contractors in parallel<br>
+  Month 6: Break ground<br>
+  Month 6–18: Construction (depending on scope and financing pace)</p>
+  <p>Final email next: how Serene Creations can guide you through this whole journey — and what we offer at each stage.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+      {
+        delayDays: 21,
+        subject: "Ready to move from planning to building? Let's talk",
+        html: (name) => `
+<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#222;line-height:1.7">
+  <p>Hi ${name || "there"},</p>
+  <p>Over the past few weeks I've walked you through defining your brief, building a realistic budget, choosing an architect, and understanding the approvals timeline. That's the foundation of a well-planned project.</p>
+  <p>At Serene Creations, we work with homeowners and investors at exactly this stage — when the idea is clear but the path to execution still needs a guide.</p>
+  <h3 style="color:#2c5f2e">What We Offer</h3>
+  <ul>
+    <li><strong>Architectural design</strong> — from schematic concept through to approved working drawings</li>
+    <li><strong>BOQ and cost estimation</strong> — detailed, current-rate bills of quantities for contractor tendering</li>
+    <li><strong>Building approvals management</strong> — submission, tracking, and response to authority queries</li>
+    <li><strong>Construction supervision</strong> — periodic or full-time site supervision to protect your investment</li>
+    <li><strong>AI Architecture Studio</strong> — explore design possibilities for your plot before committing to a full design brief</li>
+  </ul>
+  <h3 style="color:#2c5f2e">Free First Consultation</h3>
+  <p>We offer a free 30-minute consultation — in person in Kampala or by video call for clients elsewhere. Bring your brief notes, any plot documents you have, and your budget figure. We'll tell you honestly what's achievable and what the right next step looks like.</p>
+  <p>
+    📞 <a href="tel:+256783691337" style="color:#2c5f2e">+256 783 691337</a><br>
+    🌐 <a href="https://serenecreations.org/contact" style="color:#2c5f2e">serenecreations.org/contact</a><br>
+    ✉️ <a href="mailto:info@serenecreations.org" style="color:#2c5f2e">info@serenecreations.org</a>
+  </p>
+  <p>Looking forward to hearing about your project.</p>
+  ${EMAIL_SIGNATURE}
+</div>`,
+      },
+    ],
+  },
+
   "smart-design-uganda": {
     name: "Smart & Sustainable Design for Uganda",
     emails: [
@@ -1426,12 +1574,14 @@ const CAMPAIGNS = {
 
 /** Map from lead source slug → campaign id */
 const SOURCE_CAMPAIGN_MAP = {
-  "blog-costs-uganda":    "costs-uganda",
-  "blog-approvals-uganda": "approvals-uganda",
-  "blog-smart-design":    "smart-design-uganda",
-  "widget-costs":         "costs-uganda",
-  "widget-approvals":     "approvals-uganda",
-  "studio-promo":         "costs-uganda",
+  "blog-costs-uganda":       "costs-uganda",
+  "blog-approvals-uganda":   "approvals-uganda",
+  "blog-smart-design":       "smart-design-uganda",
+  "blog-build-planning":     "build-planning-uganda",
+  "widget-costs":            "costs-uganda",
+  "widget-approvals":        "approvals-uganda",
+  "widget-build-planning":   "build-planning-uganda",
+  "studio-promo":            "costs-uganda",
 };
 
 // ─── 11. subscribeToCampaign ─────────────────────────────────────────────────
@@ -1508,6 +1658,12 @@ exports.scheduledDripSend = functions
         return;
       }
 
+      // Skip unsubscribed contacts
+      if (sub.unsubscribed) {
+        await doc.ref.update({ completed: true });
+        return;
+      }
+
       const stage = sub.stage || 0;
       const emailDef = campaign.emails[stage];
       if (!emailDef) {
@@ -1515,13 +1671,16 @@ exports.scheduledDripSend = functions
         return;
       }
 
+      const token = Buffer.from(doc.id).toString("base64url");
+      const unsubUrl = `https://us-central1-serene-arch-studio.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
+
       try {
         await mailer.sendMail({
           from: FROM_EMAIL,
           to: sub.email,
           replyTo: REPLY_TO,
           subject: emailDef.subject,
-          html: emailDef.html(sub.name || ""),
+          html: emailDef.html(sub.name || "") + UNSUB_FOOTER(unsubUrl),
         });
         sent++;
       } catch (mailErr) {
@@ -1546,3 +1705,46 @@ exports.scheduledDripSend = functions
     functions.logger.info("scheduledDripSend complete", { sent, errors, total: snap.size });
     return null;
   });
+
+// ─── 13. unsubscribeEmail ────────────────────────────────────────────────────
+exports.unsubscribeEmail = functions.https.onRequest(async (req, res) => {
+  const token = req.query.token;
+  if (!token) return res.status(400).send("Invalid unsubscribe link.");
+  try {
+    const docId = Buffer.from(token, "base64url").toString("utf8");
+    const ref = db.collection("campaignSubscriptions").doc(docId);
+    await ref.update({
+      unsubscribed: true,
+      unsubscribedAt: admin.firestore.FieldValue.serverTimestamp(),
+      completed: true,
+    });
+    return res.status(200).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Unsubscribed — Serene Creations</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 580px; margin: 80px auto; padding: 0 24px;
+           color: #222; text-align: center; }
+    h2  { color: #2c5f2e; font-size: 1.6rem; margin-bottom: 12px; }
+    p   { line-height: 1.7; color: #555; }
+    a   { color: #2c5f2e; }
+  </style>
+</head>
+<body>
+  <h2>You've been unsubscribed</h2>
+  <p>You won't receive any more emails from this series.</p>
+  <p>If this was a mistake, reply to any of our emails or write to us at
+     <a href="mailto:info@serenecreations.org">info@serenecreations.org</a> and we'll
+     re-add you.</p>
+  <p><a href="https://serenecreations.org">Return to serenecreations.org</a></p>
+</body>
+</html>`);
+  } catch (err) {
+    functions.logger.error("unsubscribeEmail error", { err: err.message });
+    return res.status(500).send(
+      "Something went wrong. Please contact info@serenecreations.org to unsubscribe manually."
+    );
+  }
+});
