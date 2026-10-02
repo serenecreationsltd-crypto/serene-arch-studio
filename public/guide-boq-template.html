@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Free Uganda BOQ Template — Bill of Quantities for Construction</title>
+<meta name="description" content="Download a free, editable Bill of Quantities (BOQ) template for Uganda construction projects. Includes pricing guidance and common line items.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0d1117;
+  --surface:  #161b22;
+  --border:   #30363d;
+  --gold:     #c9a84c;
+  --gold-lt:  #e8c86d;
+  --text:     #e6edf3;
+  --muted:    #8b949e;
+  --green:    #3fb950;
+  --radius:   10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* HERO */
+.hero {
+  background: linear-gradient(160deg, #0d1117 0%, #161b22 60%, #0d1117 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 24px 80px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(63,185,80,.07) 0%, transparent 70%);
+}
+.badge {
+  display: inline-block;
+  background: rgba(63,185,80,.12);
+  border: 1px solid rgba(63,185,80,.35);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 20px;
+  margin-bottom: 22px;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 660px;
+  margin: 0 auto 18px;
+  color: #fff;
+}
+.hero h1 span { color: var(--gold); }
+.hero p { max-width: 520px; margin: 0 auto; color: var(--muted); font-size: 1.05rem; }
+
+/* PREVIEW */
+.preview {
+  max-width: 680px;
+  margin: -40px auto 0;
+  padding: 0 24px 56px;
+  position: relative;
+  z-index: 10;
+}
+.sheet {
+  background: #fff;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 20px 56px rgba(0,0,0,.5);
+  font-size: .78rem;
+  color: #1a1a1a;
+}
+.sheet-head {
+  background: #1a1f2e;
+  color: #fff;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sheet-head .title { font-weight: 700; font-size: .9rem; }
+.sheet-head .sub { font-size: .72rem; color: rgba(255,255,255,.5); }
+.sheet table { width: 100%; border-collapse: collapse; }
+.sheet th {
+  background: #f0f2f5;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: .72rem;
+  letter-spacing: .04em;
+  border-bottom: 1px solid #d0d5dd;
+  color: #344054;
+}
+.sheet td { padding: 7px 12px; border-bottom: 1px solid #f2f4f7; }
+.sheet tr:last-child td { border-bottom: none; }
+.sheet .section { background: #fafbfc; font-weight: 600; color: #1a1f2e; font-size: .74rem; }
+.sheet .amount { text-align: right; font-variant-numeric: tabular-nums; }
+.sheet .total-row td { background: #1a1f2e; color: #fff; font-weight: 700; padding: 10px 12px; }
+.blur-row td { filter: blur(3px); opacity: .5; user-select: none; }
+
+/* GATE */
+.gate-wrap { max-width: 520px; margin: 0 auto; padding: 0 24px 64px; }
+.gate {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+}
+.gate h3 { font-size: 1.15rem; font-weight: 600; color: #fff; margin-bottom: 6px; }
+.gate .sub { font-size: .88rem; color: var(--muted); margin-bottom: 22px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: .82rem; font-weight: 500; color: var(--muted); margin-bottom: 5px; }
+.field input {
+  width: 100%;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: .95rem;
+  padding: 10px 13px;
+  transition: border-color .2s;
+}
+.field input:focus { outline: none; border-color: var(--gold); }
+.field input::placeholder { color: #484f58; }
+.consent { font-size: .8rem; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+.consent a { color: var(--gold); text-decoration: none; }
+.btn-dl {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, var(--gold) 0%, #b8912a 100%);
+  border: none;
+  border-radius: 8px;
+  color: #0d1117;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 13px;
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+}
+.btn-dl:hover { opacity: .92; }
+.btn-dl:active { transform: scale(.98); }
+.btn-dl:disabled { opacity: .5; cursor: not-allowed; }
+.msg { margin-top: 12px; font-size: .88rem; text-align: center; min-height: 18px; }
+.msg.ok { color: var(--green); }
+.msg.err { color: #f85149; }
+
+/* INCLUDES */
+.includes { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 52px 24px; }
+.includes-inner { max-width: 820px; margin: 0 auto; }
+.includes-inner h2 { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: #fff; text-align: center; margin-bottom: 36px; }
+.list { display: flex; flex-direction: column; gap: 14px; max-width: 600px; margin: 0 auto; }
+.li-row { display: flex; gap: 14px; align-items: flex-start; }
+.check { color: var(--green); font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.li-row p { font-size: .95rem; color: var(--muted); }
+.li-row p strong { color: var(--text); }
+
+footer { border-top: 1px solid var(--border); padding: 24px; text-align: center; font-size: .8rem; color: var(--muted); }
+footer a { color: var(--gold); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="badge">Free Download — Excel + PDF</div>
+  <h1>Uganda <span>BOQ Template</span><br>for Construction Projects</h1>
+  <p>A ready-to-use Bill of Quantities covering foundations, structure, finishes, M&amp;E, and external works — sized for a 3-bed bungalow, scalable to any project.</p>
+</section>
+
+<!-- PREVIEW SHEET -->
+<div class="preview">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div>
+        <div class="title">Bill of Quantities — 3 Bed Bungalow</div>
+        <div class="sub">Serene Creations Ltd · Uganda · 2026</div>
+      </div>
+      <div style="color:var(--gold);font-weight:700;font-size:.85rem">PREVIEW</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:6%">#</th>
+          <th style="width:46%">Description</th>
+          <th style="width:10%">Unit</th>
+          <th style="width:10%">Qty</th>
+          <th style="width:14%">Rate (UGX)</th>
+          <th style="width:14%" class="amount">Amount (UGX)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="section"><td colspan="6">A — Preliminaries</td></tr>
+        <tr><td>A1</td><td>Site clearance &amp; establishment</td><td>LS</td><td>1</td><td>1,200,000</td><td class="amount">1,200,000</td></tr>
+        <tr><td>A2</td><td>Temporary fencing</td><td>m</td><td>60</td><td>25,000</td><td class="amount">1,500,000</td></tr>
+        <tr class="section"><td colspan="6">B — Substructure (Foundation)</td></tr>
+        <tr><td>B1</td><td>Excavation to foundation level (avg 1.2m)</td><td>m³</td><td>48</td><td>35,000</td><td class="amount">1,680,000</td></tr>
+        <tr><td>B2</td><td>Mass concrete blinding (100mm)</td><td>m³</td><td>6</td><td>420,000</td><td class="amount">2,520,000</td></tr>
+        <tr class="blur-row"><td>B3</td><td>Reinforced strip footing (150MPa)</td><td>m³</td><td>14</td><td>680,000</td><td class="amount">9,520,000</td></tr>
+        <tr class="blur-row"><td>B4</td><td>DPC membrane (polythene 1000g)</td><td>m²</td><td>90</td><td>8,000</td><td class="amount">720,000</td></tr>
+        <tr class="section blur-row"><td colspan="6">C — Superstructure · D — Roofing · E — Finishes (unlock below)</td></tr>
+        <tr class="total-row"><td colspan="5">SUBTOTAL (visible items)</td><td class="amount">17,140,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- GATE -->
+<div class="gate-wrap">
+  <div class="gate">
+    <h3>Get the complete BOQ template</h3>
+    <p class="sub">Enter your email and we'll send the full Excel file + PDF guide instantly.</p>
+    <form id="gateForm" novalidate>
+      <div class="field">
+        <label for="gName">Your name</label>
+        <input id="gName" type="text" placeholder="e.g. David Ssebugwawo" autocomplete="name" required>
+      </div>
+      <div class="field">
+        <label for="gEmail">Email address</label>
+        <input id="gEmail" type="email" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+      <p class="consent">
+        By submitting you agree to receive emails from Serene Creations Ltd. No spam — just useful construction tips.
+        <a href="/index.html#privacy">Privacy policy</a> · Unsubscribe anytime.
+      </p>
+      <button class="btn-dl" type="submit" id="dlBtn">📥 Send me the BOQ template</button>
+      <div class="msg" id="gMsg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- INCLUDES -->
+<section class="includes">
+  <div class="includes-inner">
+    <h2>What you get</h2>
+    <div class="list">
+      <div class="li-row"><span class="check">✓</span><p><strong>Full BOQ spreadsheet (Excel)</strong> — 8 sections covering A–H: preliminaries, substructure, superstructure, roofing, finishes, plumbing, electrical, and external works.</p></div>
+      <div class="li-row"><span class="check">✓</span><p><strong>2026 unit-rate benchmarks</strong> — Pre-filled with current Kampala rates for over 140 common line items.</p></div>
+      <div class="li-row"><span class="check">✓</span><p><strong>Automatic cost summary</strong> — Totals per section, sub-totals, contingency %, and VAT rows auto-calculate.</p></div>
+      <div class="li-row"><span class="check">✓</span><p><strong>PDF instructions guide</strong> — Step-by-step on how to adapt the template to your specific plot, design, and finish level.</p></div>
+      <div class="li-row"><span class="check">✓</span><p><strong>4-email follow-up series</strong> — Tips on reading BOQ quotes from contractors and spotting inflated rates.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 <a href="/index.html">Serene Creations Ltd</a> · <a href="mailto:info@serenecreations.org">info@serenecreations.org</a> · Kampala, Uganda</p>
+</footer>
+
+<script>
+(function () {
+  const SUBSCRIBE_URL = 'https://us-central1-serene-arch-studio.cloudfunctions.net/subscribeToCampaign';
+
+  const form = document.getElementById('gateForm');
+  const btn  = document.getElementById('dlBtn');
+  const msg  = document.getElementById('gMsg');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const name  = document.getElementById('gName').value.trim();
+    const email = document.getElementById('gEmail').value.trim();
+
+    if (!name)  { showMsg('Please enter your name.', false); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMsg('Please enter a valid email.', false); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      const res = await fetch(SUBSCRIBE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          name,
+          source: 'blog-boq',
+          campaignId: 'boq-follow-up',
+          consentGiven: true,
+          consentText: 'Subscribed via BOQ Template download gate',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showMsg('✅ Check your inbox — the template is on its way!', true);
+        btn.textContent = '✓ Template sent!';
+      } else {
+        throw new Error(data.error || 'Server error');
+      }
+    } catch (err) {
+      showMsg('Something went wrong. Please email info@serenecreations.org', false);
+      btn.disabled = false;
+      btn.textContent = '📥 Send me the BOQ template';
+    }
+  });
+
+  function showMsg(text, ok) {
+    msg.textContent = text;
+    msg.className = 'msg ' + (ok ? 'ok' : 'err');
+  }
+})();
+</script>
+</body>
+</html>

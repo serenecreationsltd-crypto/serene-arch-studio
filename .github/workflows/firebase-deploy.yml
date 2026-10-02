@@ -90,7 +90,8 @@ jobs:
             approveRender \
             exportUsageCSV \
             subscribeToCampaign \
-            unsubscribeEmail; do
+            unsubscribeEmail \
+            chatbaseWebhook; do
             echo "▶ Deploying $fn ..."
             gcloud functions deploy "$fn" "${ARGS[@]}" --entry-point="$fn"
           done

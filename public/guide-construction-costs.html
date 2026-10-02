@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Uganda Construction Cost Guide 2026</title>
+<meta name="description" content="Free download: Uganda Construction Cost Guide 2026. Real cost-per-sqm data, BOQ templates, and contractor rate benchmarks for Kampala and upcountry.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0d1117;
+  --surface:  #161b22;
+  --border:   #30363d;
+  --gold:     #c9a84c;
+  --gold-lt:  #e8c86d;
+  --text:     #e6edf3;
+  --muted:    #8b949e;
+  --radius:   10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100%;
+}
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  background: linear-gradient(135deg, #0d1117 0%, #1a1f2e 50%, #0d1117 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 60px 24px 50px;
+  text-align: center;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,168,76,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.badge {
+  display: inline-block;
+  background: rgba(201,168,76,.15);
+  border: 1px solid rgba(201,168,76,.4);
+  color: var(--gold-lt);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 680px;
+  margin: 0 auto 18px;
+  color: #fff;
+}
+.hero h1 span { color: var(--gold); }
+.hero p {
+  max-width: 540px;
+  margin: 0 auto 10px;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+.cover-mock {
+  margin: 36px auto 0;
+  max-width: 260px;
+  background: linear-gradient(145deg, #1e2636 0%, #141924 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 20px 24px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+}
+.cover-mock .year { font-size: 11px; letter-spacing: .12em; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; }
+.cover-mock h2 { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: #fff; line-height: 1.3; margin-bottom: 16px; }
+.cover-mock .lines { display: flex; flex-direction: column; gap: 8px; }
+.cover-line { height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; }
+.cover-line.gold { background: linear-gradient(90deg, var(--gold), transparent); width: 70%; }
+.cover-mock .tag { margin-top: 20px; font-size: 10px; color: var(--gold); letter-spacing: .08em; text-transform: uppercase; }
+
+/* ── GATE FORM ── */
+.gate-wrap {
+  max-width: 520px;
+  margin: -28px auto 0;
+  padding: 0 24px 64px;
+  position: relative;
+  z-index: 10;
+}
+.gate {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 32px 32px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+}
+.gate h3 { font-size: 1.2rem; font-weight: 600; color: #fff; margin-bottom: 6px; }
+.gate .sub { font-size: .9rem; color: var(--muted); margin-bottom: 24px; }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: .82rem; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+.field input {
+  width: 100%;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: .95rem;
+  padding: 11px 14px;
+  transition: border-color .2s;
+}
+.field input:focus { outline: none; border-color: var(--gold); }
+.field input::placeholder { color: #484f58; }
+.consent { font-size: .8rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+.consent a { color: var(--gold); text-decoration: none; }
+.btn-dl {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, var(--gold) 0%, #b8912a 100%);
+  border: none;
+  border-radius: 8px;
+  color: #0d1117;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 14px;
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+}
+.btn-dl:hover { opacity: .92; }
+.btn-dl:active { transform: scale(.98); }
+.btn-dl:disabled { opacity: .5; cursor: not-allowed; }
+.msg { margin-top: 14px; font-size: .88rem; text-align: center; min-height: 20px; }
+.msg.ok { color: #3fb950; }
+.msg.err { color: #f85149; }
+
+/* ── WHAT'S INSIDE ── */
+.inside {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 24px;
+}
+.inside-inner { max-width: 860px; margin: 0 auto; }
+.inside-inner h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 40px;
+}
+.inside-inner h2 span { color: var(--gold); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.card {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+.card-icon { font-size: 1.5rem; margin-bottom: 12px; }
+.card h4 { font-size: .95rem; font-weight: 600; color: #fff; margin-bottom: 6px; }
+.card p { font-size: .85rem; color: var(--muted); line-height: 1.55; }
+
+/* ── STATS ── */
+.stats { max-width: 860px; margin: 0 auto; padding: 56px 24px; }
+.stats h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: #fff; text-align: center; margin-bottom: 36px; }
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; text-align: center; }
+.stat-item .num { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+.stat-item .lbl { font-size: .82rem; color: var(--muted); margin-top: 4px; }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 24px;
+  text-align: center;
+  font-size: .8rem;
+  color: var(--muted);
+}
+footer a { color: var(--gold); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge">Free Professional Resource</div>
+  <h1>Uganda Construction<br><span>Cost Guide 2026</span></h1>
+  <p>Real cost-per-sqm data, BOQ templates, and contractor rate benchmarks for Kampala and upcountry — written by Serene Creations' senior architects.</p>
+  <div class="cover-mock" aria-hidden="true">
+    <div class="year">2026 Edition</div>
+    <h2>Uganda Construction Cost Guide</h2>
+    <div class="lines">
+      <div class="cover-line gold"></div>
+      <div class="cover-line"></div>
+      <div class="cover-line"></div>
+      <div class="cover-line" style="width:55%"></div>
+    </div>
+    <div class="tag">Serene Creations Ltd</div>
+  </div>
+</section>
+
+<!-- GATE -->
+<div class="gate-wrap">
+  <div class="gate">
+    <h3>Download the free guide</h3>
+    <p class="sub">Enter your details — we'll email you the PDF and send a short follow-up series with budgeting tips.</p>
+    <form id="gateForm" novalidate>
+      <div class="field">
+        <label for="gName">Your name</label>
+        <input id="gName" type="text" placeholder="e.g. Sarah Nakato" autocomplete="name" required>
+      </div>
+      <div class="field">
+        <label for="gEmail">Email address</label>
+        <input id="gEmail" type="email" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+      <p class="consent">
+        By submitting you agree to receive emails from Serene Creations Ltd at <strong>info@serenecreations.org</strong>.
+        We never share your data. <a href="/index.html#privacy">Privacy policy</a>.
+        You can unsubscribe any time.
+      </p>
+      <button class="btn-dl" type="submit" id="dlBtn">📥 Send me the guide</button>
+      <div class="msg" id="gMsg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- WHAT'S INSIDE -->
+<section class="inside">
+  <div class="inside-inner">
+    <h2>What's inside the <span>2026 Guide</span></h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h4>Cost-per-sqm tables</h4>
+        <p>Economy, standard, and high-end finishes for Kampala, Wakiso, Entebbe, and major upcountry towns.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <h4>BOQ template</h4>
+        <p>Editable Bill of Quantities for a 3-bedroom bungalow — adapt it to any project size.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏗️</div>
+        <h4>Contractor rate card</h4>
+        <p>Typical day rates for fundis, skilled artisans, site engineers, and project managers (Q1 2026).</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚠️</div>
+        <h4>Hidden cost checklist</h4>
+        <p>9 common budget overruns Ugandan projects face — and how to build contingency for each.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <h4>Material price index</h4>
+        <p>12-month trend for cement, steel, roofing iron, and aggregate — so you can time your purchases.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏦</div>
+        <h4>Financing overview</h4>
+        <p>Bank mortgage, SACCO, and self-build savings strategies relevant to the Ugandan market.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+  <h2>Why trust these numbers?</h2>
+  <div class="stat-row">
+    <div class="stat-item"><div class="num">12+</div><div class="lbl">years building in Uganda</div></div>
+    <div class="stat-item"><div class="num">200+</div><div class="lbl">projects designed &amp; supervised</div></div>
+    <div class="stat-item"><div class="num">47</div><div class="lbl">contractors surveyed for 2026 rates</div></div>
+    <div class="stat-item"><div class="num">Q1 '26</div><div class="lbl">data collection period</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 <a href="/index.html">Serene Creations Ltd</a> · <a href="mailto:info@serenecreations.org">info@serenecreations.org</a> · Kampala, Uganda</p>
+</footer>
+
+<script>
+(function () {
+  const SUBSCRIBE_URL = 'https://us-central1-serene-arch-studio.cloudfunctions.net/subscribeToCampaign';
+  const GUIDE_URL     = 'https://serenecreations.org/downloads/uganda-construction-cost-guide-2026.pdf';
+
+  const form  = document.getElementById('gateForm');
+  const btn   = document.getElementById('dlBtn');
+  const msg   = document.getElementById('gMsg');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const name  = document.getElementById('gName').value.trim();
+    const email = document.getElementById('gEmail').value.trim();
+
+    if (!name) { showMsg('Please enter your name.', false); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMsg('Please enter a valid email address.', false); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      const res = await fetch(SUBSCRIBE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          name,
+          source: 'blog-costs-uganda',
+          campaignId: 'costs-uganda',
+          consentGiven: true,
+          consentText: 'Subscribed via Uganda Construction Cost Guide 2026 download gate',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showMsg('✅ Check your inbox — the guide is on its way!', true);
+        btn.textContent = '✓ Guide sent!';
+        // Optionally open the PDF directly for immediate value
+        // window.open(GUIDE_URL, '_blank');
+      } else {
+        throw new Error(data.error || 'Server error');
+      }
+    } catch (err) {
+      showMsg('Something went wrong. Please try again or email info@serenecreations.org', false);
+      btn.disabled = false;
+      btn.textContent = '📥 Send me the guide';
+    }
+  });
+
+  function showMsg(text, ok) {
+    msg.textContent = text;
+    msg.className = 'msg ' + (ok ? 'ok' : 'err');
+  }
+})();
+</script>
+</body>
+</html>

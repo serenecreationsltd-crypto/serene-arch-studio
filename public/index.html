@@ -858,5 +858,219 @@
   };
 })();
 </script>
+
+<!-- ── Lead-capture slide-in popup ───────────────────────────────────── -->
+<style>
+#lc-wrap{
+  position:fixed;bottom:0;left:0;right:0;z-index:9000;
+  display:flex;justify-content:center;padding:0 16px 16px;
+  pointer-events:none;
+  transform:translateY(120%);
+  transition:transform .45s cubic-bezier(.22,.61,.36,1);
+}
+#lc-wrap.open{transform:translateY(0);pointer-events:auto;}
+#lc-card{
+  width:100%;max-width:460px;
+  background:#0f1729;
+  border:1px solid #2a4a35;
+  border-radius:16px;
+  box-shadow:0 24px 64px rgba(0,0,0,.55);
+  padding:24px 24px 20px;
+  position:relative;
+  color:#e8f0e9;
+  font-family:'Inter',system-ui,sans-serif;
+}
+#lc-close{
+  position:absolute;top:12px;right:14px;
+  background:none;border:none;
+  color:#9ab0a0;font-size:1.3rem;line-height:1;
+  cursor:pointer;padding:4px 6px;border-radius:6px;
+  transition:color .15s,background .15s;
+}
+#lc-close:hover{color:#e8f0e9;background:rgba(255,255,255,.08);}
+.lc-badge{
+  display:inline-block;
+  background:rgba(200,146,15,.15);
+  border:1px solid rgba(200,146,15,.4);
+  color:#c8920f;
+  font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;margin-bottom:10px;
+}
+#lc-card h3{
+  font-family:'Playfair Display',serif;
+  font-size:1.2rem;font-weight:700;
+  line-height:1.25;color:#fff;margin-bottom:6px;
+}
+#lc-card h3 span{color:#c8920f;}
+#lc-card .lc-sub{font-size:.83rem;color:#9ab0a0;margin-bottom:14px;line-height:1.5;}
+#lc-row{display:flex;gap:8px;margin-bottom:8px;}
+#lc-row input{
+  flex:1;min-width:0;
+  background:#162a1e;border:1px solid #2a4a35;
+  border-radius:8px;color:#e8f0e9;
+  font-family:inherit;font-size:.88rem;padding:9px 11px;
+  transition:border-color .2s;
+}
+#lc-row input:focus{outline:none;border-color:#c8920f;}
+#lc-row input::placeholder{color:#4a6a55;}
+#lc-consent{font-size:.72rem;color:#6b8a78;margin-bottom:10px;line-height:1.45;}
+#lc-consent a{color:#c8920f;text-decoration:none;}
+#lc-btn{
+  width:100%;
+  background:linear-gradient(135deg,#c8920f 0%,#a87010 100%);
+  border:none;border-radius:8px;
+  color:#0f1729;font-family:inherit;font-size:.92rem;font-weight:700;
+  padding:11px;cursor:pointer;
+  transition:opacity .2s;
+}
+#lc-btn:hover{opacity:.9;}
+#lc-btn:disabled{opacity:.5;cursor:not-allowed;}
+#lc-msg{margin-top:8px;font-size:.82rem;text-align:center;min-height:16px;}
+#lc-msg.ok{color:#3fb950;}
+#lc-msg.err{color:#f85149;}
+#lc-skip{
+  display:block;width:100%;margin-top:8px;
+  background:none;border:none;
+  color:#6b8a78;font-family:inherit;font-size:.78rem;
+  cursor:pointer;padding:4px;text-align:center;
+  text-decoration:underline;text-underline-offset:2px;
+}
+#lc-skip:hover{color:#9ab0a0;}
+</style>
+
+<div id="lc-wrap">
+  <div id="lc-card" role="dialog" aria-labelledby="lc-heading" aria-modal="false">
+    <button id="lc-close" aria-label="Close">&times;</button>
+    <div class="lc-badge">Free Download</div>
+    <h3 id="lc-heading">Free Uganda <span>BOQ Template</span></h3>
+    <p class="lc-sub">Get our ready-to-use Bill of Quantities — 140+ line items with 2026 Kampala rates. Sent free to your inbox.</p>
+    <form id="lc-form" novalidate>
+      <div id="lc-row">
+        <input id="lc-name" type="text" placeholder="Your name" autocomplete="name" required>
+        <input id="lc-email" type="email" placeholder="Email address" autocomplete="email" required>
+      </div>
+      <p id="lc-consent">
+        By submitting you agree to receive emails from Serene Creations Ltd. Unsubscribe anytime.
+        <a href="/index.html#privacy">Privacy&nbsp;policy</a>.
+      </p>
+      <button type="submit" id="lc-btn">📥 Send me the free BOQ</button>
+      <div id="lc-msg"></div>
+    </form>
+    <button id="lc-skip">No thanks, I'll work it out myself</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var SUBSCRIBE_URL = 'https://us-central1-serene-arch-studio.cloudfunctions.net/subscribeToCampaign';
+  var DISMISS_KEY   = 'lc_dismissed';   // timestamp of last dismissal
+  var SUBSCRIBED_KEY = 'lc_subscribed'; // set when user subscribes
+  var DISMISS_TTL   = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  function ls(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+  function lsSet(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+
+  // Don't show on guide pages (they have their own inline gates)
+  var path = window.location.pathname;
+  if (/guide-/.test(path)) return;
+
+  // Don't show if already subscribed
+  if (ls(SUBSCRIBED_KEY)) return;
+
+  // Don't show if dismissed within TTL
+  var dismissed = ls(DISMISS_KEY);
+  if (dismissed && (Date.now() - parseInt(dismissed, 10)) < DISMISS_TTL) return;
+
+  var wrap = document.getElementById('lc-wrap');
+  var shown = false;
+
+  function show() {
+    if (shown) return;
+    shown = true;
+    wrap.classList.add('open');
+    // re-check subscribed state when popup opens (e.g. if another tab subscribed)
+    if (ls(SUBSCRIBED_KEY)) { wrap.classList.remove('open'); }
+  }
+
+  function dismiss() {
+    wrap.classList.remove('open');
+    lsSet(DISMISS_KEY, Date.now().toString());
+  }
+
+  // Trigger: 12s delay OR scroll past 45% page height
+  var timer = setTimeout(show, 12000);
+
+  function onScroll() {
+    var scrolled = window.scrollY + window.innerHeight;
+    var total    = document.documentElement.scrollHeight;
+    if (scrolled / total >= 0.45) {
+      clearTimeout(timer);
+      show();
+      window.removeEventListener('scroll', onScroll, { passive: true });
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Close button
+  document.getElementById('lc-close').addEventListener('click', dismiss);
+  document.getElementById('lc-skip').addEventListener('click', dismiss);
+
+  // Click outside card
+  wrap.addEventListener('click', function (e) {
+    if (e.target === wrap) dismiss();
+  });
+
+  // Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && shown) dismiss();
+  });
+
+  // Form submit
+  document.getElementById('lc-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name  = document.getElementById('lc-name').value.trim();
+    var email = document.getElementById('lc-email').value.trim();
+    var btn   = document.getElementById('lc-btn');
+    var msg   = document.getElementById('lc-msg');
+
+    if (!name)  { msg.textContent = 'Please enter your name.';          msg.className = 'err'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                  msg.textContent = 'Please enter a valid email address.'; msg.className = 'err'; return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    msg.textContent = '';
+    msg.className   = '';
+
+    fetch(SUBSCRIBE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email,
+        name:  name,
+        source: 'popup-index',
+        campaignId: 'boq-follow-up',
+        consentGiven: true,
+        consentText: 'Subscribed via main-site slide-in popup (BOQ template offer)',
+      }),
+    })
+    .then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      lsSet(SUBSCRIBED_KEY, '1');
+      msg.textContent = '✅ Guide on its way — check your inbox!';
+      msg.className   = 'ok';
+      btn.textContent = '✓ Sent!';
+      setTimeout(function () { wrap.classList.remove('open'); }, 3000);
+    })
+    .catch(function () {
+      msg.textContent = 'Something went wrong. Please try again.';
+      msg.className   = 'err';
+      btn.disabled    = false;
+      btn.textContent = '📥 Send me the free BOQ';
+    });
+  });
+})();
+</script>
 </body>
 </html>

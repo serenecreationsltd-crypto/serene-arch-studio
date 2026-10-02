@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Uganda Land Buying Guide — Title Deeds, Tenure &amp; Fraud Prevention</title>
+<meta name="description" content="Free guide to buying land in Uganda: how to verify title deeds, understand mailo vs freehold vs leasehold tenure, and avoid the most common land fraud traps.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0d1117;
+  --surface: #161b22;
+  --border:  #30363d;
+  --gold:    #c9a84c;
+  --gold-lt: #e8c86d;
+  --text:    #e6edf3;
+  --muted:   #8b949e;
+  --earth:   #a0784a;
+  --earth-lt:#c49360;
+  --radius:  10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100%;
+}
+
+/* HERO */
+.hero {
+  background: linear-gradient(150deg, #0d1117 0%, #1c1409 55%, #0d1117 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 24px 56px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 45% at 50% 8%, rgba(160,120,74,.12) 0%, transparent 65%);
+}
+.badge {
+  display: inline-block;
+  background: rgba(160,120,74,.14);
+  border: 1px solid rgba(160,120,74,.4);
+  color: var(--earth-lt);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 20px;
+  margin-bottom: 22px;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 660px;
+  margin: 0 auto 18px;
+  color: #fff;
+}
+.hero h1 span { color: var(--gold); }
+.hero p { max-width: 520px; margin: 0 auto; color: var(--muted); font-size: 1.05rem; }
+
+/* WARNING BANNER */
+.warn-wrap {
+  max-width: 720px;
+  margin: 40px auto 0;
+  padding: 0 24px;
+}
+.warn {
+  background: rgba(160,120,74,.08);
+  border: 1px solid rgba(160,120,74,.3);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.warn-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+.warn-body h4 { font-size: .95rem; font-weight: 600; color: var(--earth-lt); margin-bottom: 4px; }
+.warn-body p { font-size: .85rem; color: var(--muted); line-height: 1.55; }
+
+/* TENURE TABLE */
+.tenure-wrap {
+  max-width: 720px;
+  margin: 36px auto 0;
+  padding: 0 24px;
+}
+.tenure-wrap h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.45rem;
+  color: #fff;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.tenure-wrap h2 span { color: var(--gold); }
+.t-sheet {
+  background: #fff;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  font-size: .8rem;
+  color: #1a1a1a;
+}
+.t-sheet-head {
+  background: #1c1409;
+  color: #fff;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.t-sheet-head .title { font-weight: 700; font-size: .88rem; }
+.t-sheet-head .sub { font-size: .7rem; color: rgba(255,255,255,.45); }
+.t-sheet table { width: 100%; border-collapse: collapse; }
+.t-sheet th {
+  background: #f5f0ea;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  border-bottom: 1px solid #ddd;
+  color: #4a3d2e;
+}
+.t-sheet td { padding: 8px 12px; border-bottom: 1px solid #f2ede7; vertical-align: top; }
+.t-sheet tr:last-child td { border-bottom: none; }
+.t-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: .7rem;
+  font-weight: 600;
+}
+.t-badge.mailo  { background: #fff3e0; color: #b35c00; }
+.t-badge.free   { background: #e8f5e9; color: #2e7d32; }
+.t-badge.lease  { background: #e3f2fd; color: #1565c0; }
+.t-badge.custom { background: #f3e5f5; color: #6a1b9a; }
+.t-row-lock td { filter: blur(3px); opacity: .45; user-select: none; }
+.lock-note {
+  background: #f5f0ea;
+  text-align: center;
+  padding: 9px;
+  font-size: .74rem;
+  color: #7a5c3a;
+  font-weight: 600;
+  border-top: 1px solid #ddd;
+}
+
+/* FRAUD CHECKLIST */
+.fraud-wrap {
+  max-width: 720px;
+  margin: 36px auto 0;
+  padding: 0 24px;
+}
+.fraud-wrap h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.45rem;
+  color: #fff;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.checklist { display: flex; flex-direction: column; gap: 10px; }
+.cl-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.cl-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.cl-body h4 { font-size: .9rem; font-weight: 600; color: #fff; margin-bottom: 2px; }
+.cl-body p { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+.cl-row.locked {
+  position: relative;
+  overflow: hidden;
+}
+.cl-row.locked > * { filter: blur(3.5px); user-select: none; pointer-events: none; }
+.cl-row.locked::after {
+  content: '🔒 Unlock in the free guide';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--earth-lt);
+  background: rgba(13,17,23,.55);
+}
+
+/* GATE */
+.gate-wrap { max-width: 500px; margin: 40px auto 0; padding: 0 24px 60px; }
+.gate {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+}
+.gate h3 { font-size: 1.15rem; font-weight: 600; color: #fff; margin-bottom: 6px; }
+.gate .sub { font-size: .88rem; color: var(--muted); margin-bottom: 22px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: .82rem; font-weight: 500; color: var(--muted); margin-bottom: 5px; }
+.field input {
+  width: 100%;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: .95rem;
+  padding: 10px 13px;
+  transition: border-color .2s;
+}
+.field input:focus { outline: none; border-color: var(--gold); }
+.field input::placeholder { color: #484f58; }
+.consent { font-size: .8rem; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+.consent a { color: var(--gold); text-decoration: none; }
+.btn-dl {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, var(--gold) 0%, #b8912a 100%);
+  border: none;
+  border-radius: 8px;
+  color: #0d1117;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 13px;
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+}
+.btn-dl:hover { opacity: .92; }
+.btn-dl:active { transform: scale(.98); }
+.btn-dl:disabled { opacity: .5; cursor: not-allowed; }
+.msg { margin-top: 12px; font-size: .88rem; text-align: center; min-height: 18px; }
+.msg.ok { color: #3fb950; }
+.msg.err { color: #f85149; }
+
+/* INSIDE */
+.inside {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 52px 24px;
+}
+.inside-inner { max-width: 840px; margin: 0 auto; }
+.inside-inner h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.65rem;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 36px;
+}
+.inside-inner h2 span { color: var(--gold); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.card { background: #0d1117; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.card-icon { font-size: 1.4rem; margin-bottom: 10px; }
+.card h4 { font-size: .92rem; font-weight: 600; color: #fff; margin-bottom: 5px; }
+.card p { font-size: .83rem; color: var(--muted); line-height: 1.55; }
+
+footer { border-top: 1px solid var(--border); padding: 24px; text-align: center; font-size: .8rem; color: var(--muted); }
+footer a { color: var(--gold); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="badge">Free Guide — Land Buying Checklist</div>
+  <h1>Uganda <span>Land Buying</span> Guide<br>Title Deeds &amp; Fraud Prevention</h1>
+  <p>Understand Uganda's four land tenure types, verify a title deed before you pay, and protect yourself from the land fraud tactics that trap buyers every year.</p>
+</section>
+
+<!-- WARNING BANNER -->
+<div class="warn-wrap">
+  <div class="warn">
+    <div class="warn-icon">⚠️</div>
+    <div class="warn-body">
+      <h4>Land fraud costs Ugandan buyers billions of shillings every year</h4>
+      <p>Multiple-selling, forged titles, caretaker scams, and undisclosed encumbrances are the most common traps. This guide walks you through every verification step you need before handing over a single shilling.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TENURE COMPARISON TABLE -->
+<div class="tenure-wrap">
+  <h2>Uganda's four <span>land tenure types</span></h2>
+  <div class="t-sheet">
+    <div class="t-sheet-head">
+      <div>
+        <div class="title">Land Tenure Comparison — Uganda</div>
+        <div class="sub">Serene Creations Ltd · 2026 · For land buyers</div>
+      </div>
+      <div style="color:var(--gold);font-weight:700;font-size:.82rem">PREVIEW</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:14%">Tenure</th>
+          <th style="width:26%">Typical areas</th>
+          <th style="width:22%">Who can buy</th>
+          <th style="width:18%">Mortgageable?</th>
+          <th style="width:20%">Key risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Visible rows -->
+        <tr>
+          <td><span class="t-badge mailo">Mailo</span></td>
+          <td>Buganda Kingdom, Kampala, Wakiso, Mpigi</td>
+          <td>Any Ugandan citizen or company</td>
+          <td>Yes — most lenders accept</td>
+          <td>Kibanja (sitting tenants) rights; must compensate</td>
+        </tr>
+        <tr>
+          <td><span class="t-badge free">Freehold</span></td>
+          <td>Ankole, Toro, Bunyoro, some urban plots</td>
+          <td>Citizens &amp; registered companies</td>
+          <td>Yes — widely accepted</td>
+          <td>Fewer kibanja issues; verify historical grants</td>
+        </tr>
+        <!-- Locked rows -->
+        <tr class="t-row-lock">
+          <td><span class="t-badge lease">Leasehold</span></td>
+          <td>Kampala CBD, Entebbe, government leases</td>
+          <td>Citizens &amp; non-citizens</td>
+          <td>Yes — check remaining term</td>
+          <td>Term expiry; ground rent arrears; reversion</td>
+        </tr>
+        <tr class="t-row-lock">
+          <td><span class="t-badge custom">Customary</span></td>
+          <td>Northern &amp; Eastern Uganda</td>
+          <td>Community members primarily</td>
+          <td>Difficult — most lenders won't</td>
+          <td>No formal title; communal disputes</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="lock-note">🔒 Full guide includes conversion steps, Kibanja compensation calculator &amp; sample sale agreements for each tenure type</div>
+  </div>
+</div>
+
+<!-- FRAUD CHECKLIST PREVIEW -->
+<div class="fraud-wrap" style="margin-top:40px;">
+  <h2>Verification checklist — <span>before you pay</span></h2>
+  <div class="checklist">
+    <div class="cl-row">
+      <div class="cl-icon">🔍</div>
+      <div class="cl-body">
+        <h4>Search the title at the Lands Registry</h4>
+        <p>Go to the Ministry of Lands (Lourdel Road, Kampala) or use the e-Lands portal. Confirm the registered owner's name, plot dimensions, and whether any caveats, mortgages, or encumbrances are lodged. Cost: UGX 10,000–20,000.</p>
+      </div>
+    </div>
+    <div class="cl-row">
+      <div class="cl-icon">📐</div>
+      <div class="cl-body">
+        <h4>Commission an independent survey</h4>
+        <p>Hire a licensed surveyor to physically beacon the plot and confirm boundaries match the title plan. Discrepancies often reveal encroachment or a title that covers a different plot entirely.</p>
+      </div>
+    </div>
+    <div class="cl-row">
+      <div class="cl-icon">👨‍💼</div>
+      <div class="cl-body">
+        <h4>Confirm the seller's authority to sell</h4>
+        <p>Ask for national ID and compare it against the registered owner. If the seller is an agent or company director, verify they hold a written Power of Attorney or board resolution — and check it with a lawyer.</p>
+      </div>
+    </div>
+    <div class="cl-row locked">
+      <div class="cl-icon">🏚️</div>
+      <div class="cl-body">
+        <h4>Check for sitting tenants (Kibanja occupants)</h4>
+        <p>Visit the land on a weekday and speak to anyone farming or living on it. Kibanja holders on Mailo land have statutory rights you must compensate before eviction — ignoring this step can cost more than the land itself.</p>
+      </div>
+    </div>
+    <div class="cl-row locked">
+      <div class="cl-icon">📜</div>
+      <div class="cl-body">
+        <h4>Review the sale agreement with a conveyancing lawyer</h4>
+        <p>A properly drafted agreement protects your deposit, sets completion timelines, and includes warranties against undisclosed claims. The full guide provides a checklist of the 11 clauses that must be in every Ugandan land sale agreement.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GATE -->
+<div class="gate-wrap">
+  <div class="gate">
+    <h3>Get the complete land buying guide</h3>
+    <p class="sub">All verification steps, tenure comparison, fraud warning signs, and a sample sale agreement checklist — free PDF in your inbox.</p>
+    <form id="gateForm" novalidate>
+      <div class="field">
+        <label for="gName">Your name</label>
+        <input id="gName" type="text" placeholder="e.g. Prossy Namukasa" autocomplete="name" required>
+      </div>
+      <div class="field">
+        <label for="gEmail">Email address</label>
+        <input id="gEmail" type="email" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+      <p class="consent">
+        By submitting you agree to receive emails from Serene Creations Ltd. No spam — just useful land buying guidance.
+        <a href="/index.html#privacy">Privacy policy</a> · Unsubscribe anytime.
+      </p>
+      <button class="btn-dl" type="submit" id="dlBtn">🏡 Send me the land buying guide</button>
+      <div class="msg" id="gMsg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- INSIDE -->
+<section class="inside">
+  <div class="inside-inner">
+    <h2>What's in the <span>land buying guide</span></h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <h4>Step-by-step verification process</h4>
+        <p>8 checks to run before signing anything — from Lands Registry search to physical site visits and lawyer review.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗺️</div>
+        <h4>Tenure type deep-dive</h4>
+        <p>All four Uganda tenure types explained: what you own, what you don't, conversion processes, and which lenders accept each as security.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🚨</div>
+        <h4>Top 7 land fraud red flags</h4>
+        <p>The most common scams in Uganda's land market: multiple-selling, forged titles, agent fraud, caretaker schemes, and how to spot each one.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📝</div>
+        <h4>Sale agreement checklist</h4>
+        <p>The 11 clauses every Uganda land sale agreement must contain — and the 3 clauses sellers try to leave out.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💰</div>
+        <h4>True cost of buying land</h4>
+        <p>Stamp duty (1.5%), registration fees, survey costs, legal fees, and Kibanja compensation — all explained with 2026 benchmarks.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <h4>Title registration walkthrough</h4>
+        <p>Step-by-step transfer process at the Ministry of Lands: documents needed, fees, timelines (typically 3–6 months), and how to follow up.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 <a href="/index.html">Serene Creations Ltd</a> · <a href="mailto:info@serenecreations.org">info@serenecreations.org</a> · Kampala, Uganda</p>
+</footer>
+
+<script>
+(function () {
+  const SUBSCRIBE_URL = 'https://us-central1-serene-arch-studio.cloudfunctions.net/subscribeToCampaign';
+  const form = document.getElementById('gateForm');
+  const btn  = document.getElementById('dlBtn');
+  const msg  = document.getElementById('gMsg');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const name  = document.getElementById('gName').value.trim();
+    const email = document.getElementById('gEmail').value.trim();
+    if (!name)  { showMsg('Please enter your name.', false); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMsg('Please enter a valid email.', false); return; }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const res = await fetch(SUBSCRIBE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email, name,
+          source: 'blog-land',
+          campaignId: 'land-buyer',
+          consentGiven: true,
+          consentText: 'Subscribed via Uganda Land Buying Guide gate',
+        }),
+      });
+      if (res.ok) {
+        showMsg('✅ Check your inbox — the guide is on its way!', true);
+        btn.textContent = '✓ Guide sent!';
+      } else { throw new Error(); }
+    } catch {
+      showMsg('Something went wrong. Email info@serenecreations.org', false);
+      btn.disabled = false;
+      btn.textContent = '🏡 Send me the land buying guide';
+    }
+  });
+
+  function showMsg(text, ok) { msg.textContent = text; msg.className = 'msg ' + (ok ? 'ok' : 'err'); }
+})();
+</script>
+</body>
+</html>

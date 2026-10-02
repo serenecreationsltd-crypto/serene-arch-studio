@@ -2495,3 +2495,127 @@ exports.unsubscribeEmail = functions.https.onRequest(async (req, res) => {
     );
   }
 });
+
+// ─── 14. chatbaseWebhook ─────────────────────────────────────────────────────
+// Receives POST from Chatbase conversation webhooks.
+// Extracts email + name from the conversation, resolves campaign from topic,
+// and enrolls the lead via subscribeToCampaign logic.
+//
+// Chatbase webhook payload shape (subset we use):
+//   { conversation: { id, messages: [{ role, content }] },
+//     customer: { email, name } }          ← populated if user typed email
+//
+// Configure in Chatbase dashboard → Integrations → Webhooks → POST to:
+//   https://us-central1-serene-arch-studio.cloudfunctions.net/chatbaseWebhook
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CHATBASE_TOPIC_MAP = {
+  "cost":          "costs-uganda",
+  "price":         "costs-uganda",
+  "budget":        "costs-uganda",
+  "quote":         "costs-uganda",
+  "boq":           "boq-follow-up",
+  "quantities":    "boq-follow-up",
+  "bill":          "boq-follow-up",
+  "design":        "house-design-nurture",
+  "plan":          "house-design-nurture",
+  "floor":         "house-design-nurture",
+  "architect":     "house-design-nurture",
+  "construction":  "construction-ready",
+  "build":         "construction-ready",
+  "contractor":    "construction-ready",
+  "approval":      "approvals-uganda",
+  "permit":        "approvals-uganda",
+  "council":       "approvals-uganda",
+  "rental":        "rental-property",
+  "investment":    "rental-property",
+  "tenant":        "rental-property",
+  "land":          "land-buyer",
+  "plot":          "land-buyer",
+  "title":         "land-buyer",
+};
+
+function resolveCampaignFromText(text) {
+  const lower = (text || "").toLowerCase();
+  for (const [keyword, campaign] of Object.entries(CHATBASE_TOPIC_MAP)) {
+    if (lower.includes(keyword)) return campaign;
+  }
+  return "costs-uganda"; // default
+}
+
+exports.chatbaseWebhook = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type, X-Chatbase-Signature");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+
+  try {
+    const body = req.body || {};
+
+    // Extract customer info — Chatbase puts it under different shapes depending on version
+    const customer = body.customer || body.user || {};
+    const conversation = body.conversation || body.chat || {};
+    const messages = Array.isArray(conversation.messages)
+      ? conversation.messages
+      : (Array.isArray(body.messages) ? body.messages : []);
+
+    // Try to extract email — from customer object first, then scan message text
+    let email = customer.email || null;
+    let name  = customer.name  || customer.displayName || null;
+
+    if (!email) {
+      const emailRe = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/;
+      for (const msg of messages) {
+        const content = (msg.content || msg.text || "");
+        const match = content.match(emailRe);
+        if (match) { email = match[0]; break; }
+      }
+    }
+
+    if (!email) {
+      functions.logger.info("chatbaseWebhook: no email found, skipping", { body });
+      return res.status(200).json({ status: "no_email" });
+    }
+
+    // Resolve campaign from conversation content
+    const allText = messages.map(m => m.content || m.text || "").join(" ");
+    const campaignId = resolveCampaignFromText(allText);
+
+    // Check for duplicate subscription
+    const existing = await db.collection("campaignSubscriptions")
+      .where("email", "==", email.toLowerCase().trim())
+      .where("campaignId", "==", campaignId)
+      .limit(1).get();
+
+    if (!existing.empty) {
+      functions.logger.info("chatbaseWebhook: already subscribed", { email, campaignId });
+      return res.status(200).json({ status: "already_subscribed", campaignId });
+    }
+
+    // Enroll
+    await db.collection("campaignSubscriptions").add({
+      email:      email.toLowerCase().trim(),
+      name:       name || "",
+      campaignId,
+      source:     "chatbase",
+      enrolledAt: admin.firestore.FieldValue.serverTimestamp(),
+      nextEmailIndex: 0,
+      unsubscribed: false,
+    });
+
+    // Also fire the lead hook so ActivePieces sees it
+    const LEAD_HOOK_URL = "https://cloud.activepieces.com/api/v1/webhooks/gaqpTTBjcrwCpNPukckrm";
+    axios.post(LEAD_HOOK_URL, {
+      email, name, source: "chatbase", campaign: campaignId,
+      conversationId: conversation.id || body.conversationId || "",
+    }).catch(err => functions.logger.warn("chatbaseWebhook: lead hook failed", { err: err.message }));
+
+    functions.logger.info("chatbaseWebhook: enrolled", { email, campaignId });
+    return res.status(200).json({ status: "enrolled", campaignId });
+
+  } catch (err) {
+    functions.logger.error("chatbaseWebhook error", { err: err.message });
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
