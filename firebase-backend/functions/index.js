@@ -2365,6 +2365,7 @@ exports.subscribeToCampaign = functions.https.onRequest(async (req, res) => {
       source: source || "direct",
       subscribedAt: admin.firestore.FieldValue.serverTimestamp(),
       completed: false,
+      unsubscribed: false,
       consentGiven: consentGiven === true,
       consentText: consentText || "",
     });
