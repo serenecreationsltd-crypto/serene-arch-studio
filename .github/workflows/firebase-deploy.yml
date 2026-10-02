@@ -33,6 +33,17 @@ jobs:
         with:
           project_id: ${{ env.PROJECT }}
 
+      - name: Enable required GCP APIs (best-effort)
+        continue-on-error: true
+        run: |
+          gcloud services enable \
+            cloudfunctions.googleapis.com \
+            cloudbuild.googleapis.com \
+            pubsub.googleapis.com \
+            cloudscheduler.googleapis.com \
+            --project="${{ env.PROJECT }}" \
+            --quiet
+
       - name: Write Functions .env
         working-directory: firebase-backend/functions
         run: |
