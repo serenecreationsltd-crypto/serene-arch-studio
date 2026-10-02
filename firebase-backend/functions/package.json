@@ -1,5 +1,6 @@
 {
   "name": "serene-arch-studio-functions",
+  "version": "1.1.0",
   "description": "Firebase Cloud Functions — AI Architecture Studio (Serene Creations)",
   "scripts": {
     "lint":   "eslint .",
