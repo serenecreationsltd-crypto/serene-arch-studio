@@ -47,15 +47,13 @@ jobs:
       - name: Write Functions .env
         working-directory: firebase-backend/functions
         run: |
-          cat > .env <<ENVEOF
-SMTP_USER=info@serenecreations.org
-SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-STRIPE_SECRET=${{ secrets.STRIPE_SECRET_KEY }}
-STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
-REPLICATE_TOKEN=${{ secrets.REPLICATE_TOKEN }}
-REPLICATE_MODEL_VERSION=${{ secrets.REPLICATE_MODEL_VERSION }}
-REPLICATE_VIDEO_MODEL_VERSION=${{ secrets.REPLICATE_VIDEO_MODEL_VERSION }}
-ENVEOF
+          echo "SMTP_USER=info@serenecreations.org" > .env
+          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env
+          echo "STRIPE_SECRET=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
+          echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
+          echo "REPLICATE_TOKEN=${{ secrets.REPLICATE_TOKEN }}" >> .env
+          echo "REPLICATE_MODEL_VERSION=${{ secrets.REPLICATE_MODEL_VERSION }}" >> .env
+          echo "REPLICATE_VIDEO_MODEL_VERSION=${{ secrets.REPLICATE_VIDEO_MODEL_VERSION }}" >> .env
 
       - name: Install Cloud Function dependencies
         working-directory: firebase-backend/functions
