@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Free Uganda Construction Guides — Serene Creations</title>
+<meta name="description" content="Download free guides on Uganda construction costs, BOQ templates, building permits, house plans, land buying, and rental investment. Expert advice from Serene Creations Ltd, Kampala.">
+<meta property="og:title" content="Free Uganda Construction Guides — Serene Creations">
+<meta property="og:description" content="Free expert guides on building in Uganda: BOQ templates, permit checklists, cost benchmarks, land buying, and rental ROI analysis.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.serenecreations.org/guides.html">
+<link rel="canonical" href="https://www.serenecreations.org/guides.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0d1117;
+  --surface:  #161b22;
+  --border:   #30363d;
+  --gold:     #c9a84c;
+  --gold-lt:  #e8c86d;
+  --text:     #e6edf3;
+  --muted:    #8b949e;
+  --green:    #3fb950;
+  --amber:    #d29922;
+  --blue:     #58a6ff;
+  --radius:   12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* TOP NAV */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13,17,23,.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+}
+.nav-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  color: var(--gold);
+  text-decoration: none;
+}
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: .88rem;
+  font-weight: 500;
+  transition: color .2s;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+/* HERO */
+.hero {
+  background: linear-gradient(160deg, #0d1117 0%, #161b22 55%, #0d1117 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 64px 24px 72px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 55% 35% at 50% 100%, rgba(201,168,76,.08) 0%, transparent 70%);
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5.5vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.15;
+  max-width: 700px;
+  margin: 0 auto 20px;
+  color: #fff;
+  position: relative;
+}
+.hero h1 span { color: var(--gold); }
+.hero p {
+  max-width: 540px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 1.05rem;
+  position: relative;
+}
+
+/* FILTER TABS */
+.filter-wrap {
+  max-width: 900px;
+  margin: 44px auto 0;
+  padding: 0 24px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 500;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.filter-btn:hover { border-color: var(--gold); color: var(--text); }
+.filter-btn.active {
+  background: rgba(201,168,76,.12);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* GRID */
+.grid-wrap {
+  max-width: 900px;
+  margin: 32px auto 0;
+  padding: 0 24px 72px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .2s, transform .15s, box-shadow .2s;
+}
+.card:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+}
+.card-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  width: fit-content;
+}
+.tag-green  { background: rgba(63,185,80,.12);  border: 1px solid rgba(63,185,80,.3);  color: var(--green); }
+.tag-gold   { background: rgba(201,168,76,.12);  border: 1px solid rgba(201,168,76,.3);  color: var(--gold); }
+.tag-amber  { background: rgba(210,153,34,.12); border: 1px solid rgba(210,153,34,.3); color: var(--amber); }
+.tag-blue   { background: rgba(88,166,255,.12);  border: 1px solid rgba(88,166,255,.3);  color: var(--blue); }
+
+.card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.35;
+}
+.card p {
+  font-size: .85rem;
+  color: var(--muted);
+  flex: 1;
+  line-height: 1.55;
+}
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.dl-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  color: var(--muted);
+}
+.dl-badge svg { width: 14px; height: 14px; fill: var(--muted); }
+.cta-arrow {
+  color: var(--gold);
+  font-size: 1.1rem;
+  transition: transform .2s;
+}
+.card:hover .cta-arrow { transform: translateX(4px); }
+
+/* CTA STRIP */
+.cta-strip {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 52px 24px;
+  text-align: center;
+}
+.cta-strip h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.cta-strip p { color: var(--muted); max-width: 480px; margin: 0 auto 24px; }
+.btn-cta {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--gold) 0%, #b8912a 100%);
+  color: #0d1117;
+  font-family: inherit;
+  font-size: .95rem;
+  font-weight: 700;
+  padding: 12px 28px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: opacity .2s;
+}
+.btn-cta:hover { opacity: .88; }
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px;
+  text-align: center;
+  font-size: .8rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+footer a { color: var(--gold); text-decoration: none; }
+.footer-links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+
+@media (max-width: 520px) {
+  .grid-wrap { grid-template-columns: 1fr; }
+  .filter-wrap { gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/index.html">Serene Creations</a>
+  <div class="nav-links">
+    <a href="/index.html">Home</a>
+    <a href="/guides.html" class="active">Guides</a>
+    <a href="/ai-studio.html">AI Studio</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>Free Uganda<br><span>Construction Guides</span></h1>
+  <p>Expert knowledge on building in Uganda — costs, permits, BOQs, land, and investment returns. All free to download.</p>
+</section>
+
+<!-- FILTER TABS -->
+<div class="filter-wrap">
+  <button class="filter-btn active" onclick="filterCards('all', this)">All guides</button>
+  <button class="filter-btn" onclick="filterCards('planning', this)">Planning</button>
+  <button class="filter-btn" onclick="filterCards('finance', this)">Finance</button>
+  <button class="filter-btn" onclick="filterCards('legal', this)">Legal &amp; permits</button>
+  <button class="filter-btn" onclick="filterCards('investment', this)">Investment</button>
+</div>
+
+<!-- CARD GRID -->
+<div class="grid-wrap" id="cardGrid">
+
+  <!-- BOQ Template -->
+  <a class="card" href="/guide-boq-template.html" data-tags="planning finance">
+    <div class="card-icon">📊</div>
+    <div class="card-tag tag-green">Free Excel + PDF</div>
+    <h3>Uganda BOQ Template for Construction Projects</h3>
+    <p>A ready-to-use Bill of Quantities with 140+ line items, 2026 Kampala unit rates, auto-calculated totals, and a step-by-step PDF guide.</p>
+    <div class="card-footer">
+      <span class="dl-badge">
+        <svg viewBox="0 0 16 16"><path d="M8 12l-4-4h2.5V2h3v6H12L8 12zm-5 2h10v1.5H3V14z"/></svg>
+        Excel + PDF
+      </span>
+      <span class="cta-arrow">→</span>
+    </div>
+  </a>
+
+  <!-- Approvals & Permits -->
+  <a class="card" href="/guide-approvals-permits.html" data-tags="legal planning">
+    <div class="card-icon">📋</div>
+    <div class="card-tag tag-amber">Checklist + Guide</div>
+    <h3>Uganda Building Approvals &amp; Permits Guide</h3>
+    <p>All 8 approval stages explained — KCCA drawings, NEMA screening, utility wayleaves, commencement permits, inspections, and occupation certificate.</p>
+    <div class="card-footer">
+      <span class="dl-badge">
+        <svg viewBox="0 0 16 16"><path d="M8 12l-4-4h2.5V2h3v6H12L8 12zm-5 2h10v1.5H3V14z"/></svg>
+        PDF Checklist
+      </span>
+      <span class="cta-arrow">→</span>
+    </div>
+  </a>
+
+  <!-- Construction Costs -->
+  <a class="card" href="/guide-construction-costs.html" data-tags="finance planning">
+    <div class="card-icon">💰</div>
+    <div class="card-tag tag-gold">2026 Benchmarks</div>
+    <h3>Uganda Construction Cost Guide 2026</h3>
+    <p>Current cost-per-square-metre benchmarks for economy, mid-range, and high-end builds in Kampala, Mukono, Wakiso, and upcountry districts.</p>
+    <div class="card-footer">
+      <span class="dl-badge">
+        <svg viewBox="0 0 16 16"><path d="M8 12l-4-4h2.5V2h3v6H12L8 12zm-5 2h10v1.5H3V14z"/></svg>
+        Free PDF
+      </span>
+      <span class="cta-arrow">→</span>
+    </div>
+  </a>
+
+  <!-- House Plans -->
+  <a class="card" href="/guide-house-plans.html" data-tags="planning">
+    <div class="card-icon">🏠</div>
+    <div class="card-tag tag-blue">Design Guide</div>
+    <h3>Uganda House Plans &amp; Design Guide</h3>
+    <p>Popular floor-plan layouts for Uganda — 3-bed bungalows, 4-bed maisonettes, studio rentals — with space-planning tips and what KCCA requires from drawings.</p>
+    <div class="card-footer">
+      <span class="dl-badge">
+        <svg viewBox="0 0 16 16"><path d="M8 12l-4-4h2.5V2h3v6H12L8 12zm-5 2h10v1.5H3V14z"/></svg>
+        Free Guide
+      </span>
+      <span class="cta-arrow">→</span>
+    </div>
+  </a>
+
+  <!-- Land Buying -->
+  <a class="card" href="/guide-land-buying.html" data-tags="legal investment">
+    <div class="card-icon">🗺️</div>
+    <div class="card-tag tag-amber">Due-Diligence Checklist</div>
+    <h3>How to Buy Land Safely in Uganda</h3>
+    <p>Title search steps, caveat registration, LC1 and kibanja checks, surveyor requirements, and common frauds — with a due-diligence checklist you can use at the site.</p>
+    <div class="card-footer">
+      <span class="dl-badge">
+        <svg viewBox="0 0 16 16"><path d="M8 12l-4-4h2.5V2h3v6H12L8 12zm-5 2h10v1.5H3V14z"/></svg>
+        Checklist + PDF
+      </span>
+      <span class="cta-arrow">→</span>
+    </div>
+  </a>
+
+  <!-- Rental Investment -->
+  <a class="card" href="/guide-rental-investment.html" data-tags="investment finance">
+    <div class="card-icon">📈</div>
+    <div class="card-tag tag-green">ROI Calculator</div>
+    <h3>Uganda Rental Property Investment Guide</h3>
+    <p>Yield benchmarks by suburb, a simple ROI calculator, vacancy-rate data, and a 10-year cash-flow model for residential rentals in Kampala and Wakiso.</p>
+    <div class="card-footer">
+      <span class="dl-badge">
+        <svg viewBox="0 0 16 16"><path d="M8 12l-4-4h2.5V2h3v6H12L8 12zm-5 2h10v1.5H3V14z"/></svg>
+        Excel + PDF
+      </span>
+      <span class="cta-arrow">→</span>
+    </div>
+  </a>
+
+</div>
+
+<!-- CTA STRIP -->
+<section class="cta-strip">
+  <h2>Need a custom design or cost estimate?</h2>
+  <p>Our team handles projects from land acquisition through to occupation certificate — get a free consultation.</p>
+  <a class="btn-cta" href="/index.html#consult">Book Free Consultation →</a>
+</section>
+
+<footer>
+  <div class="footer-links">
+    <a href="/index.html">Home</a>
+    <a href="/ai-studio.html">AI Studio</a>
+    <a href="/guides.html">Guides</a>
+    <a href="mailto:info@serenecreations.org">info@serenecreations.org</a>
+    <a href="tel:+256783691337">+256 783 691337</a>
+  </div>
+  <p>© 2026 Serene Creations Ltd · Kampala, Uganda</p>
+</footer>
+
+<script>
+function filterCards(tag, btn) {
+  // Update active button
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+
+  // Show/hide cards
+  document.querySelectorAll('#cardGrid .card').forEach(function(card) {
+    if (tag === 'all') {
+      card.style.display = '';
+    } else {
+      var tags = (card.getAttribute('data-tags') || '').split(' ');
+      card.style.display = tags.indexOf(tag) !== -1 ? '' : 'none';
+    }
+  });
+}
+</script>
+</body>
+</html>
