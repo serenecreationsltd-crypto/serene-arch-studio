@@ -37,6 +37,12 @@ const REPLICATE_TOKEN         = process.env.REPLICATE_TOKEN || "";
 const REPLICATE_MODEL_VERSION = process.env.REPLICATE_MODEL_VERSION ||
                                 "TODO_REPLACE_WITH_REPLICATE_VERSION_HASH";
 
+// ── AI video engine (Replicate) ────────────────────────────────────────────
+// Set REPLICATE_VIDEO_MODEL_VERSION to the version hash of a video generation
+// model on replicate.com (e.g. stability-ai/stable-video-diffusion or
+// minimax/video-01-live). Until set, video jobs return a friendly error.
+const REPLICATE_VIDEO_MODEL_VERSION = process.env.REPLICATE_VIDEO_MODEL_VERSION || "";
+
 // Stripe — subscription tier management
 const STRIPE_SECRET         = process.env.STRIPE_SECRET         || "";
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
@@ -392,7 +398,181 @@ exports.processRenderJob = functions
   });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 2. onUserCreated
+// 2. processVideoJob
+// Trigger : onCreate   videoQueue/{jobId}
+// Flow    : validate config → Replicate submit → poll (60 s × 10) → write result
+// Timeout : 600 s  |  Memory : 1 GB
+// ═══════════════════════════════════════════════════════════════════════════
+exports.processVideoJob = functions
+  .runWith({ timeoutSeconds: 600, memory: "1GB" })
+  .firestore.document("videoQueue/{jobId}")
+  .onCreate(async (snap, context) => {
+    const jobRef = snap.ref;
+    const jobId  = context.params.jobId;
+    const {
+      uid, sourceURL,
+      duration     = 4,
+      fps          = 24,
+      motionStyle  = "dynamic",
+      cameraMotion = "static",
+      style        = "photorealistic",
+      prompt       = "",
+    } = snap.data();
+
+    functions.logger.info("Video job received", { jobId, uid });
+
+    // ── 2a. Guard: video model unconfigured ──────────────────────────────────
+    if (!REPLICATE_TOKEN || !REPLICATE_VIDEO_MODEL_VERSION) {
+      await jobRef.update({
+        status:   "error",
+        error:    "AI video engine is not configured yet — please check back soon.",
+        failedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      functions.logger.warn("Video model not configured", { jobId });
+      return null;
+    }
+
+    // ── 2b. Guard: no source image ───────────────────────────────────────────
+    if (!sourceURL) {
+      await jobRef.update({
+        status:   "error",
+        error:    "No source image provided for video animation.",
+        failedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return null;
+    }
+
+    // ── 2c. Mark processing ──────────────────────────────────────────────────
+    await jobRef.update({
+      status:    "processing",
+      startedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    try {
+      // ── 2d. Build video prompt ────────────────────────────────────────────
+      const motionMap = {
+        subtle:    "slow gentle camera movement, subtle parallax, calm atmosphere",
+        dynamic:   "smooth dynamic camera movement, engaging architectural walkthrough",
+        cinematic: "cinematic sweeping camera movement, dramatic reveal, film-quality motion",
+      };
+      const cameraMap = {
+        static: "static locked-off camera, no camera movement",
+        pan:    "slow horizontal pan across the facade",
+        dolly:  "smooth dolly push-in toward the building entrance",
+        orbit:  "orbital arc around the building, 360 sweep",
+      };
+
+      const styleBase = STYLE_PROMPTS[style] || "photorealistic architectural visualization";
+      const motionDesc  = motionMap[motionStyle]  || motionMap.dynamic;
+      const cameraDesc  = cameraMap[cameraMotion] || cameraMap.static;
+      const videoPrompt = [
+        styleBase,
+        motionDesc,
+        cameraDesc,
+        prompt || "",
+        "high quality, smooth motion, professional architectural animation",
+      ].filter(Boolean).join(", ");
+
+      functions.logger.info("Video prompt built", { jobId, videoPrompt: videoPrompt.slice(0, 80) });
+
+      // ── 2e. Submit to Replicate ───────────────────────────────────────────
+      // Input schema covers the most common Replicate video models:
+      //   • stability-ai/stable-video-diffusion (image → video)
+      //   • minimax/video-01-live               (image + prompt → video)
+      //   • wan-ai/wan2.1-i2v-480p              (image + prompt → video)
+      const { data: prediction } = await axios.post(
+        "https://api.replicate.com/v1/predictions",
+        {
+          version: REPLICATE_VIDEO_MODEL_VERSION,
+          input: {
+            // image-to-video fields (used by SVD, MiniMax, Wan, etc.)
+            image:          sourceURL,
+            prompt:         videoPrompt,
+            negative_prompt: "blurry, distorted, jittery, low quality, watermark, text",
+            // motion / duration controls
+            video_length:   duration,        // seconds (SVD uses num_frames instead)
+            num_frames:     Math.round(duration * fps),
+            fps,
+            motion_bucket_id: motionStyle === "subtle" ? 40
+                            : motionStyle === "cinematic" ? 127 : 80,
+            // quality
+            num_inference_steps: 25,
+            guidance_scale:      7.5,
+          },
+        },
+        {
+          headers: {
+            "Authorization": `Token ${REPLICATE_TOKEN}`,
+            "Content-Type":  "application/json",
+          },
+          timeout: 20000,
+        }
+      );
+
+      await jobRef.update({ predictionId: prediction.id });
+      functions.logger.info("Video prediction queued", { predictionId: prediction.id });
+
+      // ── 2f. Poll for completion (60 s × 10 = 600 s max) ─────────────────
+      const VIDEO_POLL_ATTEMPTS    = 10;
+      const VIDEO_POLL_INTERVAL_MS = 60000; // 60 seconds
+
+      let outputURL = null;
+      for (let i = 0; i < VIDEO_POLL_ATTEMPTS; i++) {
+        await sleep(VIDEO_POLL_INTERVAL_MS);
+        functions.logger.info(`Video poll attempt ${i + 1}/${VIDEO_POLL_ATTEMPTS}`, { jobId });
+
+        const { data: poll } = await axios.get(
+          `https://api.replicate.com/v1/predictions/${prediction.id}`,
+          {
+            headers: { "Authorization": `Token ${REPLICATE_TOKEN}` },
+            timeout: 15000,
+          }
+        );
+
+        if (poll.status === "succeeded") {
+          // Output may be a string URL or an array; pick the first
+          outputURL = Array.isArray(poll.output) ? poll.output[0] : poll.output;
+          break;
+        }
+        if (poll.status === "failed" || poll.status === "canceled") {
+          throw new Error(poll.error || `Video prediction ${poll.status}`);
+        }
+        // "starting" / "processing" — keep waiting
+      }
+
+      if (!outputURL) {
+        throw new Error("Video render timed out after 10 minutes. Please try again.");
+      }
+
+      // ── 2g. Write result ──────────────────────────────────────────────────
+      await jobRef.update({
+        status:      "done",
+        outputURL,
+        completedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      functions.logger.info("Video job complete", { jobId, outputURL: outputURL.slice(0, 60) });
+
+      // ── 2h. Usage tracking ────────────────────────────────────────────────
+      await db.collection("usage").add({
+        uid, jobId, tier: "unknown",
+        event:     "video_complete",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+    } catch (err) {
+      functions.logger.error("Video job failed", { jobId, error: err.message });
+      await jobRef.update({
+        status:   "error",
+        error:    err.message || "Video render failed — please try again.",
+        failedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
+    return null;
+  });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. onUserCreated
 // Trigger : onCreate   users/{uid}
 // Fires WELCOME_HOOK + sends branded welcome email via Zoho SMTP
 // ═══════════════════════════════════════════════════════════════════════════

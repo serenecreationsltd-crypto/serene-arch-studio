@@ -683,6 +683,59 @@ option{background:var(--navy-2)}
 }
 .stb-remove:hover{color:#f87171;background:rgba(248,113,113,.08)}
 
+/* ── WORKFLOW TOGGLE ─────────────────────────────────────── */
+.workflow-toggle{
+  display:flex;gap:6px;padding:4px;
+  background:var(--navy-3);border-radius:10px;
+  margin-bottom:16px;
+}
+.wf-btn{
+  flex:1;padding:8px 4px;border:none;border-radius:7px;
+  font-size:.78rem;font-weight:600;letter-spacing:.03em;
+  cursor:pointer;transition:all .2s;
+  background:transparent;color:var(--text-d);
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.wf-btn.active{
+  background:var(--teal);color:#fff;
+  box-shadow:0 2px 8px rgba(10,126,115,.45);
+}
+.wf-btn:not(.active):hover{background:var(--navy-4);color:var(--text);}
+
+/* ── VIDEO CONTROLS ──────────────────────────────────────── */
+.video-controls{display:none;}
+.video-controls.active{display:block;}
+.ctrl-sublabel{
+  font-size:.7rem;color:var(--text-d);
+  text-transform:uppercase;letter-spacing:.06em;
+  margin-bottom:4px;
+}
+.video-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:.65rem;font-weight:700;letter-spacing:.04em;
+  padding:2px 6px;border-radius:4px;
+  background:linear-gradient(135deg,#7c3aed,#a855f7);
+  color:#fff;vertical-align:middle;margin-left:6px;
+}
+.hc-play-overlay{
+  position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;
+  background:rgba(0,0,0,.35);border-radius:inherit;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.history-card:hover .hc-play-overlay{opacity:1;}
+.hc-play-icon{
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.92);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;padding-left:3px;
+}
+#videoOutput{
+  display:none;width:100%;height:100%;
+  object-fit:contain;background:#000;
+  border-radius:var(--radius);
+}
+
 /* ── MOBILE ADJUSTMENTS ─────────────────────────────────── */
 @media(max-width:900px){
   html,body{overflow:auto}
@@ -744,6 +797,16 @@ option{background:var(--navy-2)}
       </div>
     </div>
     <div class="panel-body">
+
+      <!-- Workflow Toggle: Render / Animate -->
+      <div class="workflow-toggle" id="workflowToggle">
+        <button class="wf-btn active" id="wfRender" onclick="setWorkflow('render')">
+          <span>✦</span> Render
+        </button>
+        <button class="wf-btn" id="wfAnimate" onclick="setWorkflow('animate')">
+          <span>▶</span> Animate
+        </button>
+      </div>
 
       <!-- Expert Mode -->
       <div class="ctrl-group">
@@ -893,13 +956,50 @@ option{background:var(--navy-2)}
       </div>
 
       <!-- Render Engine -->
-      <div class="ctrl-group">
+      <div class="ctrl-group" id="engineCtrlGroup">
         <div class="section-label">Render Engine</div>
         <select class="engine-select" id="engineSelect">
           <option value="v46">v4.6 — Default</option>
           <option value="v45ultra">v4.5 Ultra — Highest quality</option>
           <option value="v45fast">v4.5 Fast — Quick preview</option>
         </select>
+      </div>
+
+      <!-- Video Controls (Animate mode only) -->
+      <div class="video-controls" id="videoControls">
+        <div class="ctrl-group">
+          <div class="section-label">Duration</div>
+          <div class="ctrl-row" id="durationGroup">
+            <button class="ctrl-btn" data-group="duration" data-val="2">2s</button>
+            <button class="ctrl-btn active" data-group="duration" data-val="4">4s</button>
+            <button class="ctrl-btn" data-group="duration" data-val="8">8s</button>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <div class="section-label">Frame Rate</div>
+          <div class="ctrl-row" id="fpsGroup">
+            <button class="ctrl-btn active" data-group="fps" data-val="24">24 fps</button>
+            <button class="ctrl-btn" data-group="fps" data-val="30">30 fps</button>
+            <button class="ctrl-btn" data-group="fps" data-val="60">60 fps</button>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <div class="section-label">Motion Intensity</div>
+          <div class="ctrl-row" id="motionGroup">
+            <button class="ctrl-btn active" data-group="motion" data-val="subtle">Subtle</button>
+            <button class="ctrl-btn" data-group="motion" data-val="dynamic">Dynamic</button>
+            <button class="ctrl-btn" data-group="motion" data-val="cinematic">Cinematic</button>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <div class="section-label">Camera Motion</div>
+          <div class="ctrl-row" id="cammotionGroup">
+            <button class="ctrl-btn active" data-group="cammotion" data-val="static">Static</button>
+            <button class="ctrl-btn" data-group="cammotion" data-val="pan">Pan</button>
+            <button class="ctrl-btn" data-group="cammotion" data-val="dolly">Dolly</button>
+            <button class="ctrl-btn" data-group="cammotion" data-val="orbit">Orbit</button>
+          </div>
+        </div>
       </div>
 
     </div><!-- /panel-body -->
@@ -939,7 +1039,7 @@ option{background:var(--navy-2)}
 
       <!-- Canvas (before/after split) -->
       <div class="canvas-preview" id="canvasPreview">
-        <div class="preview-split">
+        <div class="preview-split" id="previewSplit">
           <div class="preview-pane">
             <img id="baBeforeImg" src="" alt="Original">
             <div class="pane-tag">Original</div>
@@ -949,6 +1049,8 @@ option{background:var(--navy-2)}
             <div class="pane-tag after">AI Render</div>
           </div>
         </div>
+        <!-- Video output (Animate mode result) -->
+        <video id="videoOutput" controls loop playsinline></video>
       </div>
 
       <!-- Render progress overlay -->
@@ -1149,6 +1251,14 @@ let objectURL    = null;
 let renderUnsub  = null;
 let splitView    = true;
 let lastOutputURL= null;
+// Video mode state
+let currentWorkflow   = 'render';
+let selectedDuration  = '4';
+let selectedFps       = '24';
+let selectedMotion    = 'subtle';
+let selectedCamMotion = 'static';
+let videoUnsub        = null;
+let lastVideoURL      = null;
 
 // ═══════════════════════════════════════════════════════════
 // AUTH STATE
@@ -1225,9 +1335,13 @@ document.querySelectorAll('[data-group]').forEach(btn => {
     const group = btn.dataset.group;
     document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    if (group === 'camera')  selectedCam  = btn.dataset.val;
-    if (group === 'time')    selectedTime = btn.dataset.val;
-    if (group === 'weather') selectedWx   = btn.dataset.val;
+    if (group === 'camera')    selectedCam       = btn.dataset.val;
+    if (group === 'time')      selectedTime      = btn.dataset.val;
+    if (group === 'weather')   selectedWx        = btn.dataset.val;
+    if (group === 'duration')  selectedDuration  = btn.dataset.val;
+    if (group === 'fps')       selectedFps       = btn.dataset.val;
+    if (group === 'motion')    selectedMotion    = btn.dataset.val;
+    if (group === 'cammotion') selectedCamMotion = btn.dataset.val;
   });
 });
 
@@ -1235,6 +1349,23 @@ document.querySelectorAll('[data-group]').forEach(btn => {
 document.getElementById('engineSelect').addEventListener('change', e => {
   selectedEng = e.target.value;
 });
+
+// ── WORKFLOW TOGGLE ──────────────────────────────────────────
+function setWorkflow(mode) {
+  currentWorkflow = mode;
+  document.getElementById('wfRender').classList.toggle('active', mode === 'render');
+  document.getElementById('wfAnimate').classList.toggle('active', mode === 'animate');
+  document.getElementById('videoControls').classList.toggle('active', mode === 'animate');
+  // Dim render-only controls in Animate mode
+  const renderOnlyIds = ['cameraGroup','timeGroup','weatherGroup','engineCtrlGroup'];
+  renderOnlyIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.opacity = mode === 'animate' ? '0.35' : '';
+  });
+  // Update generate button label
+  document.getElementById('renderBtnText').textContent =
+    mode === 'animate' ? 'Animate' : 'Generate';
+}
 
 // ═══════════════════════════════════════════════════════════
 // FILE HANDLING
@@ -1298,6 +1429,9 @@ function formatBytes(b) {
 async function startRender() {
   if (!fbReady) { toast('Firebase not configured', 3000); return; }
   if (!currentUser) { openModal('login'); return; }
+
+  // Branch to video pipeline
+  if (currentWorkflow === 'animate') { await startVideoJob(); return; }
 
   const isT2R = selectedMode === 't2r';
   const prompt = document.getElementById('promptInput').value.trim();
@@ -1440,6 +1574,141 @@ function onRenderDone(outputURL, jobId) {
   toast('Your AI render is ready! ✦', 5000);
 }
 
+// ── VIDEO PIPELINE ──────────────────────────────────────────
+async function startVideoJob() {
+  if (!sourceFile && selectedMode !== 't2r') {
+    toast('Please upload a drawing first to animate', 3500);
+    return;
+  }
+
+  const btn = document.getElementById('renderBtn');
+  const txt = document.getElementById('renderBtnText');
+  btn.disabled = true;
+  txt.textContent = 'Animating…';
+
+  document.getElementById('canvasActions').classList.remove('active');
+  document.getElementById('canvasPreview').classList.remove('active');
+  showProgress(true);
+  setStage('stageUpload', 'active');
+  setMsg('Starting video animation… 🎬');
+
+  try {
+    const uid = currentUser.uid;
+    let jobSourceURL = sourceURL || null;
+
+    if (sourceFile && !jobSourceURL) {
+      showBar(true);
+      const ext  = sourceFile.name.split('.').pop();
+      const path = `uploads/${uid}/${Date.now()}.${ext}`;
+      const ref  = storage.ref(path);
+      const task = ref.put(sourceFile);
+      await new Promise((resolve, reject) => {
+        task.on('state_changed',
+          snap => {
+            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+            setProgress(pct, 'Uploading…');
+          },
+          reject,
+          async () => {
+            setProgress(100, 'Upload complete');
+            jobSourceURL = await task.snapshot.ref.getDownloadURL();
+            sourceURL = jobSourceURL;
+            resolve();
+          }
+        );
+      });
+      showBar(false);
+    }
+
+    setStage('stageUpload', 'done');
+    setStage('stageQueue', 'active');
+    setMsg('Queuing video render… 🎥');
+
+    const prompt = document.getElementById('promptInput').value.trim();
+
+    const jobRef = await db.collection('videoQueue').add({
+      uid,
+      sourceURL: jobSourceURL,
+      duration:     selectedDuration,
+      fps:          selectedFps,
+      motionStyle:  selectedMotion,
+      cameraMotion: selectedCamMotion,
+      style:        selectedStyle,
+      environment:  selectedMode,
+      prompt:       prompt || null,
+      status:       'pending',
+      createdAt:    firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    setStage('stageQueue', 'done');
+    setStage('stageProcess', 'active');
+    setMsg('AI is animating your design… this takes 1–5 minutes 🎬');
+
+    // Real-time listener
+    videoUnsub = db.collection('videoQueue').doc(jobRef.id)
+      .onSnapshot(snap => {
+        if (!snap.exists) return;
+        const job = snap.data();
+        if (job.status === 'done' && job.outputURL) {
+          cleanupSub();
+          setStage('stageProcess', 'done');
+          setStage('stageDone', 'done');
+          onVideoDone(job.outputURL, jobRef.id);
+        } else if (job.status === 'error') {
+          cleanupSub();
+          setStage('stageProcess', 'err');
+          setMsg('❌ ' + (job.error || 'Video render failed — please try again'));
+          toast('Video error: ' + (job.error || 'unknown'), 5000);
+          resetBtn();
+        }
+      }, err => {
+        setMsg('❌ Connection lost — ' + err.message);
+        resetBtn();
+      });
+
+    // 10-minute timeout for video
+    setTimeout(() => {
+      if (videoUnsub) {
+        cleanupSub();
+        setMsg('⏱ Video render timed out — please try again');
+        resetBtn();
+      }
+    }, 600000);
+
+  } catch(e) {
+    console.error('Video error:', e);
+    setMsg('❌ ' + (e.message || 'Unknown error'));
+    toast('Error: ' + e.message, 5000);
+    resetBtn();
+  }
+}
+
+function onVideoDone(videoURL, jobId) {
+  lastVideoURL = videoURL;
+  showProgress(false);
+
+  // Show video player, hide split image view
+  const splitEl  = document.getElementById('previewSplit');
+  const videoEl  = document.getElementById('videoOutput');
+  if (splitEl)  splitEl.style.display = 'none';
+  if (videoEl) {
+    videoEl.style.display = 'block';
+    videoEl.src = videoURL;
+    videoEl.play().catch(() => {});
+  }
+
+  document.getElementById('canvasPreview').classList.add('active');
+  document.getElementById('canvasActions').classList.add('active');
+
+  // Download link — mp4
+  const dlBtn = document.getElementById('dlBtn');
+  dlBtn.href     = videoURL;
+  dlBtn.download = `serene-arch-video-${jobId.slice(-6)}.mp4`;
+
+  resetBtn();
+  toast('Your AI animation is ready! ▶', 5000);
+}
+
 function cancelRender() {
   cleanupSub();
   showProgress(false);
@@ -1453,6 +1722,12 @@ function newRender() {
   resetBtn();
   document.getElementById('canvasActions').classList.remove('active');
   document.getElementById('canvasPreview').classList.remove('active');
+  // Reset video output
+  const videoEl = document.getElementById('videoOutput');
+  if (videoEl) { videoEl.pause(); videoEl.src = ''; videoEl.style.display = 'none'; }
+  const splitEl = document.getElementById('previewSplit');
+  if (splitEl) splitEl.style.display = '';
+  lastVideoURL = null;
   clearSource();
   document.getElementById('promptInput').value = '';
   toast('Ready for a new render ✦');
@@ -1527,83 +1802,130 @@ function resetBtn() {
   const btn = document.getElementById('renderBtn');
   const txt = document.getElementById('renderBtnText');
   btn.disabled = false;
-  txt.textContent = 'Generate';
+  txt.textContent = currentWorkflow === 'animate' ? 'Animate' : 'Generate';
 }
 function cleanupSub() {
   if (renderUnsub) { renderUnsub(); renderUnsub = null; }
+  if (videoUnsub)  { videoUnsub();  videoUnsub  = null; }
 }
 
 // ═══════════════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════════════
 let historyUnsub = null;
+let videoHistoryUnsub = null;
+let _renderDocs = [];
+let _videoDocs  = [];
 
 function loadHistory(uid) {
   if (historyUnsub) historyUnsub();
+  if (videoHistoryUnsub) videoHistoryUnsub();
+
   historyUnsub = db.collection('renderQueue')
     .where('uid', '==', uid)
     .orderBy('createdAt', 'desc')
-    .limit(30)
+    .limit(25)
     .onSnapshot(snap => {
-      const list    = document.getElementById('historyList');
-      const empty   = document.getElementById('historyEmpty');
-      const countEl = document.getElementById('historyCount');
-      const subEl   = document.getElementById('historySubtitle');
-
-      const docs = snap.docs;
-      countEl.textContent = docs.length;
-      subEl.textContent   = docs.length === 1 ? '1 render' : `${docs.length} renders`;
-
-      // Remove old cards
-      list.querySelectorAll('.history-card').forEach(c => c.remove());
-
-      if (docs.length === 0) {
-        empty.style.display = 'flex';
-        return;
-      }
-      empty.style.display = 'none';
-
-      docs.forEach(doc => {
-        const d  = doc.data();
-        const card = document.createElement('div');
-        card.className = 'history-card';
-
-        const thumb = d.outputURL
-          ? `<img class="hc-thumb" src="${d.outputURL}" alt="Render" loading="lazy">`
-          : `<div class="hc-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--navy-4)">${statusIcon(d.status)}</div>`;
-
-        const when = d.createdAt ? timeAgo(d.createdAt.toDate()) : '—';
-        const styleLabel = d.style ? d.style.charAt(0).toUpperCase() + d.style.slice(1) : 'Render';
-        const envLabel   = d.environment ? d.environment.charAt(0).toUpperCase() + d.environment.slice(1) : '';
-
-        card.innerHTML = `
-          ${thumb}
-          <div class="hc-body">
-            <div class="hc-style">${styleLabel}${envLabel ? ' · ' + envLabel : ''}</div>
-            <div class="hc-prompt">${d.prompt || 'No prompt specified'}</div>
-            <div class="hc-meta">
-              <span>${when}</span>
-              <span class="hc-status ${d.status}">${d.status}</span>
-            </div>
-          </div>`;
-
-        if (d.outputURL) {
-          card.addEventListener('click', () => {
-            // Load this render into the canvas
-            document.getElementById('baAfterImg').src   = d.outputURL;
-            document.getElementById('baBeforeImg').src  = d.sourceURL || '';
-            document.getElementById('canvasPreview').classList.add('active');
-            document.getElementById('canvasActions').classList.add('active');
-            lastOutputURL = d.outputURL;
-            const dlBtn = document.getElementById('dlBtn');
-            dlBtn.href     = d.outputURL;
-            dlBtn.download = `serene-arch-${doc.id.slice(-6)}.jpg`;
-          });
-        }
-
-        list.appendChild(card);
-      });
+      _renderDocs = snap.docs.map(d => ({ ...d.data(), _id: d.id, _type: 'render' }));
+      renderHistory();
     }, err => console.warn('History error:', err.message));
+
+  videoHistoryUnsub = db.collection('videoQueue')
+    .where('uid', '==', uid)
+    .orderBy('createdAt', 'desc')
+    .limit(15)
+    .onSnapshot(snap => {
+      _videoDocs = snap.docs.map(d => ({ ...d.data(), _id: d.id, _type: 'video' }));
+      renderHistory();
+    }, err => console.warn('Video history error:', err.message));
+}
+
+function renderHistory() {
+  const list    = document.getElementById('historyList');
+  const empty   = document.getElementById('historyEmpty');
+  const countEl = document.getElementById('historyCount');
+  const subEl   = document.getElementById('historySubtitle');
+
+  // Merge and sort by createdAt descending
+  const all = [..._renderDocs, ..._videoDocs].sort((a, b) => {
+    const ta = a.createdAt ? a.createdAt.toMillis() : 0;
+    const tb = b.createdAt ? b.createdAt.toMillis() : 0;
+    return tb - ta;
+  }).slice(0, 30);
+
+  countEl.textContent = all.length;
+  subEl.textContent   = all.length === 1 ? '1 item' : `${all.length} items`;
+
+  list.querySelectorAll('.history-card').forEach(c => c.remove());
+
+  if (all.length === 0) { empty.style.display = 'flex'; return; }
+  empty.style.display = 'none';
+
+  all.forEach(d => {
+    const isVideo = d._type === 'video';
+    const card = document.createElement('div');
+    card.className = 'history-card';
+
+    let thumbHtml;
+    if (d.outputURL) {
+      if (isVideo) {
+        thumbHtml = `<div class="hc-thumb" style="position:relative;background:#000">
+          <video src="${d.outputURL}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover;border-radius:inherit"></video>
+          <div class="hc-play-overlay"><div class="hc-play-icon">▶</div></div>
+        </div>`;
+      } else {
+        thumbHtml = `<img class="hc-thumb" src="${d.outputURL}" alt="Render" loading="lazy">`;
+      }
+    } else {
+      thumbHtml = `<div class="hc-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--navy-4)">${statusIcon(d.status)}</div>`;
+    }
+
+    const when       = d.createdAt ? timeAgo(d.createdAt.toDate()) : '—';
+    const styleLabel = d.style ? d.style.charAt(0).toUpperCase() + d.style.slice(1) : (isVideo ? 'Animation' : 'Render');
+    const envLabel   = d.environment ? d.environment.charAt(0).toUpperCase() + d.environment.slice(1) : '';
+    const videoBadge = isVideo ? `<span class="video-badge">▶ Video</span>` : '';
+
+    card.innerHTML = `
+      ${thumbHtml}
+      <div class="hc-body">
+        <div class="hc-style">${styleLabel}${envLabel ? ' · ' + envLabel : ''}${videoBadge}</div>
+        <div class="hc-prompt">${d.prompt || 'No prompt specified'}</div>
+        <div class="hc-meta">
+          <span>${when}</span>
+          <span class="hc-status ${d.status}">${d.status}</span>
+        </div>
+      </div>`;
+
+    if (d.outputURL) {
+      card.addEventListener('click', () => {
+        if (isVideo) {
+          // Show video in canvas
+          const splitEl = document.getElementById('previewSplit');
+          const videoEl = document.getElementById('videoOutput');
+          if (splitEl) splitEl.style.display = 'none';
+          if (videoEl) { videoEl.style.display = 'block'; videoEl.src = d.outputURL; videoEl.play().catch(()=>{}); }
+          document.getElementById('canvasPreview').classList.add('active');
+          document.getElementById('canvasActions').classList.add('active');
+          lastVideoURL = d.outputURL;
+          const dlBtn = document.getElementById('dlBtn');
+          dlBtn.href     = d.outputURL;
+          dlBtn.download = `serene-arch-video-${d._id.slice(-6)}.mp4`;
+        } else {
+          // Show image in canvas
+          document.getElementById('baAfterImg').src   = d.outputURL;
+          document.getElementById('baBeforeImg').src  = d.sourceURL || '';
+          document.getElementById('canvasPreview').classList.add('active');
+          document.getElementById('canvasActions').classList.add('active');
+          lastOutputURL = d.outputURL;
+          const dlBtn = document.getElementById('dlBtn');
+          dlBtn.href     = d.outputURL;
+          dlBtn.download = `serene-arch-${d._id.slice(-6)}.jpg`;
+        }
+      });
+    }
+
+    list.appendChild(card);
+  });
 }
 
 function statusIcon(s) {
@@ -1611,7 +1933,9 @@ function statusIcon(s) {
 }
 
 function clearHistory() {
-  if (historyUnsub) { historyUnsub(); historyUnsub = null; }
+  if (historyUnsub)      { historyUnsub();      historyUnsub      = null; }
+  if (videoHistoryUnsub) { videoHistoryUnsub(); videoHistoryUnsub = null; }
+  _renderDocs = []; _videoDocs = [];
   document.getElementById('historyList').querySelectorAll('.history-card').forEach(c => c.remove());
   document.getElementById('historyEmpty').style.display = 'flex';
   document.getElementById('historyCount').textContent = '0';

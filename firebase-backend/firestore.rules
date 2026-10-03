@@ -24,6 +24,21 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── videoQueue ────────────────────────────────────────────────────────
+    // Mirrors renderQueue: clients create their own pending jobs and read
+    // their own jobs for the polling loop. Status transitions from
+    // Cloud Functions (admin SDK) only.
+    match /videoQueue/{jobId} {
+      allow create: if request.auth != null
+        && request.resource.data.uid    == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      allow read: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+
+      allow update, delete: if false;
+    }
+
     // ── gallery ────────────────────────────────────────────────────────────
     // Anyone may read public renders (community gallery).
     // All writes come from Cloud Functions (admin SDK).
