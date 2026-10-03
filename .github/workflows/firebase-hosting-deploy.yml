@@ -15,7 +15,7 @@ jobs:
   deploy:
     name: Deploy Firebase Hosting
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -42,16 +42,10 @@ jobs:
             --project ${{ env.FIREBASE_PROJECT }} \
             --non-interactive
 
-      - name: Install gcloud CLI
-        run: |
-          curl -sSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=/opt/gcloud
-          echo "/opt/gcloud/google-cloud-sdk/bin" >> $GITHUB_PATH
-
       - name: Register custom domain serenecreations.org
         run: |
-          /opt/gcloud/google-cloud-sdk/bin/gcloud auth activate-service-account \
-            --key-file=service-account.json --quiet
-          TOKEN=$(/opt/gcloud/google-cloud-sdk/bin/gcloud auth print-access-token)
+          gcloud auth activate-service-account --key-file=service-account.json --quiet
+          TOKEN=$(gcloud auth print-access-token)
           API="https://firebasehosting.googleapis.com/v1beta1/projects/${{ env.FIREBASE_PROJECT }}/sites/${{ env.FIREBASE_PROJECT }}"
 
           echo "::group::Registering serenecreations.org"
@@ -59,7 +53,7 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"domainName":"serenecreations.org"}' \
-            "$API/domains" || true
+            "$API/domains" | jq .
           echo "::endgroup::"
 
           echo "::group::Registering www.serenecreations.org"
@@ -67,23 +61,19 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"domainName":"www.serenecreations.org"}' \
-            "$API/domains" || true
+            "$API/domains" | jq .
           echo "::endgroup::"
 
-          echo "::group::Required DNS Records — add these to Cloudflare (DNS only, grey cloud)"
-          curl -s -H "Authorization: Bearer $TOKEN" "$API/domains" | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-for d in data.get('domains', []):
-    print(f\"DOMAIN: {d.get('domainName')}  STATUS: {d.get('domainStatus')}\")
-    prov = d.get('provisioning', {})
-    for rec in prov.get('dnsRequiredRecords', []):
-        r = rec.get('requiredDnsRecord', {})
-        print(f\"  ADD: {r.get('type')} {r.get('name')} -> {r.get('rrdatas', [])}\")
-    for rec in prov.get('certChallenge', {}).get('dnsChallenge', {}).get('records', []):
-        print(f\"  TXT: {rec.get('name')} -> {rec.get('value')}\")
-    print()
-"
+          echo "::group::All domains and required DNS records"
+          curl -s -H "Authorization: Bearer $TOKEN" "$API/domains" | jq -r '
+            .domains[] |
+            "=== DOMAIN: \(.domainName) | STATUS: \(.domainStatus) ===",
+            (.provisioning.dnsRequiredRecords // [] | .[] |
+              "  ADD DNS: \(.requiredDnsRecord.type) \(.requiredDnsRecord.name) -> \(.requiredDnsRecord.rrdatas | join(", "))"),
+            (.provisioning.certChallenge.dnsChallenge.records // [] | .[] |
+              "  TXT: \(.name) -> \(.value)"),
+            ""
+          ' || curl -s -H "Authorization: Bearer $TOKEN" "$API/domains"
           echo "::endgroup::"
 
       - name: Clean up service account key
