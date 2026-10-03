@@ -472,24 +472,21 @@
 
     var payload = { name: name, email: email, phone: phone, subject: selectedService, message: message };
 
-    var main = fetch(CONTACT_ENDPOINT, {
+    // Fire Cloud Function in background (non-blocking — requires Blaze plan)
+    fetch(CONTACT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    });
+    }).catch(function () {});
 
-    var lead = fetch(LEAD_HOOK, {
+    // LEAD_HOOK is the primary success signal (always live)
+    fetch(LEAD_HOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    }).catch(function () { /* pipeline failure is non-fatal */ });
-
-    Promise.all([main, lead])
-      .then(function (results) {
-        if (!results[0].ok) throw new Error('HTTP ' + results[0].status);
-        return results[0].json();
-      })
-      .then(function () {
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         document.getElementById('sas-form-panel').style.display = 'none';
         document.getElementById('sas-success').style.display = 'block';
       })
