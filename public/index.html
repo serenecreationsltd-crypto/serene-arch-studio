@@ -831,21 +831,19 @@
 
     var payload = { name: name, email: email, phone: phone, subject: selectedService, message: message };
 
-    var main = fetch(CONTACT_ENDPOINT, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    var lead = fetch(LEAD_HOOK, {
+    // Fire Cloud Function in background (non-blocking — requires Blaze plan)
+    fetch(CONTACT_ENDPOINT, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).catch(function () {});
 
-    Promise.all([main, lead])
-      .then(function (results) {
-        if (!results[0].ok) throw new Error('HTTP ' + results[0].status);
-        return results[0].json();
-      })
-      .then(function () {
+    // LEAD_HOOK is the primary success signal (always live)
+    fetch(LEAD_HOOK, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         document.getElementById('sas-form-panel-idx').style.display = 'none';
         document.getElementById('sas-success-idx').style.display = 'block';
       })
@@ -964,6 +962,7 @@
 (function () {
   'use strict';
   var SUBSCRIBE_URL = 'https://us-central1-serene-arch-studio.cloudfunctions.net/subscribeToCampaign';
+  var WELCOME_HOOK  = 'https://cloud.activepieces.com/api/v1/webhooks/uusAJlkobrnDCeGwdQITw';
   var DISMISS_KEY   = 'lc_dismissed';   // timestamp of last dismissal
   var SUBSCRIBED_KEY = 'lc_subscribed'; // set when user subscribes
   var DISMISS_TTL   = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -1043,17 +1042,27 @@
     msg.textContent = '';
     msg.className   = '';
 
+    var wcPayload = {
+      email: email,
+      name:  name,
+      source: 'popup-index',
+      campaignId: 'boq-follow-up',
+      consentGiven: true,
+      consentText: 'Subscribed via main-site slide-in popup (BOQ template offer)',
+    };
+
+    // Fire Cloud Function in background (non-blocking — requires Blaze plan)
     fetch(SUBSCRIBE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: email,
-        name:  name,
-        source: 'popup-index',
-        campaignId: 'boq-follow-up',
-        consentGiven: true,
-        consentText: 'Subscribed via main-site slide-in popup (BOQ template offer)',
-      }),
+      body: JSON.stringify(wcPayload),
+    }).catch(function () {});
+
+    // WELCOME_HOOK is the primary success signal (always live)
+    fetch(WELCOME_HOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(wcPayload),
     })
     .then(function (res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
