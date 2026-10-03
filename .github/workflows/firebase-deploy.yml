@@ -47,82 +47,45 @@ jobs:
       - name: Write Functions .env
         working-directory: firebase-backend/functions
         run: |
-          cat > .env <<'ENVEOF'
-          SMTP_USER=info@serenecreations.org
-          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-          STRIPE_SECRET=${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          REPLICATE_TOKEN=${{ secrets.REPLICATE_TOKEN }}
-          REPLICATE_MODEL_VERSION=${{ secrets.REPLICATE_MODEL_VERSION }}
-          ENVEOF
-
-      - name: Create .gcloudignore (include .env, exclude node_modules)
-        working-directory: firebase-backend/functions
-        run: |
-          cat > .gcloudignore <<'EOF'
-          .git
-          .gitignore
-          node_modules
-          EOF
+          cat > .env <<ENVEOF
+SMTP_USER=info@serenecreations.org
+SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+STRIPE_SECRET=${{ secrets.STRIPE_SECRET_KEY }}
+STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+REPLICATE_TOKEN=${{ secrets.REPLICATE_TOKEN }}
+REPLICATE_MODEL_VERSION=${{ secrets.REPLICATE_MODEL_VERSION }}
+REPLICATE_VIDEO_MODEL_VERSION=${{ secrets.REPLICATE_VIDEO_MODEL_VERSION }}
+ENVEOF
 
       - name: Install Cloud Function dependencies
         working-directory: firebase-backend/functions
         run: npm install --omit=dev
 
-      - name: Deploy HTTPS functions
-        working-directory: firebase-backend/functions
-        run: |
-          ARGS=(
-            --project="${{ env.PROJECT }}"
-            --region="${{ env.REGION }}"
-            --runtime="${{ env.RUNTIME }}"
-            --source=.
-            --trigger-http
-            --allow-unauthenticated
-            --quiet
-          )
-          for fn in \
-            trackLead \
-            getUsageStats \
-            contactFormSubmit \
-            adminStats \
-            stripeWebhook \
-            approveRender \
-            exportUsageCSV \
-            subscribeToCampaign \
-            unsubscribeEmail \
-            chatbaseWebhook; do
-            echo "▶ Deploying $fn ..."
-            gcloud functions deploy "$fn" "${ARGS[@]}" --entry-point="$fn"
-          done
+      - name: Install firebase-tools
+        run: npm install -g firebase-tools@13.29.1 --quiet 2>&1 | tail -5
 
-      - name: Deploy processRenderJob (Firestore trigger)
+      - name: Deploy all Cloud Functions via Firebase CLI
+        working-directory: firebase-backend
+        run: |
+          firebase deploy --only functions \
+            --project "${{ env.PROJECT }}" \
+            --non-interactive 2>&1
+
+      - name: Deploy processVideoJob (Firestore trigger — separate for memory/timeout)
+        continue-on-error: true
         working-directory: firebase-backend/functions
         run: |
-          gcloud functions deploy processRenderJob \
+          gcloud functions deploy processVideoJob \
             --project="${{ env.PROJECT }}" \
             --region="${{ env.REGION }}" \
             --runtime="${{ env.RUNTIME }}" \
             --source=. \
             --trigger-event="providers/cloud.firestore/eventTypes/document.create" \
-            --trigger-resource="projects/${{ env.PROJECT }}/databases/(default)/documents/renderQueue/{jobId}" \
-            --memory=512MB \
-            --timeout=300s \
-            --entry-point=processRenderJob \
-            --quiet
-
-      - name: Deploy onUserCreated (Firestore trigger)
-        working-directory: firebase-backend/functions
-        run: |
-          gcloud functions deploy onUserCreated \
-            --project="${{ env.PROJECT }}" \
-            --region="${{ env.REGION }}" \
-            --runtime="${{ env.RUNTIME }}" \
-            --source=. \
-            --trigger-event="providers/cloud.firestore/eventTypes/document.create" \
-            --trigger-resource="projects/${{ env.PROJECT }}/databases/(default)/documents/users/{uid}" \
-            --entry-point=onUserCreated \
-            --quiet
+            --trigger-resource="projects/${{ env.PROJECT }}/databases/(default)/documents/videoQueue/{jobId}" \
+            --memory=1GB \
+            --timeout=600s \
+            --entry-point=processVideoJob \
+            --quiet 2>&1 || echo "⚠ processVideoJob gcloud deploy failed — it may already be deployed via firebase CLI above"
 
       - name: Deploy scheduledCleanup (Pub/Sub + Cloud Scheduler)
         working-directory: firebase-backend/functions
@@ -133,18 +96,6 @@ jobs:
           gcloud pubsub topics create "$TOPIC" \
             --project="${{ env.PROJECT }}" 2>/dev/null \
             || echo "  Topic $TOPIC already exists"
-
-          # Deploy the function
-          gcloud functions deploy scheduledCleanup \
-            --project="${{ env.PROJECT }}" \
-            --region="${{ env.REGION }}" \
-            --runtime="${{ env.RUNTIME }}" \
-            --source=. \
-            --trigger-topic="$TOPIC" \
-            --memory=256MB \
-            --timeout=540s \
-            --entry-point=scheduledCleanup \
-            --quiet
 
           # Create or update the Cloud Scheduler job
           gcloud scheduler jobs create pubsub "$TOPIC" \
@@ -171,18 +122,6 @@ jobs:
             --project="${{ env.PROJECT }}" 2>/dev/null \
             || echo "  Topic $TOPIC already exists"
 
-          # Deploy the function
-          gcloud functions deploy scheduledDripSend \
-            --project="${{ env.PROJECT }}" \
-            --region="${{ env.REGION }}" \
-            --runtime="${{ env.RUNTIME }}" \
-            --source=. \
-            --trigger-topic="$TOPIC" \
-            --memory=256MB \
-            --timeout=300s \
-            --entry-point=scheduledDripSend \
-            --quiet
-
           # Create or update the Cloud Scheduler job
           gcloud scheduler jobs create pubsub "$TOPIC" \
             --project="${{ env.PROJECT }}" \
@@ -198,12 +137,11 @@ jobs:
             --time-zone="Africa/Kampala" 2>/dev/null \
           || echo "  Scheduler job for scheduledDripSend — verify in GCP Console"
 
-      - name: Deploy Firestore & Storage rules (best-effort)
+      - name: Deploy Firestore & Storage rules
         if: always()
         continue-on-error: true
         working-directory: firebase-backend
         run: |
-          npm install -g firebase-tools@12.9.1 --quiet 2>&1 | tail -5
           firebase deploy --only firestore,storage \
             --project "${{ env.PROJECT }}" \
             --non-interactive 2>&1 | tail -20 || true
