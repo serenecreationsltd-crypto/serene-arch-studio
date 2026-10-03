@@ -269,6 +269,7 @@ footer a { color: var(--gold); text-decoration: none; }
 <script>
 (function () {
   const SUBSCRIBE_URL = 'https://us-central1-serene-arch-studio.cloudfunctions.net/subscribeToCampaign';
+  const WELCOME_HOOK  = 'https://cloud.activepieces.com/api/v1/webhooks/uusAJlkobrnDCeGwdQITw'; // primary — always live
   const form = document.getElementById('gateForm');
   const btn  = document.getElementById('dlBtn');
   const msg  = document.getElementById('gMsg');
@@ -282,16 +283,20 @@ footer a { color: var(--gold); text-decoration: none; }
     btn.disabled = true;
     btn.textContent = 'Sending…';
     try {
-      const res = await fetch(SUBSCRIBE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const payload = {
           email, name,
           source: 'blog-rental',
           campaignId: 'rental-property',
           consentGiven: true,
           consentText: 'Subscribed via Uganda Rental Investment Guide gate',
-        }),
+        };
+      // Fire Cloud Function in background (non-blocking — requires Blaze plan)
+      fetch(SUBSCRIBE_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      // WELCOME_HOOK is the primary success signal (always live)
+      const res = await fetch(WELCOME_HOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         showMsg('✅ Check your inbox — the guide is on its way!', true);

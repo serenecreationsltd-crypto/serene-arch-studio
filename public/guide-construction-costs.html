@@ -292,6 +292,7 @@ footer a { color: var(--gold); text-decoration: none; }
 <script>
 (function () {
   const SUBSCRIBE_URL = 'https://us-central1-serene-arch-studio.cloudfunctions.net/subscribeToCampaign';
+  const WELCOME_HOOK  = 'https://cloud.activepieces.com/api/v1/webhooks/uusAJlkobrnDCeGwdQITw'; // primary — always live
   const GUIDE_URL     = 'https://serenecreations.org/downloads/uganda-construction-cost-guide-2026.pdf';
 
   const form  = document.getElementById('gateForm');
@@ -310,17 +311,21 @@ footer a { color: var(--gold); text-decoration: none; }
     btn.textContent = 'Sending…';
 
     try {
-      const res = await fetch(SUBSCRIBE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const payload = {
           email,
           name,
           source: 'blog-costs-uganda',
           campaignId: 'costs-uganda',
           consentGiven: true,
           consentText: 'Subscribed via Uganda Construction Cost Guide 2026 download gate',
-        }),
+        };
+      // Fire Cloud Function in background (non-blocking — requires Blaze plan)
+      fetch(SUBSCRIBE_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      // WELCOME_HOOK is the primary success signal (always live)
+      const res = await fetch(WELCOME_HOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok) {
