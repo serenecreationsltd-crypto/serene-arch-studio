@@ -65,7 +65,8 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::All domains and required DNS records"
-          curl -s -H "Authorization: Bearer $TOKEN" "$API/domains" | jq -r '
+          DOMAINS_JSON=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/domains")
+          echo "$DOMAINS_JSON" | jq -r '
             .domains[] |
             "=== DOMAIN: \(.domainName) | STATUS: \(.domainStatus) ===",
             (.provisioning.dnsRequiredRecords // [] | .[] |
@@ -73,8 +74,23 @@ jobs:
             (.provisioning.certChallenge.dnsChallenge.records // [] | .[] |
               "  TXT: \(.name) -> \(.value)"),
             ""
-          ' || curl -s -H "Authorization: Bearer $TOKEN" "$API/domains"
+          ' || echo "$DOMAINS_JSON"
           echo "::endgroup::"
+
+          echo "## Cloudflare DNS Records Required" >> $GITHUB_STEP_SUMMARY
+          echo "Add these to Cloudflare with **DNS only (grey cloud, proxy OFF)**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "$DOMAINS_JSON" | jq -r '
+            .domains[] |
+            "### \(.domainName) — Status: \(.domainStatus)",
+            "| Type | Name | Value |",
+            "|------|------|-------|",
+            (.provisioning.dnsRequiredRecords // [] | .[] |
+              "| \(.requiredDnsRecord.type) | \(.requiredDnsRecord.name) | \(.requiredDnsRecord.rrdatas | join(", ")) |"),
+            (.provisioning.certChallenge.dnsChallenge.records // [] | .[] |
+              "| TXT | \(.name) | \(.value) |"),
+            ""
+          ' >> $GITHUB_STEP_SUMMARY || echo "$DOMAINS_JSON" >> $GITHUB_STEP_SUMMARY
 
       - name: Clean up service account key
         if: always()
