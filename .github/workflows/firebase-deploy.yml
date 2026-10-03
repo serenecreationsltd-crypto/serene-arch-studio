@@ -65,25 +65,27 @@ jobs:
       - name: Diagnose GCP state before deploy
         continue-on-error: true
         run: |
-          echo "=== Active account ==="
-          gcloud auth list 2>&1
-          echo "=== Billing account linked ==="
-          gcloud billing projects describe "${{ env.PROJECT }}" 2>&1 || echo "Cannot check billing"
-          echo "=== Cloud Functions API status ==="
-          gcloud services list --project="${{ env.PROJECT }}" \
-            --filter="name:cloudfunctions.googleapis.com" \
-            --format="value(name,state)" 2>&1 || echo "Cannot list services"
-          echo "=== Cloud Build API status ==="
-          gcloud services list --project="${{ env.PROJECT }}" \
-            --filter="name:cloudbuild.googleapis.com" \
-            --format="value(name,state)" 2>&1 || echo "Cannot list services"
-          echo "=== Active SA IAM bindings on project ==="
           SA=$(gcloud auth list --filter="status=ACTIVE" --format="value(account)" 2>&1 | head -1)
-          echo "Service account: $SA"
-          gcloud projects get-iam-policy "${{ env.PROJECT }}" \
+          echo "::notice title=Active-SA::${SA}"
+
+          BILLING=$(gcloud billing projects describe "${{ env.PROJECT }}" --format="value(billingAccountName,billingEnabled)" 2>&1 || echo "billing-check-failed")
+          echo "::notice title=Billing::${BILLING}"
+
+          CF_API=$(gcloud services list --project="${{ env.PROJECT }}" \
+            --filter="name:cloudfunctions.googleapis.com" \
+            --format="value(state)" 2>&1 || echo "api-check-failed")
+          echo "::notice title=CloudFunctions-API::${CF_API:-NOT_ENABLED}"
+
+          CB_API=$(gcloud services list --project="${{ env.PROJECT }}" \
+            --filter="name:cloudbuild.googleapis.com" \
+            --format="value(state)" 2>&1 || echo "api-check-failed")
+          echo "::notice title=CloudBuild-API::${CB_API:-NOT_ENABLED}"
+
+          ROLES=$(gcloud projects get-iam-policy "${{ env.PROJECT }}" \
             --flatten="bindings[].members" \
             --filter="bindings.members:serviceAccount:${SA}" \
-            --format="table(bindings.role)" 2>&1 || echo "Cannot check IAM policy"
+            --format="value(bindings.role)" 2>&1 || echo "iam-check-failed")
+          echo "::notice title=SA-Roles::${ROLES}"
 
       - name: Deploy all Cloud Functions via Firebase CLI
         working-directory: firebase-backend
