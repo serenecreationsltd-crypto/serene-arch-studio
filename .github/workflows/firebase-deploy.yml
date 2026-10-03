@@ -67,7 +67,12 @@ jobs:
         run: |
           firebase deploy --only functions \
             --project "${{ env.PROJECT }}" \
-            --non-interactive 2>&1
+            --non-interactive --debug 2>&1; EXIT=$?
+          if [ -f firebase-debug.log ]; then
+            echo "=== firebase-debug.log (last 80 lines) ==="
+            tail -80 firebase-debug.log
+          fi
+          exit $EXIT
 
       - name: Deploy processVideoJob (Firestore trigger — separate for memory/timeout)
         continue-on-error: true
