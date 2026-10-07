@@ -78,12 +78,25 @@ jobs:
       - name: Deploy all Cloud Functions via Firebase CLI
         working-directory: firebase-backend
         run: |
+          set +e            # default shell is bash -e; keep going so we can report the error
+          set -o pipefail   # but take firebase's exit code, not tee's
           firebase deploy --only functions \
             --project "${{ env.PROJECT }}" \
-            --non-interactive 2>&1; EXIT=$?
+            --non-interactive 2>&1 | tee deploy-output.log; EXIT=$?
           if [ -f firebase-debug.log ]; then
             echo "=== firebase-debug.log (last 40 lines) ==="
             tail -40 firebase-debug.log
+          fi
+          if [ $EXIT -ne 0 ]; then
+            # Surface the real cause as annotations (readable via the checks API,
+            # unlike raw logs). If it's a permission error, the fix is
+            # scripts/fix-iam-permissions.sh run once in Cloud Shell.
+            grep -iE "error|denied|permission|forbidden|not enabled|billing" deploy-output.log \
+              | grep -v "^\s*$" | tail -8 \
+              | while IFS= read -r line; do echo "::error title=firebase deploy::${line}"; done
+            if grep -qiE "permission|denied|forbidden|403" deploy-output.log; then
+              echo "::error title=Deploy account lacks permissions::Run scripts/fix-iam-permissions.sh once in Google Cloud Shell as project Owner, then re-run this workflow."
+            fi
           fi
           exit $EXIT
 
