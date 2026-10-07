@@ -4,3 +4,4 @@ firebase-backend/functions/service-account.json
 .firebase/
 *.local
 .env
+firebase-debug.log
