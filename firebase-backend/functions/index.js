@@ -2678,8 +2678,10 @@ exports.httpDripSend = functions
       functions.logger.error("httpDripSend: DRIP_SECRET env var not set");
       return res.status(500).json({ error: "Server misconfiguration" });
     }
-    const provided = req.headers["x-drip-secret"] || (req.body && req.body.secret);
-    if (provided !== secret) {
+    const provided = String(req.headers["x-drip-secret"] || (req.body && req.body.secret) || "");
+    const a = Buffer.from(provided);
+    const b = Buffer.from(secret);
+    if (a.length !== b.length || !require("crypto").timingSafeEqual(a, b)) {
       functions.logger.warn("httpDripSend: unauthorized attempt", {
         ip: req.ip,
         provided: provided ? "[redacted]" : "missing",
