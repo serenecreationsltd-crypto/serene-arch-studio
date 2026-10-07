@@ -633,7 +633,7 @@ exports.onUserCreated = functions.firestore
                   <span style="color:#888;font-size:13px">Upgrade to Pro for 20/day or Enterprise for 100/day</span>
                 </div>
                 <div style="text-align:center;margin:32px 0">
-                  <a href="https://serenecreations.org/studio"
+                  <a href="https://www.serenecreations.org/ai-studio.html"
                      style="display:inline-block;background:#d4af37;color:#0a1628;
                             padding:14px 36px;border-radius:6px;font-weight:bold;
                             text-decoration:none;font-size:16px">Open Your Studio →</a>
@@ -860,7 +860,7 @@ exports.contactFormSubmit = functions.https.onRequest(async (req, res) => {
             </p>
             <p>While you wait, why not try our AI rendering studio?</p>
             <div style="text-align:center;margin:24px 0">
-              <a href="https://serenecreations.org/studio"
+              <a href="https://www.serenecreations.org/ai-studio.html"
                  style="display:inline-block;background:#d4af37;color:#0a1628;
                         padding:12px 28px;border-radius:6px;font-weight:bold;text-decoration:none">
                 Try the Studio →</a>
@@ -1062,7 +1062,7 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 <p>Hi${userData.displayName ? " " + userData.displayName : ""},</p>
                 <p>Thank you for upgrading! Your <strong>${tier.toUpperCase()}</strong> plan is now active on
                    Serene Arch Studio. You now have up to <strong>${TIER_LIMITS[tier] || 20} AI renders per day</strong>.</p>
-                <p><a href="https://studio.serenecreations.org"
+                <p><a href="https://www.serenecreations.org/ai-studio.html"
                       style="background:#4A6741;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block">
                    Go to Studio
                 </a></p>
@@ -1178,7 +1178,7 @@ exports.approveRender = functions.https.onRequest(async (req, res) => {
               <h2 style="color:#4A6741">Render ${isPublic ? "Published ✅" : "Review Update"}</h2>
               <p>Hi,</p>
               <p>Your render <strong>${galleryData.title || galleryId}</strong> has been <strong>${actionLabel}</strong>.</p>
-              ${isPublic ? `<p><a href="https://studio.serenecreations.org/gallery/${galleryId}"
+              ${isPublic ? `<p><a href="https://www.serenecreations.org/ai-studio.html"
                 style="background:#4A6741;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block">
                 View in Gallery</a></p>` : ""}
               <p style="color:#888;font-size:12px">Questions? Contact info@serenecreations.org</p>
