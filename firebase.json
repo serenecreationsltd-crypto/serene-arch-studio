@@ -5,6 +5,37 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "cleanUrls": false,
+    "trailingSlash": false,
+    "404": "404.html",
+    "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+        ]
+      },
+      {
+        "source": "**/*.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        ]
+      },
+      {
+        "source": "robots.txt",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=86400" }
+        ]
+      },
+      {
+        "source": "sitemap.xml",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=86400" }
+        ]
+      }
     ]
   }
 }
