@@ -6,13 +6,13 @@
  *   3. Floating "Free Consultation" trigger button
  *
  * Usage:
- *   <script src="https://serene-arch-studio.web.app/serene-widget.js" defer></script>
+ *   <script src="https://www.serenecreations.org/serene-widget.js" defer></script>
  */
 (function (root) {
   'use strict';
 
   /* ── CONSTANTS ─────────────────────────────────────────── */
-  var STUDIO_URL       = 'https://serene-arch-studio.web.app/ai-studio.html';
+  var STUDIO_URL       = 'https://www.serenecreations.org/ai-studio.html';
   var CONTACT_ENDPOINT = 'https://us-central1-serene-arch-studio.cloudfunctions.net/contactFormSubmit';
   var LEAD_HOOK        = 'https://cloud.activepieces.com/api/v1/webhooks/gaqpTTBjcrwCpNPukckrm';
 
@@ -184,7 +184,7 @@
       '<span class="scw-studio-res-icon">🤖</span>',
       '<div class="scw-studio-res-meta">',
       '<div class="scw-studio-res-title">AI Architecture Studio</div>',
-      '<div class="scw-studio-res-url">Free Tool · serene-arch-studio.web.app</div>',
+      '<div class="scw-studio-res-url">Free Tool · serenecreations.org</div>',
       '</div>',
       '<span class="scw-studio-res-arrow">↗</span>',
       '</div>',
