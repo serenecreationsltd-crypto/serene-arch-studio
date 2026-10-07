@@ -1,568 +1,503 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>AI Architecture Studio — Serene Creations Ltd</title>
-  <meta name="description" content="AI-powered architectural design, 3D renders, and free consultations from Serene Creations Ltd, Uganda's premier infrastructure solutions provider.">
-  <meta property="og:title" content="AI Architecture Studio — Serene Creations Ltd">
-  <meta property="og:description" content="AI-powered architectural design, 3D renders, and free consultations from Serene Creations Ltd, Uganda's premier infrastructure solutions provider.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://www.serenecreations.org/">
-  <link rel="canonical" href="https://www.serenecreations.org/">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-  <style>
-    /* ── Design tokens ── */
-    :root {
-      --green:      #2d6b45;
-      --green-dark: #1a4528;
-      --green-mid:  #256039;
-      --green-pale: #dff0e5;
-      --navy:       #0f1729;
-      --navy-mid:   #1a2944;
-      --gold:       #c8920f;
-      --text:       #1a1a1a;
-      --text-sub:   #555;
-      --border:     #c8e0d4;
-      --bg:         #f7fbf8;
-      --card-bg:    #ffffff;
-      --shadow-sm:  0 2px 8px rgba(0,0,0,.08);
-      --shadow-md:  0 8px 32px rgba(0,0,0,.12);
-      --shadow-lg:  0 20px 60px rgba(0,0,0,.18);
-      --radius:     14px;
-      color-scheme: light;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) {
-        --text:     #e8f0e9;
-        --text-sub: #9ab0a0;
-        --border:   #2a4a35;
-        --bg:       #0d1f14;
-        --card-bg:  #162a1e;
-        --shadow-sm: 0 2px 8px rgba(0,0,0,.3);
-        --shadow-md: 0 8px 32px rgba(0,0,0,.4);
-        --shadow-lg: 0 20px 60px rgba(0,0,0,.5);
-        color-scheme: dark;
-      }
-    }
-    :root[data-theme="dark"] {
-      --text:     #e8f0e9;
-      --text-sub: #9ab0a0;
-      --border:   #2a4a35;
-      --bg:       #0d1f14;
-      --card-bg:  #162a1e;
-      color-scheme: dark;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Serene Creations — Architecture, Design & AI Studio | Uganda</title>
+<meta name="description" content="Serene Creations Ltd — Uganda's premier architecture, construction, and AI design studio. House plans, 3D renders, BOQ, structural design, and client portal. Based in Mukono, Uganda.">
+<link rel="canonical" href="https://www.serenecreations.org/">
+<meta property="og:title" content="Serene Creations — Architecture, Design & AI Studio | Uganda">
+<meta property="og:description" content="Uganda's premier architecture and AI design studio. House plans, renders, BOQ, client portal — all in one place.">
+<meta property="og:url" content="https://www.serenecreations.org/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#07101e">
 
-    /* ── Reset + base ── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      padding: 0 16px;
-      padding-top: env(safe-area-inset-top, 0);
-      padding-bottom: env(safe-area-inset-bottom, 0);
-    }
-    img { max-width: 100%; display: block; }
-    a { color: inherit; text-decoration: none; }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap">
 
-    /* ── Top bar ── */
-    .topbar {
-      position: sticky;
-      top: env(safe-area-inset-top, 0);
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 24px;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border);
-      box-shadow: var(--shadow-sm);
-      margin: 0 -16px;
-    }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-family: 'Playfair Display', serif;
-      font-size: 17px;
-      color: var(--green);
-      font-weight: 700;
-    }
-    .logo-icon {
-      width: 32px; height: 32px;
-      background: var(--green);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .logo-icon svg { fill: #fff; }
-    .topbar-links {
-      display: flex;
-      gap: 4px;
-      list-style: none;
-    }
-    .topbar-links a {
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-sub);
-      transition: background .15s, color .15s;
-    }
-    .topbar-links a:hover { background: var(--green-pale); color: var(--green); }
-    .topbar-links a.cta {
-      background: var(--green);
-      color: #fff;
-      font-weight: 600;
-    }
-    .topbar-links a.cta:hover { background: var(--green-mid); }
-    @media (max-width: 540px) {
-      .topbar-links { display: none; }
-    }
+<style>
+/* ── Design tokens ── */
+:root {
+  --bg:      #07101e;
+  --surface: #0e1c30;
+  --surface2: #142338;
+  --border:  #1e3550;
+  --teal:    #0A7E73;
+  --teal-dim:#085f57;
+  --teal-glow:rgba(10,126,115,.18);
+  --gold:    #C8920F;
+  --gold-dim: rgba(200,146,15,.15);
+  --gold-border: rgba(200,146,15,.35);
+  --text:    #e2eaf4;
+  --muted:   #7a9ab8;
+  --subtle:  #4a6a85;
+  color-scheme: dark;
+}
 
-    /* ── Hero ── */
-    .hero {
-      text-align: center;
-      padding: 72px 24px 56px;
-      max-width: 860px;
-      margin: 0 auto;
-    }
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--green-pale);
-      color: var(--green);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 4px 14px 4px 10px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-    .hero-badge svg { flex-shrink: 0; }
-    .hero h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 6vw, 3.2rem);
-      line-height: 1.18;
-      color: var(--text);
-      margin-bottom: 16px;
-      text-wrap: balance;
-    }
-    .hero h1 em {
-      font-style: normal;
-      color: var(--green);
-    }
-    .hero p {
-      font-size: clamp(15px, 2vw, 17px);
-      color: var(--text-sub);
-      max-width: 600px;
-      margin: 0 auto 32px;
-      line-height: 1.7;
-    }
-    .hero-btns {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--green);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 14px 28px;
-      font-size: 15px;
-      font-weight: 700;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      transition: background .15s, transform .15s, box-shadow .15s;
-      box-shadow: 0 4px 14px rgba(45,107,69,.35);
-      text-decoration: none;
-    }
-    .btn-primary:hover { background: var(--green-mid); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(45,107,69,.45); }
-    .btn-ghost {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: transparent;
-      color: var(--green);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 13px 24px;
-      font-size: 15px;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      transition: border-color .15s, background .15s;
-      text-decoration: none;
-    }
-    .btn-ghost:hover { border-color: var(--green); background: var(--green-pale); }
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+img { max-width: 100%; }
+a { color: inherit; text-decoration: none; }
 
-    /* ── Stats strip ── */
-    .stats {
-      display: flex;
-      gap: 2px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin: 0 auto 64px;
-      max-width: 760px;
-    }
-    .stat {
-      flex: 1 1 150px;
-      text-align: center;
-      padding: 20px 16px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-    }
-    .stat .num {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--green);
-      font-variant-numeric: tabular-nums;
-    }
-    .stat .label {
-      font-size: 12px;
-      color: var(--text-sub);
-      margin-top: 2px;
-    }
+/* ── Topbar ── */
+.topbar {
+  position: sticky; top: 0; z-index: 800;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 58px;
+  background: rgba(7,16,30,.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .95rem; font-weight: 700; letter-spacing: -.01em;
+  color: var(--text); text-decoration: none;
+}
+.logo-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dim) 100%);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-icon svg { fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.topbar-links { display: flex; gap: 4px; list-style: none; align-items: center; }
+.topbar-links a {
+  display: block; padding: 6px 12px; border-radius: 6px;
+  font-size: .88rem; font-weight: 500; color: var(--muted);
+  transition: color .15s, background .15s;
+}
+.topbar-links a:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.topbar-links a.cta {
+  background: var(--teal); color: #fff; font-weight: 600;
+}
+.topbar-links a.cta:hover { background: #0d9e91; }
 
-    /* ── Feature cards ── */
-    .section {
-      max-width: 1060px;
-      margin: 0 auto 72px;
-      padding: 0 8px;
-    }
-    .section-header {
-      text-align: center;
-      margin-bottom: 36px;
-    }
-    .section-header h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.5rem, 4vw, 2rem);
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-    .section-header p {
-      font-size: 15px;
-      color: var(--text-sub);
-    }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-    }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      transition: transform .2s, box-shadow .2s, border-color .2s;
-      cursor: default;
-    }
-    .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--green); }
-    .card-icon {
-      width: 48px; height: 48px;
-      border-radius: 12px;
-      background: var(--green-pale);
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 16px;
-    }
-    .card-icon svg { stroke: var(--green); }
-    .card h3 {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-    .card p {
-      font-size: 14px;
-      color: var(--text-sub);
-      line-height: 1.65;
-      margin-bottom: 18px;
-    }
-    .card a, .card-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--green);
-      font-size: 14px;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      transition: gap .15s;
-      text-decoration: none;
-    }
-    .card a:hover, .card-btn:hover { gap: 10px; }
+@media (max-width: 600px) {
+  .topbar-links { gap: 2px; }
+  .topbar-links a { padding: 6px 9px; font-size: .82rem; }
+}
 
-    /* ── Hero card — AI Studio featured ── */
-    .card.featured {
-      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-      border-color: transparent;
-      color: #fff;
-      grid-column: span 2;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      align-items: center;
-    }
-    @media (max-width: 640px) {
-      .card.featured { grid-column: span 1; grid-template-columns: 1fr; }
-    }
-    .card.featured .card-icon { background: rgba(255,255,255,.08); }
-    .card.featured .card-icon svg { stroke: #c8d8e8; }
-    .card.featured h3 { color: #fff; font-size: 22px; }
-    .card.featured p { color: rgba(255,255,255,.68); }
-    .card.featured a { color: #7EC8B4; }
-    .card.featured .card-right {
-      background: rgba(255,255,255,.05);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 10px;
-      padding: 20px;
-    }
-    .card.featured .feature-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .card.featured .feature-list li {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 13.5px;
-      color: rgba(255,255,255,.8);
-    }
-    .feature-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--gold);
-      flex-shrink: 0;
-    }
+/* ── Hero ── */
+.hero {
+  padding: clamp(72px,10vw,120px) 24px clamp(56px,8vw,96px);
+  text-align: center;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(10,126,115,.12) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(200,146,15,.07) 0%, transparent 60%);
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--gold-dim); border: 1px solid var(--gold-border);
+  color: var(--gold); font-size: .78rem; font-weight: 600;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 5px 14px; border-radius: 20px; margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.1rem, 5.5vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.12;
+  color: #fff;
+  text-wrap: balance;
+  margin-bottom: 20px;
+  letter-spacing: -.02em;
+}
+.hero h1 em {
+  font-style: italic;
+  background: linear-gradient(135deg, var(--teal) 0%, #0fb8a8 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  max-width: 580px; margin: 0 auto 36px;
+  color: var(--muted); font-size: clamp(.93rem, 1.6vw, 1.07rem);
+}
+.hero-btns {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+}
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--teal); color: #fff; font-weight: 700; font-size: .95rem;
+  padding: 13px 26px; border-radius: 9px; border: none; cursor: pointer;
+  transition: background .15s, transform .12s;
+}
+.btn-primary:hover { background: #0d9e91; transform: translateY(-1px); }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: var(--text); font-weight: 600; font-size: .95rem;
+  padding: 13px 26px; border-radius: 9px;
+  border: 1px solid var(--border);
+  cursor: pointer; transition: border-color .15s, background .15s;
+  font-family: inherit;
+}
+.btn-ghost:hover { border-color: var(--muted); background: rgba(255,255,255,.04); }
 
-    /* ── CTA banner ── */
-    .cta-banner {
-      max-width: 1060px;
-      margin: 0 auto 72px;
-      padding: 0 8px;
-    }
-    .cta-inner {
-      background: var(--green);
-      border-radius: 20px;
-      padding: 48px 40px;
-      text-align: center;
-      color: #fff;
-    }
-    .cta-inner h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.4rem, 4vw, 1.9rem);
-      margin-bottom: 12px;
-    }
-    .cta-inner p { font-size: 15px; opacity: .8; margin-bottom: 28px; }
-    .btn-white {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #fff;
-      color: var(--green);
-      border: none;
-      border-radius: 10px;
-      padding: 14px 28px;
-      font-size: 15px;
-      font-weight: 700;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      transition: transform .15s, box-shadow .15s;
-      box-shadow: 0 4px 14px rgba(0,0,0,.15);
-    }
-    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+/* ── Stats bar ── */
+.stats {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.stat {
+  padding: 20px 32px; text-align: center; flex: 1; min-width: 130px;
+  border-right: 1px solid var(--border);
+}
+.stat:last-child { border-right: none; }
+.stat .num {
+  font-size: 1.7rem; font-weight: 700; color: var(--teal);
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.stat .label { font-size: .78rem; color: var(--muted); margin-top: 4px; }
 
-    /* ── Footer ── */
-    footer {
-      text-align: center;
-      padding: 32px 16px 40px;
-      border-top: 1px solid var(--border);
-      font-size: 13px;
-      color: var(--text-sub);
-      max-width: 1060px;
-      margin: 0 auto;
-    }
-    footer a { color: var(--green); }
-    footer .footer-links {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
+/* ── Section ── */
+.section { padding: clamp(56px,8vw,96px) 24px; max-width: 1100px; margin: 0 auto; }
+.section-header { text-align: center; margin-bottom: 48px; }
+.section-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 700; color: #fff; margin-bottom: 12px;
+  text-wrap: balance;
+}
+.section-header p { color: var(--muted); max-width: 520px; margin: 0 auto; }
 
-    /* ── Popup overlay ── */
-    #sas-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(10,22,40,.72);
-      z-index: 9999;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      backdrop-filter: blur(3px);
-    }
-    #sas-overlay.open { display: flex; }
-    #sas-modal {
-      background: #fff;
-      border-radius: 14px;
-      width: 100%;
-      max-width: 520px;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0,0,0,.45);
-      font-family: 'Inter', Arial, sans-serif;
-      color: #222;
-      animation: sasFadeIn .22s ease;
-    }
-    @keyframes sasFadeIn {
-      from { opacity: 0; transform: translateY(14px) scale(.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .sas-head {
-      background: #2d6b45;
-      border-radius: 14px 14px 0 0;
-      padding: 20px 22px 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-    .sas-badge-sm {
-      display: inline-block;
-      background: rgba(255,255,255,.18);
-      color: #fff;
-      border-radius: 20px;
-      padding: 2px 10px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 7px;
-    }
-    .sas-head h2 { margin: 0 0 4px; color: #fff; font-size: 18px; font-weight: 700; line-height: 1.3; }
-    .sas-head p { margin: 0; color: rgba(255,255,255,.68); font-size: 12.5px; }
-    #sas-close-idx {
-      background: rgba(255,255,255,.15); border: none; cursor: pointer; color: #fff;
-      font-size: 16px; line-height: 1; padding: 6px 8px; border-radius: 6px;
-      margin-left: 12px; flex-shrink: 0; transition: background .15s;
-    }
-    #sas-close-idx:hover { background: rgba(255,255,255,.28); }
-    .sas-body-idx { padding: 20px 22px 18px; }
-    .sas-section-label {
-      font-size: 11.5px; font-weight: 700; color: #2d6b45;
-      text-transform: uppercase; letter-spacing: .6px; margin: 0 0 9px;
-    }
-    .sas-services {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 7px;
-      margin-bottom: 18px;
-    }
-    .sas-svc-btn {
-      display: flex; align-items: center; gap: 7px;
-      padding: 9px 11px; border: 1.5px solid #c8e0d4;
-      border-radius: 8px; background: #f7fbf8; cursor: pointer;
-      font-size: 12.5px; font-family: 'Inter', Arial, sans-serif;
-      color: #2d6b45; font-weight: 600; text-align: left;
-      transition: background .13s, border-color .13s, color .13s; line-height: 1.3;
-    }
-    .sas-svc-btn:hover { background: #e8f5ee; border-color: #2d6b45; }
-    .sas-svc-btn.selected { background: #2d6b45; border-color: #2d6b45; color: #fff; }
-    .sas-svc-btn.selected .sas-svc-icon { stroke: #fff; }
-    .sas-svc-icon { flex-shrink: 0; width: 16px; height: 16px; stroke: #2d6b45; }
-    .sas-row-idx { display: flex; gap: 12px; }
-    .sas-row-idx .sas-field-idx { flex: 1; }
-    .sas-field-idx { margin-bottom: 12px; }
-    .sas-field-idx label {
-      display: block; font-size: 11px; font-weight: 700; color: #555;
-      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px;
-    }
-    .sas-field-idx label span { color: #c0392b; }
-    .sas-field-idx input, .sas-field-idx textarea {
-      width: 100%; box-sizing: border-box; border: 1.5px solid #c8e0d4;
-      border-radius: 7px; padding: 9px 12px; font-size: 14px;
-      font-family: 'Inter', Arial, sans-serif; color: #222; background: #f7fbf8;
-      transition: border-color .15s, box-shadow .15s; outline: none;
-    }
-    .sas-field-idx input:focus, .sas-field-idx textarea:focus {
-      border-color: #2d6b45;
-      box-shadow: 0 0 0 3px rgba(45,107,69,.12);
-      background: #fff;
-    }
-    .sas-field-idx textarea { resize: vertical; min-height: 76px; }
-    #sas-submit-idx {
-      width: 100%; background: #2d6b45; color: #fff; border: none;
-      border-radius: 8px; padding: 13px; font-size: 15px; font-weight: 700;
-      font-family: 'Inter', Arial, sans-serif; cursor: pointer;
-      transition: background .15s, transform .15s; margin-top: 4px; letter-spacing: .2px;
-    }
-    #sas-submit-idx:hover:not(:disabled) { background: #256039; transform: translateY(-1px); }
-    #sas-submit-idx:disabled { opacity: .6; cursor: not-allowed; }
-    #sas-status-idx { margin-top: 10px; font-size: 13px; text-align: center; min-height: 18px; }
-    #sas-status-idx.err { color: #c0392b; }
-    #sas-status-idx.ok  { color: #27ae60; }
-    #sas-success-idx {
-      display: none; padding: 40px 24px; text-align: center;
-    }
-    #sas-success-idx .sas-tick {
-      width: 56px; height: 56px; border-radius: 50%; background: #e8f5ee;
-      display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
-    }
-    #sas-success-idx h3 { color: #2d6b45; margin: 0 0 8px; font-size: 20px; }
-    #sas-success-idx p  { color: #555; margin: 0 0 22px; font-size: 14px; line-height: 1.6; }
-    #sas-done-btn-idx {
-      background: #2d6b45; color: #fff; border: none; border-radius: 8px;
-      padding: 11px 28px; font-size: 14px; font-weight: 700;
-      font-family: 'Inter', Arial, sans-serif; cursor: pointer; transition: background .15s;
-    }
-    #sas-done-btn-idx:hover { background: #256039; }
-    .sas-privacy-idx { font-size: 11px; color: #aaa; text-align: center; margin-top: 10px; }
-    @media (max-width: 480px) {
-      .sas-row-idx { flex-direction: column; gap: 0; }
-      .sas-services { grid-template-columns: 1fr; }
-    }
-  </style>
+/* ── Product tiles ── */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 20px;
+}
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px 28px;
+  display: flex; flex-direction: column;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  text-decoration: none; color: inherit;
+  position: relative; overflow: hidden;
+}
+.tile::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, var(--tile-glow, rgba(10,126,115,.1)) 0%, transparent 65%);
+  pointer-events: none;
+}
+.tile:hover {
+  border-color: var(--tile-accent, var(--teal));
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,.4);
+}
+.tile.teal { --tile-accent: var(--teal); --tile-glow: rgba(10,126,115,.12); }
+.tile.gold { --tile-accent: var(--gold); --tile-glow: rgba(200,146,15,.10); }
+.tile.violet { --tile-accent: #7c6fe0; --tile-glow: rgba(124,111,224,.10); }
+
+.tile-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  padding: 4px 11px; border-radius: 20px; margin-bottom: 20px; align-self: flex-start;
+}
+.tile.teal .tile-badge {
+  background: var(--teal-glow); border: 1px solid rgba(10,126,115,.4); color: #0fb8a8;
+}
+.tile.gold .tile-badge {
+  background: var(--gold-dim); border: 1px solid var(--gold-border); color: var(--gold);
+}
+.tile.violet .tile-badge {
+  background: rgba(124,111,224,.15); border: 1px solid rgba(124,111,224,.35); color: #a89df0;
+}
+.tile-icon {
+  width: 52px; height: 52px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px; flex-shrink: 0;
+}
+.tile.teal .tile-icon { background: rgba(10,126,115,.2); }
+.tile.gold .tile-icon { background: rgba(200,146,15,.15); }
+.tile.violet .tile-icon { background: rgba(124,111,224,.15); }
+.tile-icon svg { stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.tile.teal .tile-icon svg { stroke: #0fb8a8; }
+.tile.gold .tile-icon svg { stroke: var(--gold); }
+.tile.violet .tile-icon svg { stroke: #a89df0; }
+.tile h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem; font-weight: 700; color: #fff;
+  margin-bottom: 10px; line-height: 1.2;
+}
+.tile p { color: var(--muted); font-size: .9rem; line-height: 1.6; flex: 1; margin-bottom: 24px; }
+.tile-features {
+  list-style: none; display: flex; flex-direction: column; gap: 7px;
+  margin-bottom: 28px;
+}
+.tile-features li {
+  display: flex; align-items: center; gap: 9px;
+  font-size: .84rem; color: var(--muted);
+}
+.tile-features li::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+}
+.tile.teal .tile-features li::before { background: var(--teal); }
+.tile.gold .tile-features li::before { background: var(--gold); }
+.tile.violet .tile-features li::before { background: #7c6fe0; }
+.tile-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: .9rem; font-weight: 700;
+  padding: 11px 20px; border-radius: 8px; align-self: flex-start;
+  transition: opacity .15s;
+}
+.tile-link:hover { opacity: .85; }
+.tile.teal .tile-link { background: var(--teal); color: #fff; }
+.tile.gold .tile-link { background: var(--gold); color: #07101e; }
+.tile.violet .tile-link { background: #7c6fe0; color: #fff; }
+
+/* ── CTA banner ── */
+.cta-banner {
+  background: linear-gradient(135deg, var(--teal-dim) 0%, #063d38 100%);
+  border-top: 1px solid rgba(10,126,115,.3);
+  border-bottom: 1px solid rgba(10,126,115,.3);
+  padding: clamp(48px,7vw,80px) 24px;
+  text-align: center;
+}
+.cta-banner h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.5rem,3.5vw,2.2rem);
+  color: #fff; margin-bottom: 12px; font-weight: 700;
+}
+.cta-banner p { color: rgba(255,255,255,.72); max-width: 520px; margin: 0 auto 28px; font-size: .97rem; }
+.btn-white {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #fff; color: var(--bg); font-weight: 700; font-size: .95rem;
+  padding: 13px 28px; border-radius: 9px; border: none; cursor: pointer;
+  font-family: inherit; transition: opacity .15s;
+}
+.btn-white:hover { opacity: .9; }
+
+/* ── Footer ── */
+footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 32px 24px;
+  text-align: center;
+}
+.footer-links {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 6px; margin-bottom: 14px;
+}
+.footer-links a {
+  color: var(--muted); font-size: .83rem; padding: 4px 12px;
+  border-radius: 6px; transition: color .15s, background .15s;
+}
+.footer-links a:hover { color: var(--text); background: rgba(255,255,255,.05); }
+footer p { color: var(--subtle); font-size: .78rem; }
+footer p a { color: var(--muted); }
+footer p a:hover { color: var(--text); }
+
+/* ── Consultation popup ── */
+#sas-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9900;
+  background: rgba(0,0,0,.72); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 16px;
+}
+#sas-overlay.open { display: flex; }
+#sas-modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; width: 100%; max-width: 640px;
+  max-height: 92vh; overflow-y: auto;
+  box-shadow: 0 32px 96px rgba(0,0,0,.6);
+}
+.sas-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 24px 24px 0; gap: 12px;
+}
+.sas-head > div { flex: 1; }
+.sas-badge-sm {
+  display: inline-block;
+  background: var(--gold-dim); border: 1px solid var(--gold-border);
+  color: var(--gold); font-size: .7rem; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 8px;
+}
+.sas-head h2 { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.sas-head p { font-size: .84rem; color: var(--muted); }
+#sas-close-idx {
+  background: none; border: none; color: var(--muted);
+  font-size: 1.3rem; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: color .15s, background .15s;
+}
+#sas-close-idx:hover { color: var(--text); background: rgba(255,255,255,.06); }
+.sas-body-idx { padding: 20px 24px 24px; }
+.sas-section-label {
+  font-size: .78rem; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+.sas-services {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(145px,1fr));
+  gap: 8px; margin-bottom: 18px;
+}
+.sas-svc-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); border-radius: 8px; padding: 11px 12px;
+  font-family: inherit; font-size: .82rem; font-weight: 500; text-align: left;
+  cursor: pointer; transition: border-color .15s, color .15s, background .15s;
+}
+.sas-svc-btn:hover { border-color: var(--teal); color: var(--text); }
+.sas-svc-btn.selected {
+  border-color: var(--teal); color: #0fb8a8; background: var(--teal-glow);
+}
+.sas-svc-icon { stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sas-row-idx { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.sas-field-idx { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.sas-field-idx label {
+  font-size: .78rem; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted);
+}
+.sas-field-idx label span { color: #e05555; }
+.sas-field-idx input, .sas-field-idx textarea {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 7px; color: var(--text); font-family: inherit;
+  font-size: .9rem; padding: 9px 12px; transition: border-color .2s;
+}
+.sas-field-idx input:focus, .sas-field-idx textarea:focus {
+  outline: none; border-color: var(--teal);
+}
+.sas-field-idx input::placeholder, .sas-field-idx textarea::placeholder { color: var(--subtle); }
+.sas-field-idx textarea { resize: vertical; min-height: 80px; }
+.sas-body-idx > form > button[type=submit] {
+  width: 100%;
+  background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dim) 100%);
+  border: none; border-radius: 8px; color: #fff;
+  font-family: inherit; font-size: .95rem; font-weight: 700;
+  padding: 12px; cursor: pointer; transition: opacity .2s;
+}
+.sas-body-idx > form > button[type=submit]:hover { opacity: .88; }
+.sas-body-idx > form > button[type=submit]:disabled { opacity: .5; cursor: not-allowed; }
+#sas-status-idx { min-height: 18px; font-size: .83rem; margin-top: 8px; }
+#sas-status-idx.err { color: #f85149; }
+.sas-privacy-idx { font-size: .72rem; color: var(--subtle); margin-top: 10px; }
+#sas-success-idx { display: none; padding: 32px 24px; text-align: center; }
+.sas-tick {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(10,126,115,.15); border: 1px solid rgba(10,126,115,.3);
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+}
+#sas-success-idx h3 { font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+#sas-success-idx p { color: var(--muted); font-size: .9rem; margin-bottom: 20px; }
+#sas-done-btn-idx {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: inherit; font-size: .9rem; font-weight: 600;
+  padding: 10px 24px; border-radius: 8px; cursor: pointer;
+  transition: background .15s;
+}
+#sas-done-btn-idx:hover { background: rgba(255,255,255,.06); }
+@media (max-width: 520px) {
+  .sas-row-idx { grid-template-columns: 1fr; }
+}
+
+/* ── Lead popup ── */
+#lc-wrap {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 9000;
+  display: flex; justify-content: center; padding: 0 16px 16px;
+  pointer-events: none;
+  transform: translateY(120%);
+  transition: transform .45s cubic-bezier(.22,.61,.36,1);
+}
+#lc-wrap.open { transform: translateY(0); pointer-events: auto; }
+#lc-card {
+  width: 100%; max-width: 460px;
+  background: #0b1a2e;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.55);
+  padding: 24px 24px 20px;
+  position: relative; color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+#lc-close {
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none; color: var(--muted);
+  font-size: 1.3rem; line-height: 1; cursor: pointer;
+  padding: 4px 6px; border-radius: 6px;
+  transition: color .15s, background .15s;
+}
+#lc-close:hover { color: var(--text); background: rgba(255,255,255,.08); }
+.lc-badge {
+  display: inline-block;
+  background: var(--gold-dim); border: 1px solid var(--gold-border);
+  color: var(--gold); font-size: 11px; font-weight: 600;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 10px;
+}
+#lc-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem; font-weight: 700; line-height: 1.25;
+  color: #fff; margin-bottom: 6px;
+}
+#lc-card h3 span { color: var(--gold); }
+#lc-card .lc-sub { font-size: .83rem; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+#lc-row { display: flex; gap: 8px; margin-bottom: 8px; }
+#lc-row input {
+  flex: 1; min-width: 0;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: inherit; font-size: .88rem; padding: 9px 11px;
+  transition: border-color .2s;
+}
+#lc-row input:focus { outline: none; border-color: var(--gold); }
+#lc-row input::placeholder { color: var(--subtle); }
+#lc-consent { font-size: .72rem; color: var(--subtle); margin-bottom: 10px; line-height: 1.45; }
+#lc-consent a { color: var(--gold); text-decoration: none; }
+#lc-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--gold) 0%, #a87010 100%);
+  border: none; border-radius: 8px;
+  color: #07101e; font-family: inherit; font-size: .92rem; font-weight: 700;
+  padding: 11px; cursor: pointer; transition: opacity .2s;
+}
+#lc-btn:hover { opacity: .9; }
+#lc-btn:disabled { opacity: .5; cursor: not-allowed; }
+#lc-msg { margin-top: 8px; font-size: .82rem; text-align: center; min-height: 16px; }
+#lc-msg.ok { color: #3fb950; }
+#lc-msg.err { color: #f85149; }
+#lc-skip {
+  display: block; width: 100%; margin-top: 8px;
+  background: none; border: none; color: var(--subtle);
+  font-family: inherit; font-size: .78rem; cursor: pointer;
+  padding: 4px; text-align: center;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+#lc-skip:hover { color: var(--muted); }
+</style>
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "LocalBusiness",
+  "@type": "Organization",
   "name": "Serene Creations Ltd",
   "url": "https://www.serenecreations.org",
-  "telephone": "+256783691337",
-  "email": "info@serenecreations.org",
-  "description": "AI-powered architectural design, 3D renders, construction consulting, and free BOQ templates from Uganda's premier infrastructure solutions provider.",
+  "logo": "https://www.serenecreations.org/logo.png",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+256783691337",
+    "contactType": "customer service"
+  },
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "Mukono Business Center",
     "addressLocality": "Mukono",
-    "addressRegion": "Central Region",
     "addressCountry": "UG"
   },
-  "areaServed": {
-    "@type": "Country",
-    "name": "Uganda"
-  },
-  "serviceType": ["Architectural Design", "Construction Consulting", "3D Rendering", "BOQ Preparation", "Building Permits Guidance"],
+  "areaServed": { "@type": "Country", "name": "Uganda" },
+  "serviceType": ["Architectural Design","Construction Consulting","3D Rendering","BOQ Preparation","AI Studio"],
   "sameAs": ["https://www.serenecreations.org"]
 }
 </script>
@@ -571,7 +506,7 @@
 
 <!-- ── Top navigation ── -->
 <header class="topbar">
-  <a class="logo" href="https://www.serenecreations.org">
+  <a class="logo" href="/">
     <div class="logo-icon">
       <svg width="18" height="18" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     </div>
@@ -579,9 +514,8 @@
   </a>
   <nav>
     <ul class="topbar-links">
-      <li><a href="https://www.serenecreations.org">Main Site</a></li>
-      <li><a href="/ai-studio.html">AI Studio</a></li>
       <li><a href="/guides.html">Free Guides</a></li>
+      <li><a href="https://www.serenecreations.org/contact">Contact</a></li>
       <li><a href="#" class="cta" onclick="openPopup(); return false;">Free Consultation</a></li>
     </ul>
   </nav>
@@ -593,23 +527,23 @@
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
     </svg>
-    AI-Powered Architecture
+    Uganda's Premier Studio
   </div>
-  <h1>Uganda's Premier <em>AI Architecture Studio</em></h1>
-  <p>Professional house plans, photorealistic 3D renders, and expert consultations — powered by artificial intelligence and years of Ugandan engineering excellence.</p>
+  <h1>One Studio.<br><em>Every Vision.</em></h1>
+  <p class="hero-sub">Architecture, AI design, and client management — built for Uganda's builders, investors, and dreamers. Choose your workspace below.</p>
   <div class="hero-btns">
-    <a href="/ai-studio.html" class="btn-primary">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
-      </svg>
-      Open AI Architecture Studio
-    </a>
-    <button class="btn-ghost" onclick="openPopup()">
+    <button class="btn-primary" onclick="openPopup()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
       Free Consultation
     </button>
+    <a class="btn-ghost" href="/guides.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      Free Guides
+    </a>
   </div>
 </section>
 
@@ -618,102 +552,117 @@
   <div class="stat"><div class="num">500+</div><div class="label">Projects Delivered</div></div>
   <div class="stat"><div class="num">24h</div><div class="label">Response Time</div></div>
   <div class="stat"><div class="num">10+</div><div class="label">Years Experience</div></div>
-  <div class="stat"><div class="num">100%</div><div class="label">Uganda-Based Team</div></div>
+  <div class="stat"><div class="num">3</div><div class="label">Integrated Studios</div></div>
 </div>
 
-<!-- ── Feature cards ── -->
-<section class="section">
+<!-- ── Product tiles ── -->
+<div class="section">
   <div class="section-header">
-    <h2>Everything You Need, In One Studio</h2>
-    <p>From concept sketches to construction-ready documents — faster and more accurate than ever.</p>
+    <h2>Choose Your Studio</h2>
+    <p>Three integrated workspaces — architecture, client portal, and AI design — all under one roof.</p>
   </div>
-  <div class="cards">
 
-    <!-- AI Studio featured card -->
-    <div class="card featured">
-      <div class="card-left">
-        <div class="card-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
-          </svg>
-        </div>
-        <h3>AI Architecture Studio</h3>
-        <p>Upload a sketch, describe your dream home, and let our AI generate detailed house plans, 3D renders, and structural designs — tailored for Uganda's climate and building codes.</p>
-        <a href="/ai-studio.html">
-          Explore the Studio
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-      </div>
-      <div class="card-right">
-        <ul class="feature-list">
-          <li><span class="feature-dot"></span> AI-generated house plans from sketches</li>
-          <li><span class="feature-dot"></span> Photorealistic 3D renders in seconds</li>
-          <li><span class="feature-dot"></span> Before & after design comparisons</li>
-          <li><span class="feature-dot"></span> Uganda building code compliance</li>
-          <li><span class="feature-dot"></span> Instant BOQ cost estimation</li>
-          <li><span class="feature-dot"></span> Download CAD-ready files</li>
-        </ul>
-      </div>
-    </div>
+  <div class="tiles">
 
-    <!-- Free Consultation card -->
-    <div class="card" onclick="openPopup()" style="cursor:pointer">
-      <div class="card-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    <!-- Serene Hub -->
+    <a href="/serene-hub.html" class="tile teal">
+      <div class="tile-badge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Architecture
+      </div>
+      <div class="tile-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       </div>
-      <h3>Free Consultation</h3>
-      <p>Talk to our expert team about your project — house plans, land plots, BOQ estimates, structural design, or construction management. No commitment required.</p>
-      <button class="card-btn" onclick="openPopup()">
-        Book Your Free Session
+      <h3>Serene Hub</h3>
+      <p>Full-service architecture studio — house plans, 3D renders, structural design, BOQ costing, and expert consultations for Uganda's builders.</p>
+      <ul class="tile-features">
+        <li>House plans & 3D renders</li>
+        <li>BOQ & quantity surveying</li>
+        <li>Structural & MEP design</li>
+        <li>Free consultation booking</li>
+      </ul>
+      <span class="tile-link">
+        Open Serene Hub
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
-    </div>
+      </span>
+    </a>
 
-    <!-- Services card -->
-    <div class="card">
-      <div class="card-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    <!-- Serene Portal -->
+    <a href="/serene-portal.html" class="tile gold">
+      <div class="tile-badge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Client Portal
+      </div>
+      <div class="tile-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
         </svg>
       </div>
-      <h3>All Services</h3>
-      <p>Structural design, quantity surveying, construction management, MEP engineering, civil works, land acquisition, property valuation, and more.</p>
-      <a href="https://www.serenecreations.org/services">
-        View All Services
+      <h3>Serene Portal</h3>
+      <p>Your secure client dashboard — track project milestones, download drawings and reports, message the team, and manage your engagement with us.</p>
+      <ul class="tile-features">
+        <li>Live project tracking</li>
+        <li>Document & drawing downloads</li>
+        <li>Direct team messaging</li>
+        <li>Invoice & payment history</li>
+      </ul>
+      <span class="tile-link">
+        Open Client Portal
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </a>
-    </div>
+      </span>
+    </a>
+
+    <!-- AI Studio -->
+    <a href="/ai-studio.html" class="tile violet">
+      <div class="tile-badge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        AI Powered
+      </div>
+      <div class="tile-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+        </svg>
+      </div>
+      <h3>AI Studio</h3>
+      <p>Upload a sketch or describe your dream home — our AI generates detailed house plans, photorealistic 3D renders, and cost estimates instantly.</p>
+      <ul class="tile-features">
+        <li>AI-generated house plans</li>
+        <li>Photorealistic 3D renders</li>
+        <li>Instant BOQ estimation</li>
+        <li>Uganda building code compliance</li>
+      </ul>
+      <span class="tile-link">
+        Open AI Studio
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
+    </a>
 
   </div>
-</section>
+</div>
 
 <!-- ── CTA Banner ── -->
 <section class="cta-banner">
-  <div class="cta-inner">
-    <h2>Start Your Dream Project Today</h2>
-    <p>Get expert advice, accurate quotes, and beautiful designs — all in one free consultation with our certified engineers.</p>
-    <button class="btn-white" onclick="openPopup()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      </svg>
-      Request Free Consultation
-    </button>
-  </div>
+  <h2>Not Sure Where to Start?</h2>
+  <p>Talk to our certified engineers and architects — free, no commitment. We'll point you in the right direction for your project.</p>
+  <button class="btn-white" onclick="openPopup()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    Book Free Consultation
+  </button>
 </section>
 
 <!-- ── Footer ── -->
-<section style="background:#161b22;border-top:1px solid #30363d;border-bottom:1px solid #30363d;padding:48px 24px;text-align:center;">
-  <p style="font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:#8b949e;margin-bottom:10px;font-weight:600;">Free Resources</p>
-  <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.4rem,3vw,2rem);color:#fff;margin-bottom:12px;">Uganda Construction Guides</h2>
-  <p style="color:#8b949e;max-width:480px;margin:0 auto 24px;font-size:.95rem;">BOQ templates, permit checklists, cost benchmarks, land-buying due-diligence guides — all free to download.</p>
-  <a href="/guides.html" style="display:inline-block;background:linear-gradient(135deg,#c9a84c 0%,#b8912a 100%);color:#0d1117;font-weight:700;font-size:.95rem;padding:12px 28px;border-radius:8px;text-decoration:none;">Browse Free Guides →</a>
-</section>
-
 <footer>
   <div class="footer-links">
     <a href="https://www.serenecreations.org">serenecreations.org</a>
+    <a href="/serene-hub.html">Serene Hub</a>
+    <a href="/serene-portal.html">Client Portal</a>
     <a href="/ai-studio.html">AI Studio</a>
     <a href="/guides.html">Free Guides</a>
     <a href="#" onclick="openPopup(); return false;">Free Consultation</a>
@@ -735,38 +684,38 @@
     </div>
     <div class="sas-body-idx" id="sas-form-panel-idx">
       <form id="sas-form-idx" onsubmit="sasSubmitIdx(event)" novalidate>
-        <p class="sas-section-label">Select a Service <span style="color:#c0392b">*</span></p>
+        <p class="sas-section-label">Select a Service <span style="color:#e05555">*</span></p>
         <div class="sas-services" id="sas-services-idx">
           <button type="button" class="sas-svc-btn" data-service="House Plan / 3D Render" onclick="sasSelectIdx(this)">
-            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <svg class="sas-svc-icon" width="18" height="18" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             House Plan / 3D Render
           </button>
           <button type="button" class="sas-svc-btn" data-service="Land / Plot" onclick="sasSelectIdx(this)">
-            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+            <svg class="sas-svc-icon" width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
             Land / Plot
           </button>
           <button type="button" class="sas-svc-btn" data-service="BOQ & Costing" onclick="sasSelectIdx(this)">
-            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+            <svg class="sas-svc-icon" width="18" height="18" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
             BOQ &amp; Costing
           </button>
           <button type="button" class="sas-svc-btn" data-service="Quantity Surveying" onclick="sasSelectIdx(this)">
-            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="20" x2="22" y2="20"/><rect x="4" y="14" width="4" height="6"/><rect x="10" y="10" width="4" height="10"/><rect x="16" y="6" width="4" height="14"/></svg>
+            <svg class="sas-svc-icon" width="18" height="18" viewBox="0 0 24 24"><line x1="2" y1="20" x2="22" y2="20"/><rect x="4" y="14" width="4" height="6"/><rect x="10" y="10" width="4" height="10"/><rect x="16" y="6" width="4" height="14"/></svg>
             Quantity Surveying
           </button>
           <button type="button" class="sas-svc-btn" data-service="Structural Design" onclick="sasSelectIdx(this)">
-            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="2" x2="6" y2="22"/><line x1="18" y1="2" x2="18" y2="22"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="6" x2="18" y2="6"/><line x1="6" y1="18" x2="18" y2="18"/></svg>
+            <svg class="sas-svc-icon" width="18" height="18" viewBox="0 0 24 24"><line x1="6" y1="2" x2="6" y2="22"/><line x1="18" y1="2" x2="18" y2="22"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="6" x2="18" y2="6"/><line x1="6" y1="18" x2="18" y2="18"/></svg>
             Structural Design
           </button>
           <button type="button" class="sas-svc-btn" data-service="Construction" onclick="sasSelectIdx(this)">
-            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M4 20V10l8-8 8 8v10"/><path d="M10 20v-6h4v6"/></svg>
+            <svg class="sas-svc-icon" width="18" height="18" viewBox="0 0 24 24"><path d="M2 20h20M4 20V10l8-8 8 8v10"/><path d="M10 20v-6h4v6"/></svg>
             Construction
           </button>
           <button type="button" class="sas-svc-btn" data-service="Buy a Design" onclick="sasSelectIdx(this)">
-            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <svg class="sas-svc-icon" width="18" height="18" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
             Buy a Design
           </button>
           <button type="button" class="sas-svc-btn" data-service="Book Site Visit" onclick="sasSelectIdx(this)">
-            <svg class="sas-svc-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <svg class="sas-svc-icon" width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Book Site Visit
           </button>
         </div>
@@ -790,12 +739,12 @@
         </div>
         <button type="submit" id="sas-submit-idx">Request Free Consultation &#8594;</button>
         <div id="sas-status-idx"></div>
-        <p class="sas-privacy-idx">&#128274; No spam &mdash; your details are used only to respond to your enquiry.</p>
+        <p class="sas-privacy-idx">&#128274; No spam — your details are used only to respond to your enquiry.</p>
       </form>
     </div>
     <div id="sas-success-idx">
       <div class="sas-tick">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2d6b45" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0fb8a8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <h3>Consultation Request Sent!</h3>
       <p>Thank you — we've received your request and will respond within <strong>24 hours</strong>.<br>Check your inbox for a confirmation from <em>info@serenecreations.org</em>.</p>
@@ -895,85 +844,7 @@
 })();
 </script>
 
-<!-- ── Lead-capture slide-in popup ───────────────────────────────────── -->
-<style>
-#lc-wrap{
-  position:fixed;bottom:0;left:0;right:0;z-index:9000;
-  display:flex;justify-content:center;padding:0 16px 16px;
-  pointer-events:none;
-  transform:translateY(120%);
-  transition:transform .45s cubic-bezier(.22,.61,.36,1);
-}
-#lc-wrap.open{transform:translateY(0);pointer-events:auto;}
-#lc-card{
-  width:100%;max-width:460px;
-  background:#0f1729;
-  border:1px solid #2a4a35;
-  border-radius:16px;
-  box-shadow:0 24px 64px rgba(0,0,0,.55);
-  padding:24px 24px 20px;
-  position:relative;
-  color:#e8f0e9;
-  font-family:'Inter',system-ui,sans-serif;
-}
-#lc-close{
-  position:absolute;top:12px;right:14px;
-  background:none;border:none;
-  color:#9ab0a0;font-size:1.3rem;line-height:1;
-  cursor:pointer;padding:4px 6px;border-radius:6px;
-  transition:color .15s,background .15s;
-}
-#lc-close:hover{color:#e8f0e9;background:rgba(255,255,255,.08);}
-.lc-badge{
-  display:inline-block;
-  background:rgba(200,146,15,.15);
-  border:1px solid rgba(200,146,15,.4);
-  color:#c8920f;
-  font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
-  padding:3px 10px;border-radius:20px;margin-bottom:10px;
-}
-#lc-card h3{
-  font-family:'Playfair Display',serif;
-  font-size:1.2rem;font-weight:700;
-  line-height:1.25;color:#fff;margin-bottom:6px;
-}
-#lc-card h3 span{color:#c8920f;}
-#lc-card .lc-sub{font-size:.83rem;color:#9ab0a0;margin-bottom:14px;line-height:1.5;}
-#lc-row{display:flex;gap:8px;margin-bottom:8px;}
-#lc-row input{
-  flex:1;min-width:0;
-  background:#162a1e;border:1px solid #2a4a35;
-  border-radius:8px;color:#e8f0e9;
-  font-family:inherit;font-size:.88rem;padding:9px 11px;
-  transition:border-color .2s;
-}
-#lc-row input:focus{outline:none;border-color:#c8920f;}
-#lc-row input::placeholder{color:#4a6a55;}
-#lc-consent{font-size:.72rem;color:#6b8a78;margin-bottom:10px;line-height:1.45;}
-#lc-consent a{color:#c8920f;text-decoration:none;}
-#lc-btn{
-  width:100%;
-  background:linear-gradient(135deg,#c8920f 0%,#a87010 100%);
-  border:none;border-radius:8px;
-  color:#0f1729;font-family:inherit;font-size:.92rem;font-weight:700;
-  padding:11px;cursor:pointer;
-  transition:opacity .2s;
-}
-#lc-btn:hover{opacity:.9;}
-#lc-btn:disabled{opacity:.5;cursor:not-allowed;}
-#lc-msg{margin-top:8px;font-size:.82rem;text-align:center;min-height:16px;}
-#lc-msg.ok{color:#3fb950;}
-#lc-msg.err{color:#f85149;}
-#lc-skip{
-  display:block;width:100%;margin-top:8px;
-  background:none;border:none;
-  color:#6b8a78;font-family:inherit;font-size:.78rem;
-  cursor:pointer;padding:4px;text-align:center;
-  text-decoration:underline;text-underline-offset:2px;
-}
-#lc-skip:hover{color:#9ab0a0;}
-</style>
-
+<!-- ── Lead-capture slide-in popup ── -->
 <div id="lc-wrap">
   <div id="lc-card" role="dialog" aria-labelledby="lc-heading" aria-modal="false">
     <button id="lc-close" aria-label="Close">&times;</button>
@@ -987,7 +858,7 @@
       </div>
       <p id="lc-consent">
         By submitting you agree to receive emails from Serene Creations Ltd. Unsubscribe anytime.
-        <a href="/index.html#privacy">Privacy&nbsp;policy</a>.
+        <a href="/#privacy">Privacy&nbsp;policy</a>.
       </p>
       <button type="submit" id="lc-btn">📥 Send me the free BOQ</button>
       <div id="lc-msg"></div>
@@ -999,23 +870,18 @@
 <script>
 (function () {
   'use strict';
-  var SUBSCRIBE_URL = 'https://us-central1-serene-arch-studio.cloudfunctions.net/subscribeToCampaign';
-  var WELCOME_HOOK  = 'https://cloud.activepieces.com/api/v1/webhooks/uusAJlkobrnDCeGwdQITw';
-  var DISMISS_KEY   = 'lc_dismissed';   // timestamp of last dismissal
-  var SUBSCRIBED_KEY = 'lc_subscribed'; // set when user subscribes
-  var DISMISS_TTL   = 7 * 24 * 60 * 60 * 1000; // 7 days
+  var SUBSCRIBE_URL  = 'https://us-central1-serene-arch-studio.cloudfunctions.net/subscribeToCampaign';
+  var WELCOME_HOOK   = 'https://cloud.activepieces.com/api/v1/webhooks/uusAJlkobrnDCeGwdQITw';
+  var DISMISS_KEY    = 'lc_dismissed';
+  var SUBSCRIBED_KEY = 'lc_subscribed';
+  var DISMISS_TTL    = 7 * 24 * 60 * 60 * 1000;
 
   function ls(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
   function lsSet(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
 
-  // Don't show on guide pages (they have their own inline gates)
   var path = window.location.pathname;
   if (/guide-/.test(path)) return;
-
-  // Don't show if already subscribed
   if (ls(SUBSCRIBED_KEY)) return;
-
-  // Don't show if dismissed within TTL
   var dismissed = ls(DISMISS_KEY);
   if (dismissed && (Date.now() - parseInt(dismissed, 10)) < DISMISS_TTL) return;
 
@@ -1026,7 +892,6 @@
     if (shown) return;
     shown = true;
     wrap.classList.add('open');
-    // re-check subscribed state when popup opens (e.g. if another tab subscribed)
     if (ls(SUBSCRIBED_KEY)) { wrap.classList.remove('open'); }
   }
 
@@ -1035,7 +900,6 @@
     lsSet(DISMISS_KEY, Date.now().toString());
   }
 
-  // Trigger: 12s delay OR scroll past 45% page height
   var timer = setTimeout(show, 12000);
 
   function onScroll() {
@@ -1049,21 +913,11 @@
   }
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  // Close button
   document.getElementById('lc-close').addEventListener('click', dismiss);
   document.getElementById('lc-skip').addEventListener('click', dismiss);
+  wrap.addEventListener('click', function (e) { if (e.target === wrap) dismiss(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && shown) dismiss(); });
 
-  // Click outside card
-  wrap.addEventListener('click', function (e) {
-    if (e.target === wrap) dismiss();
-  });
-
-  // Escape key
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && shown) dismiss();
-  });
-
-  // Form submit
   document.getElementById('lc-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var name  = document.getElementById('lc-name').value.trim();
@@ -1071,7 +925,7 @@
     var btn   = document.getElementById('lc-btn');
     var msg   = document.getElementById('lc-msg');
 
-    if (!name)  { msg.textContent = 'Please enter your name.';          msg.className = 'err'; return; }
+    if (!name)  { msg.textContent = 'Please enter your name.';           msg.className = 'err'; return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                   msg.textContent = 'Please enter a valid email address.'; msg.className = 'err'; return; }
 
@@ -1083,10 +937,10 @@
     var wcPayload = {
       email: email,
       name:  name,
-      source: 'popup-index',
+      source: 'popup-portal',
       campaignId: 'boq-follow-up',
       consentGiven: true,
-      consentText: 'Subscribed via main-site slide-in popup (BOQ template offer)',
+      consentText: 'Subscribed via mother portal slide-in popup (BOQ template offer)',
     };
 
     // Fire Cloud Function in background (non-blocking — requires Blaze plan)

@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Serene Portal — Client Dashboard | Serene Creations Ltd</title>
+<meta name="description" content="Serene Creations client portal — track your project, download documents, and message your architect. Secure login for existing clients.">
+<link rel="canonical" href="https://www.serenecreations.org/serene-portal.html">
+<meta property="og:title" content="Serene Portal — Client Dashboard">
+<meta property="og:description" content="Secure client portal for Serene Creations projects. Track progress, download drawings, and message your team.">
+<meta property="og:url" content="https://www.serenecreations.org/serene-portal.html">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#07101e">
+<meta name="robots" content="noindex,nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap">
+
+<!-- Firebase v8 SDK -->
+<script src="https://unpkg.com/firebase@8.10.1/firebase-app.js"></script>
+<script src="https://unpkg.com/firebase@8.10.1/firebase-auth.js"></script>
+<script src="https://unpkg.com/firebase@8.10.1/firebase-firestore.js"></script>
+
+<style>
+/* ── Design tokens ── */
+:root {
+  --bg:        #07101e;
+  --surface:   #0e1c30;
+  --surface2:  #142338;
+  --border:    #1e3550;
+  --teal:      #0A7E73;
+  --teal-dim:  #085f57;
+  --teal-glow: rgba(10,126,115,.16);
+  --gold:      #C8920F;
+  --gold-dim:  rgba(200,146,15,.13);
+  --gold-border: rgba(200,146,15,.32);
+  --text:      #e2eaf4;
+  --muted:     #7a9ab8;
+  --subtle:    #4a6a85;
+  --danger:    #e05252;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+img { max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+
+/* ── Topbar ── */
+.topbar {
+  position: sticky; top: 0; z-index: 800;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 58px;
+  background: rgba(7,16,30,.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .95rem; font-weight: 700; letter-spacing: -.01em;
+  color: var(--text);
+}
+.logo-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dim) 100%);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-icon svg { fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.topbar-right {
+  display: flex; align-items: center; gap: 10px;
+}
+.portal-link {
+  font-size: .85rem; color: var(--muted); padding: 5px 10px;
+  border-radius: 6px; transition: color .15s, background .15s;
+}
+.portal-link:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.topbar-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .8rem; font-weight: 600; color: var(--teal);
+  background: var(--teal-glow); border: 1px solid rgba(10,126,115,.3);
+  padding: 4px 10px; border-radius: 20px;
+}
+.topbar-badge::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--teal); flex-shrink: 0;
+}
+
+/* ── Auth screen ── */
+#authScreen {
+  min-height: calc(100vh - 58px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 16px;
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 0%, rgba(10,126,115,.1) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(200,146,15,.06) 0%, transparent 60%);
+}
+.auth-card {
+  width: 100%; max-width: 420px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden;
+}
+.auth-header {
+  padding: 32px 32px 20px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.auth-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 700;
+  color: var(--text); margin-bottom: 6px;
+}
+.auth-header p { font-size: .9rem; color: var(--muted); }
+.auth-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+}
+.auth-tab {
+  flex: 1; padding: 14px;
+  font-size: .9rem; font-weight: 600;
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; transition: color .15s, background .15s;
+  border-bottom: 2px solid transparent;
+}
+.auth-tab.active {
+  color: var(--teal); border-bottom-color: var(--teal);
+  background: rgba(10,126,115,.05);
+}
+.auth-body { padding: 28px 32px 32px; }
+.auth-panel { display: none; }
+.auth-panel.active { display: block; }
+
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block; font-size: .82rem; font-weight: 600;
+  color: var(--muted); margin-bottom: 6px; letter-spacing: .02em; text-transform: uppercase;
+}
+.form-input {
+  width: 100%; padding: 11px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-size: .95rem;
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.form-input::placeholder { color: var(--subtle); }
+.form-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-glow);
+}
+.form-input.error { border-color: var(--danger); }
+.form-hint { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+.form-error { font-size: .82rem; color: var(--danger); margin-top: 5px; display: none; }
+.form-error.visible { display: block; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 20px; border-radius: 10px; font-size: .93rem; font-weight: 600;
+  border: none; transition: all .15s; cursor: pointer; }
+.btn-primary { background: var(--teal); color: #fff; }
+.btn-primary:hover { background: #0d9e91; }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+.btn-ghost { background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: rgba(255,255,255,.1); }
+.btn-full { width: 100%; }
+.btn-danger { background: rgba(224,82,82,.12); color: var(--danger); border: 1px solid rgba(224,82,82,.25); }
+.btn-danger:hover { background: rgba(224,82,82,.2); }
+
+.auth-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 18px 0; color: var(--subtle); font-size: .8rem;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 11px; border-radius: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-size: .93rem; font-weight: 500; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.google-btn:hover { background: rgba(255,255,255,.05); border-color: var(--muted); }
+.google-btn svg { flex-shrink: 0; }
+
+.auth-footer { text-align: center; margin-top: 20px; font-size: .85rem; color: var(--muted); }
+.auth-footer a { color: var(--teal); font-weight: 500; }
+.auth-footer a:hover { text-decoration: underline; }
+
+/* ── Spinner ── */
+.spin {
+  width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.25);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Dashboard screen ── */
+#dashScreen { display: none; }
+.dash-hero {
+  padding: 40px 24px 32px;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(10,126,115,.1) 0%, transparent 65%);
+  border-bottom: 1px solid var(--border);
+}
+.dash-hero-inner { max-width: 1100px; margin: 0 auto; }
+.welcome-line {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.welcome-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dim) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.welcome-text h2 { font-size: 1.35rem; font-weight: 700; }
+.welcome-text h2 span { color: var(--teal); }
+.welcome-text p { font-size: .88rem; color: var(--muted); margin-top: 2px; }
+.dash-stats {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px;
+}
+.stat-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: .85rem; color: var(--muted);
+}
+.stat-chip strong { color: var(--text); font-weight: 600; }
+.stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.stat-dot.teal { background: var(--teal); }
+.stat-dot.gold { background: var(--gold); }
+.stat-dot.grey { background: var(--subtle); }
+
+/* ── Dashboard tabs ── */
+.dash-tabs {
+  display: flex; gap: 0; padding: 0 24px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.dash-tab {
+  padding: 14px 20px; font-size: .9rem; font-weight: 600;
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.dash-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+.dash-tab:hover:not(.active) { color: var(--text); }
+
+/* ── Dashboard content ── */
+.dash-content { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+.dash-panel { display: none; }
+.dash-panel.active { display: block; }
+
+/* Section heading */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+}
+.section-head h3 { font-size: 1.05rem; font-weight: 700; }
+.section-head p { font-size: .85rem; color: var(--muted); margin-top: 3px; }
+
+/* ── Project cards ── */
+.project-grid { display: grid; gap: 16px; }
+@media (min-width: 640px) { .project-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 960px) { .project-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.project-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 22px 22px 18px; position: relative;
+  transition: border-color .15s, transform .15s;
+}
+.project-card:hover { border-color: rgba(10,126,115,.4); transform: translateY(-2px); }
+.project-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  margin-bottom: 14px;
+}
+.project-type-badge {
+  font-size: .73rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px;
+}
+.badge-teal { background: var(--teal-glow); color: var(--teal); border: 1px solid rgba(10,126,115,.3); }
+.badge-gold { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-border); }
+.badge-grey { background: rgba(74,106,133,.15); color: var(--muted); border: 1px solid var(--border); }
+.badge-violet { background: rgba(130,80,200,.12); color: #a880e8; border: 1px solid rgba(130,80,200,.25); }
+
+.project-card h4 { font-size: .97rem; font-weight: 700; margin-bottom: 4px; }
+.project-card p { font-size: .84rem; color: var(--muted); line-height: 1.5; }
+.project-progress { margin-top: 16px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: .78rem; color: var(--muted); margin-bottom: 6px;
+}
+.progress-label strong { color: var(--text); }
+.progress-bar {
+  height: 5px; border-radius: 3px; background: var(--border); overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--teal), #12c3b3);
+  transition: width 1s ease;
+}
+.project-meta {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+  font-size: .79rem; color: var(--muted);
+}
+.project-meta span { display: flex; align-items: center; gap: 5px; }
+
+/* Status badge */
+.status-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+}
+.status-active { background: var(--teal); box-shadow: 0 0 6px rgba(10,126,115,.6); }
+.status-pending { background: var(--gold); }
+.status-complete { background: var(--subtle); }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center; padding: 60px 20px;
+  color: var(--muted);
+}
+.empty-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.empty-state h4 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.empty-state p { font-size: .88rem; max-width: 300px; margin: 0 auto 20px; }
+
+/* ── Documents ── */
+.doc-list { display: grid; gap: 10px; }
+.doc-item {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+  transition: border-color .15s;
+}
+.doc-item:hover { border-color: rgba(10,126,115,.35); }
+.doc-icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.doc-icon-pdf { background: rgba(220,60,60,.12); }
+.doc-icon-dwg { background: var(--teal-glow); }
+.doc-icon-xls { background: rgba(30,180,80,.1); }
+.doc-info { flex: 1; min-width: 0; }
+.doc-info h4 { font-size: .9rem; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-info p { font-size: .78rem; color: var(--muted); }
+.doc-size { font-size: .75rem; color: var(--subtle); flex-shrink: 0; }
+.doc-dl {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--teal); transition: background .15s, border-color .15s; flex-shrink: 0;
+  cursor: pointer; text-decoration: none;
+}
+.doc-dl:hover { background: var(--teal-glow); border-color: rgba(10,126,115,.4); }
+
+/* ── Support form ── */
+.support-grid {
+  display: grid; gap: 20px;
+}
+@media (min-width: 700px) { .support-grid { grid-template-columns: 1fr 1fr; } }
+
+.support-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px;
+}
+.support-card h4 {
+  font-size: .95rem; font-weight: 700; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.support-card p { font-size: .85rem; color: var(--muted); margin-bottom: 18px; }
+.contact-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .87rem; padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.contact-item:last-child { border-bottom: none; }
+.contact-item a { color: var(--teal); }
+.contact-item a:hover { text-decoration: underline; }
+.textarea {
+  width: 100%; padding: 11px 14px; min-height: 110px; resize: vertical;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-size: .93rem;
+  font-family: inherit; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.textarea::placeholder { color: var(--subtle); }
+.textarea:focus {
+  border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-glow);
+}
+.select-input {
+  width: 100%; padding: 11px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-size: .93rem;
+  font-family: inherit; outline: none; cursor: pointer;
+  transition: border-color .15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a9ab8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+.select-input:focus { border-color: var(--teal); }
+.select-input option { background: #0e1c30; }
+
+/* Inline success */
+.form-success {
+  display: none; padding: 12px 16px; border-radius: 10px;
+  background: rgba(10,126,115,.1); border: 1px solid rgba(10,126,115,.3);
+  color: var(--teal); font-size: .88rem; font-weight: 500; margin-top: 12px;
+}
+.form-success.visible { display: block; }
+
+/* ── Settings panel ── */
+.settings-list { display: grid; gap: 10px; }
+.settings-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; gap: 16px;
+}
+.settings-info h4 { font-size: .9rem; font-weight: 600; }
+.settings-info p { font-size: .82rem; color: var(--muted); margin-top: 2px; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  z-index: 9999; pointer-events: none;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 20px;
+  font-size: .88rem; font-weight: 500; color: var(--text);
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  transition: transform .3s ease, opacity .3s;
+  opacity: 0;
+  white-space: nowrap;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+#toast.toast-ok { border-color: rgba(10,126,115,.5); color: var(--teal); }
+#toast.toast-err { border-color: rgba(224,82,82,.4); color: var(--danger); }
+
+/* ── Mobile responsive ── */
+@media (max-width: 500px) {
+  .auth-body { padding: 22px 20px 24px; }
+  .auth-header { padding: 24px 20px 16px; }
+  .dash-content { padding: 24px 16px; }
+  .dash-hero { padding: 28px 16px 22px; }
+}
+
+/* ── Forgot password modal ── */
+.overlay {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 28px;
+  width: 100%; max-width: 380px;
+  transform: scale(.95); transition: transform .2s;
+}
+.overlay.open .modal-box { transform: scale(1); }
+.modal-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.modal-box p { font-size: .85rem; color: var(--muted); margin-bottom: 18px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+.modal-actions .btn { flex: 1; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+  TOPBAR
+══════════════════════════════════════════ -->
+<header class="topbar">
+  <a href="/" class="logo" aria-label="Back to Serene Creations portal">
+    <div class="logo-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24">
+        <polyline points="3 9 12 3 21 9"/>
+        <path d="M9 22V12h6v10"/>
+        <rect x="3" y="9" width="18" height="13" rx="1"/>
+      </svg>
+    </div>
+    <span>Serene Portal</span>
+  </a>
+  <div class="topbar-right">
+    <div id="authStatus" style="display:none">
+      <div class="topbar-badge" id="userBadge"></div>
+    </div>
+    <a href="/" class="portal-link" aria-label="Back to main portal">← Portal</a>
+    <button class="btn btn-ghost" id="signOutBtn" style="display:none;font-size:.83rem;padding:6px 12px" onclick="signOut()">Sign out</button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════
+  AUTH SCREEN (shown when not signed in)
+══════════════════════════════════════════ -->
+<section id="authScreen">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>Client Portal</h1>
+      <p>Sign in to track your project, download documents, and message your architect.</p>
+    </div>
+
+    <div class="auth-tabs" role="tablist">
+      <button class="auth-tab active" id="tabSignIn" role="tab" aria-selected="true"
+        onclick="switchTab('signin')">Sign In</button>
+      <button class="auth-tab" id="tabSignUp" role="tab" aria-selected="false"
+        onclick="switchTab('signup')">Create Account</button>
+    </div>
+
+    <div class="auth-body">
+
+      <!-- Sign In Panel -->
+      <div class="auth-panel active" id="panelSignIn">
+        <div class="form-group">
+          <label class="form-label" for="siEmail">Email address</label>
+          <input class="form-input" id="siEmail" type="email" autocomplete="email"
+            placeholder="you@example.com" oninput="clearErr('siErr')">
+          <div class="form-error" id="siErr"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="siPass">Password</label>
+          <input class="form-input" id="siPass" type="password" autocomplete="current-password"
+            placeholder="••••••••" oninput="clearErr('siErr')" onkeydown="if(event.key==='Enter')doSignIn()">
+          <div class="form-hint">
+            <a href="#" style="color:var(--teal);font-size:.8rem" onclick="openForgot();return false">Forgot password?</a>
+          </div>
+        </div>
+        <div id="siErrGlobal" class="form-error"></div>
+        <button class="btn btn-primary btn-full" id="siBtn" onclick="doSignIn()">
+          Sign In to Portal
+        </button>
+
+        <div class="auth-divider">or</div>
+
+        <button class="google-btn" onclick="doGoogleSignIn()">
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="auth-footer">
+          New client? <a href="#" onclick="switchTab('signup');return false">Create an account →</a>
+        </div>
+      </div>
+
+      <!-- Sign Up Panel -->
+      <div class="auth-panel" id="panelSignUp">
+        <div class="form-group">
+          <label class="form-label" for="suName">Full name</label>
+          <input class="form-input" id="suName" type="text" autocomplete="name"
+            placeholder="Your name" oninput="clearErr('suErr')">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="suEmail">Email address</label>
+          <input class="form-input" id="suEmail" type="email" autocomplete="email"
+            placeholder="you@example.com" oninput="clearErr('suErr')">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="suPass">Password</label>
+          <input class="form-input" id="suPass" type="password" autocomplete="new-password"
+            placeholder="Min. 8 characters" oninput="clearErr('suErr')" onkeydown="if(event.key==='Enter')doSignUp()">
+          <div class="form-hint">Use a strong, unique password for your account.</div>
+        </div>
+        <div class="form-error" id="suErr"></div>
+        <button class="btn btn-primary btn-full" id="suBtn" onclick="doSignUp()">
+          Create Account
+        </button>
+
+        <div class="auth-divider">or</div>
+
+        <button class="google-btn" onclick="doGoogleSignIn()">
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="auth-footer">
+          Already have an account? <a href="#" onclick="switchTab('signin');return false">Sign in →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+  DASHBOARD SCREEN (shown when signed in)
+══════════════════════════════════════════ -->
+<section id="dashScreen">
+
+  <!-- Hero strip -->
+  <div class="dash-hero">
+    <div class="dash-hero-inner">
+      <div class="welcome-line">
+        <div class="welcome-avatar" id="avatarInitial">?</div>
+        <div class="welcome-text">
+          <h2>Welcome back, <span id="welcomeName">Client</span></h2>
+          <p id="welcomeSub">Your projects and documents are ready below.</p>
+        </div>
+      </div>
+      <div class="dash-stats" id="dashStatsBar">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <nav class="dash-tabs" role="tablist">
+    <button class="dash-tab active" id="dtProjects" role="tab" onclick="dashTab('projects')">Projects</button>
+    <button class="dash-tab" id="dtDocuments" role="tab" onclick="dashTab('documents')">Documents</button>
+    <button class="dash-tab" id="dtSupport" role="tab" onclick="dashTab('support')">Support</button>
+    <button class="dash-tab" id="dtSettings" role="tab" onclick="dashTab('settings')">Account</button>
+  </nav>
+
+  <!-- Panel: Projects -->
+  <div class="dash-content">
+    <div class="dash-panel active" id="dpProjects">
+      <div class="section-head">
+        <div>
+          <h3>Your Projects</h3>
+          <p>Live status and milestones for each engagement.</p>
+        </div>
+      </div>
+      <div class="project-grid" id="projectGrid">
+        <!-- filled by JS / shows empty state if none -->
+      </div>
+    </div>
+
+    <!-- Panel: Documents -->
+    <div class="dash-panel" id="dpDocuments">
+      <div class="section-head">
+        <div>
+          <h3>Documents & Drawings</h3>
+          <p>Latest deliverables from your architect. More added as the project progresses.</p>
+        </div>
+      </div>
+      <div class="doc-list" id="docList">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Panel: Support -->
+    <div class="dash-panel" id="dpSupport">
+      <div class="support-grid">
+
+        <!-- Message form -->
+        <div class="support-card">
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal)">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Message Your Architect
+          </h4>
+          <p>We respond to all messages within 24 hours (Mon–Fri).</p>
+
+          <div class="form-group">
+            <label class="form-label" for="msgSubject">Subject</label>
+            <div class="form-group">
+              <select class="select-input" id="msgSubject">
+                <option value="">Select a topic…</option>
+                <option>Project update request</option>
+                <option>Drawing revision</option>
+                <option>BOQ / Costing query</option>
+                <option>Site visit scheduling</option>
+                <option>Payment / Invoice</option>
+                <option>New scope addition</option>
+                <option>General query</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="msgBody">Message</label>
+            <textarea class="textarea" id="msgBody" placeholder="Describe your query or request…"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" id="sendMsgBtn" onclick="sendMessage()">
+            Send Message
+          </button>
+          <div class="form-success" id="msgSuccess">✓ Message sent — we'll reply within 24 hours.</div>
+        </div>
+
+        <!-- Contact info -->
+        <div class="support-card">
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gold)">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 1h3a2 2 0 0 1 2 1.72c.127.96.36 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.64a16 16 0 0 0 6 6l1.06-1.06a2 2 0 0 1 2.11-.45c.907.34 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            Direct Contact
+          </h4>
+          <p>Prefer to reach us another way? All channels below are monitored daily.</p>
+
+          <div class="contact-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <a href="mailto:info@serenecreations.org">info@serenecreations.org</a>
+          </div>
+          <div class="contact-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 1h3a2 2 0 0 1 2 1.72c.127.96.36 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.64a16 16 0 0 0 6 6l1.06-1.06a2 2 0 0 1 2.11-.45c.907.34 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>+256 772 000 000</span>
+          </div>
+          <div class="contact-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Mon – Fri, 8 am – 6 pm EAT</span>
+          </div>
+          <div class="contact-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Mukono, Uganda</span>
+          </div>
+
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+            <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Emergency / urgent site issue?</p>
+            <a href="mailto:info@serenecreations.org?subject=URGENT" class="btn btn-ghost btn-full" style="font-size:.85rem">
+              Send Urgent Email
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Panel: Settings / Account -->
+    <div class="dash-panel" id="dpSettings">
+      <div class="section-head">
+        <div>
+          <h3>Account Settings</h3>
+          <p>Manage your profile and portal preferences.</p>
+        </div>
+      </div>
+      <div class="settings-list">
+        <div class="settings-item">
+          <div class="settings-info">
+            <h4>Email address</h4>
+            <p id="settingsEmail">—</p>
+          </div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-info">
+            <h4>Display name</h4>
+            <p id="settingsName">—</p>
+          </div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-info">
+            <h4>Account created</h4>
+            <p id="settingsCreated">—</p>
+          </div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-info">
+            <h4>Sign out of portal</h4>
+            <p>You will be taken back to the sign-in screen.</p>
+          </div>
+          <button class="btn btn-danger" onclick="signOut()" style="font-size:.85rem;padding:8px 16px">Sign out</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dash-content -->
+</section>
+
+<!-- ── Forgot password overlay ── -->
+<div class="overlay" id="forgotOverlay" onclick="if(event.target===this)closeForgot()">
+  <div class="modal-box">
+    <h3>Reset Password</h3>
+    <p>Enter your email and we'll send a password reset link.</p>
+    <div class="form-group">
+      <label class="form-label" for="forgotEmail">Email address</label>
+      <input class="form-input" id="forgotEmail" type="email" placeholder="you@example.com">
+    </div>
+    <div class="form-error" id="forgotErr"></div>
+    <div class="form-success" id="forgotOk"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeForgot()">Cancel</button>
+      <button class="btn btn-primary" onclick="doForgot()">Send Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ─── Firebase config ───────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBqEl1IW42KOHfx21v7YOvYbs1CZnPua3w",
+  authDomain:        "serene-arch-studio.firebaseapp.com",
+  projectId:         "serene-arch-studio",
+  storageBucket:     "serene-arch-studio.firebasestorage.app",
+  messagingSenderId: "532056767194",
+  appId:             "1:532056767194:web:dab8ce517a11654e1903e3",
+  measurementId:     "G-RXR4E98RFT"
+};
+
+// ─── Webhook / function endpoints ──────────────────────────────────
+var WELCOME_HOOK      = 'https://cloud.activepieces.com/api/v1/webhooks/uusAJlkobrnDCeGwdQITw';
+var LEAD_HOOK         = 'https://cloud.activepieces.com/api/v1/webhooks/gaqpTTBjcrwCpNPukckrm';
+var CONTACT_ENDPOINT  = 'https://us-central1-serene-arch-studio.cloudfunctions.net/contactFormSubmit';
+
+// ─── Firebase init ─────────────────────────────────────────────────
+var auth, db, fbReady = false;
+try {
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  auth    = firebase.auth();
+  db      = firebase.firestore();
+  fbReady = true;
+} catch (e) {
+  console.warn('Firebase init error:', e.message);
+}
+
+// ─── Auth state watcher ────────────────────────────────────────────
+var currentUser = null;
+if (fbReady) {
+  auth.onAuthStateChanged(function(user) {
+    currentUser = user;
+    if (user) {
+      showDashboard(user);
+    } else {
+      showAuth();
+    }
+  });
+} else {
+  showAuth();
+}
+
+// ─── Show auth / dashboard ─────────────────────────────────────────
+function showAuth() {
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('dashScreen').style.display = 'none';
+  document.getElementById('authStatus').style.display = 'none';
+  document.getElementById('signOutBtn').style.display = 'none';
+}
+
+function showDashboard(user) {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('dashScreen').style.display = 'block';
+  document.getElementById('authStatus').style.display = 'flex';
+  document.getElementById('signOutBtn').style.display = 'inline-flex';
+
+  var name    = user.displayName || user.email.split('@')[0];
+  var initial = name.charAt(0).toUpperCase();
+  document.getElementById('avatarInitial').textContent  = initial;
+  document.getElementById('welcomeName').textContent    = name;
+  document.getElementById('userBadge').textContent      = name;
+  document.getElementById('settingsEmail').textContent  = user.email;
+  document.getElementById('settingsName').textContent   = name;
+
+  var created = user.metadata && user.metadata.creationTime
+    ? new Date(user.metadata.creationTime).toLocaleDateString('en-UG', {year:'numeric',month:'long',day:'numeric'})
+    : 'Not available';
+  document.getElementById('settingsCreated').textContent = created;
+
+  loadProjects(user);
+  loadDocuments(user);
+}
+
+// ─── Tab switching ─────────────────────────────────────────────────
+function switchTab(tab) {
+  ['signin','signup'].forEach(function(t) {
+    document.getElementById('tabSign' + (t === 'signin' ? 'In' : 'Up'))
+      .classList.toggle('active', t === tab);
+    document.getElementById('panel' + (t === 'signin' ? 'SignIn' : 'SignUp'))
+      .classList.toggle('active', t === tab);
+  });
+}
+
+function dashTab(tab) {
+  var tabs    = ['projects','documents','support','settings'];
+  var names   = ['Projects','Documents','Support','Settings'];
+  tabs.forEach(function(t, i) {
+    document.getElementById('dt' + names[i])
+      .classList.toggle('active', t === tab);
+    document.getElementById('dp' + names[i].charAt(0).toUpperCase() + names[i].slice(1))
+      .classList.toggle('active', t === tab);
+  });
+}
+
+// ─── Sign in ───────────────────────────────────────────────────────
+function doSignIn() {
+  if (!fbReady) { toast('Firebase not ready — please refresh.', 'err'); return; }
+  var email = document.getElementById('siEmail').value.trim();
+  var pass  = document.getElementById('siPass').value;
+  if (!email || !pass) {
+    showErr('siErrGlobal', 'Please enter your email and password.'); return;
+  }
+  setLoading('siBtn', true, 'Signing in…');
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(function() { clearErr('siErrGlobal'); })
+    .catch(function(e) {
+      setLoading('siBtn', false, 'Sign In to Portal');
+      showErr('siErrGlobal', friendlyAuthError(e.code));
+    });
+}
+
+// ─── Sign up ───────────────────────────────────────────────────────
+function doSignUp() {
+  if (!fbReady) { toast('Firebase not ready — please refresh.', 'err'); return; }
+  var name  = document.getElementById('suName').value.trim();
+  var email = document.getElementById('suEmail').value.trim();
+  var pass  = document.getElementById('suPass').value;
+  if (!name || !email || !pass) {
+    showErr('suErr', 'Please fill in all fields.'); return;
+  }
+  if (pass.length < 8) {
+    showErr('suErr', 'Password must be at least 8 characters.'); return;
+  }
+  setLoading('suBtn', true, 'Creating account…');
+  auth.createUserWithEmailAndPassword(email, pass)
+    .then(function(cred) {
+      return cred.user.updateProfile({ displayName: name });
+    })
+    .then(function() {
+      // Fire welcome hook (non-blocking)
+      fetch(WELCOME_HOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          name:  name,
+          source: 'portal-signup',
+          consentText: 'Account created via Serene Portal sign-up'
+        })
+      }).catch(function() {});
+    })
+    .then(function() { clearErr('suErr'); })
+    .catch(function(e) {
+      setLoading('suBtn', false, 'Create Account');
+      showErr('suErr', friendlyAuthError(e.code));
+    });
+}
+
+// ─── Google sign-in ────────────────────────────────────────────────
+function doGoogleSignIn() {
+  if (!fbReady) { toast('Firebase not ready — please refresh.', 'err'); return; }
+  var provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .then(function(result) {
+      // If brand-new account, fire welcome hook
+      if (result.additionalUserInfo && result.additionalUserInfo.isNewUser) {
+        fetch(WELCOME_HOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: result.user.email,
+            name:  result.user.displayName || '',
+            source: 'portal-google',
+            consentText: 'Account created via Serene Portal Google sign-in'
+          })
+        }).catch(function() {});
+      }
+    })
+    .catch(function(e) {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        toast(friendlyAuthError(e.code), 'err');
+      }
+    });
+}
+
+// ─── Sign out ──────────────────────────────────────────────────────
+function signOut() {
+  if (!fbReady) return;
+  auth.signOut().catch(function() {});
+}
+
+// ─── Forgot password ───────────────────────────────────────────────
+function openForgot() { document.getElementById('forgotOverlay').classList.add('open'); }
+function closeForgot() { document.getElementById('forgotOverlay').classList.remove('open'); }
+function doForgot() {
+  if (!fbReady) return;
+  var email = document.getElementById('forgotEmail').value.trim();
+  clearErr('forgotErr');
+  document.getElementById('forgotOk').classList.remove('visible');
+  if (!email) { showErr('forgotErr', 'Enter your email address.'); return; }
+  auth.sendPasswordResetEmail(email)
+    .then(function() {
+      var ok = document.getElementById('forgotOk');
+      ok.textContent = '✓ Reset link sent — check your inbox.';
+      ok.classList.add('visible');
+      document.getElementById('forgotErr').classList.remove('visible');
+    })
+    .catch(function(e) { showErr('forgotErr', friendlyAuthError(e.code)); });
+}
+
+// ─── Load projects from Firestore ──────────────────────────────────
+function loadProjects(user) {
+  var grid = document.getElementById('projectGrid');
+  grid.innerHTML = '<p style="color:var(--muted);font-size:.88rem;padding:8px 0">Loading projects…</p>';
+
+  if (!db) { renderProjects(grid, []); return; }
+
+  db.collection('clients').doc(user.uid).collection('projects')
+    .orderBy('createdAt', 'desc').limit(12)
+    .get()
+    .then(function(snap) {
+      var projects = [];
+      snap.forEach(function(doc) { projects.push({ id: doc.id, ...doc.data() }); });
+      renderProjects(grid, projects);
+      updateStatsBar(projects);
+    })
+    .catch(function() {
+      // Fall back to demo data so the portal always looks useful
+      renderProjects(grid, getDemoProjects(user));
+      updateStatsBar(getDemoProjects(user));
+    });
+}
+
+function getDemoProjects(user) {
+  return [
+    {
+      title: 'Residential House Plan',
+      type: 'House Plan',
+      badgeClass: 'badge-teal',
+      status: 'active',
+      statusLabel: 'In Progress',
+      description: 'Full architectural drawings for a 3-bedroom bungalow on 50×100 ft plot.',
+      progress: 65,
+      stage: 'Working Drawings',
+      updated: 'Oct 5, 2026'
+    },
+    {
+      title: '3D Render & Visualisation',
+      type: '3D Render',
+      badgeClass: 'badge-gold',
+      status: 'pending',
+      statusLabel: 'Awaiting Review',
+      description: 'Exterior and interior 3D renders of the approved house design.',
+      progress: 40,
+      stage: 'Draft renders ready',
+      updated: 'Oct 3, 2026'
+    }
+  ];
+}
+
+function renderProjects(container, projects) {
+  if (!projects || projects.length === 0) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-icon">' +
+          '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
+        '</div>' +
+        '<h4>No projects yet</h4>' +
+        '<p>Once your engagement starts, your project files and milestones will appear here.</p>' +
+        '<a href="mailto:info@serenecreations.org?subject=New Project Enquiry" class="btn btn-primary" style="margin:0 auto">Start a Project</a>' +
+      '</div>';
+    return;
+  }
+
+  container.innerHTML = projects.map(function(p) {
+    var statusDot  = p.status === 'active' ? 'status-active' : (p.status === 'complete' ? 'status-complete' : 'status-pending');
+    var progress   = typeof p.progress === 'number' ? p.progress : 0;
+    var badgeClass = p.badgeClass || 'badge-grey';
+    return (
+      '<div class="project-card">' +
+        '<div class="project-card-top">' +
+          '<span class="project-type-badge ' + badgeClass + '">' + (p.type || 'Project') + '</span>' +
+          '<span style="display:flex;align-items:center;gap:5px;font-size:.78rem;color:var(--muted)">' +
+            '<span class="status-dot ' + statusDot + '"></span>' + (p.statusLabel || 'Active') +
+          '</span>' +
+        '</div>' +
+        '<h4>' + (p.title || 'Untitled Project') + '</h4>' +
+        '<p>' + (p.description || '') + '</p>' +
+        '<div class="project-progress">' +
+          '<div class="progress-label"><span>' + (p.stage || 'In progress') + '</span><strong>' + progress + '%</strong></div>' +
+          '<div class="progress-bar"><div class="progress-fill" style="width:' + progress + '%"></div></div>' +
+        '</div>' +
+        '<div class="project-meta">' +
+          (p.updated ? '<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Updated ' + p.updated + '</span>' : '') +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function updateStatsBar(projects) {
+  var active   = projects.filter(function(p) { return p.status === 'active'; }).length;
+  var pending  = projects.filter(function(p) { return p.status === 'pending'; }).length;
+  var complete = projects.filter(function(p) { return p.status === 'complete'; }).length;
+  var html = '';
+  if (active)   html += '<div class="stat-chip"><span class="stat-dot teal"></span><strong>' + active + '</strong> Active</div>';
+  if (pending)  html += '<div class="stat-chip"><span class="stat-dot gold"></span><strong>' + pending + '</strong> Awaiting</div>';
+  if (complete) html += '<div class="stat-chip"><span class="stat-dot grey"></span><strong>' + complete + '</strong> Completed</div>';
+  if (!html)    html  = '<div class="stat-chip"><span class="stat-dot teal" style="background:var(--muted)"></span>No active projects</div>';
+  document.getElementById('dashStatsBar').innerHTML = html;
+}
+
+// ─── Load documents ────────────────────────────────────────────────
+function loadDocuments(user) {
+  var list = document.getElementById('docList');
+  list.innerHTML = '<p style="color:var(--muted);font-size:.88rem;padding:8px 0">Loading documents…</p>';
+
+  if (!db) { renderDocuments(list, []); return; }
+
+  db.collection('clients').doc(user.uid).collection('documents')
+    .orderBy('uploadedAt', 'desc').limit(20)
+    .get()
+    .then(function(snap) {
+      var docs = [];
+      snap.forEach(function(doc) { docs.push({ id: doc.id, ...doc.data() }); });
+      renderDocuments(list, docs);
+    })
+    .catch(function() {
+      renderDocuments(list, getDemoDocs());
+    });
+}
+
+function getDemoDocs() {
+  return [
+    { name: 'Site Plan — Rev A', type: 'pdf', size: '2.4 MB', date: 'Oct 5, 2026', url: '#', icon: '📄' },
+    { name: 'Floor Plan Ground Floor', type: 'pdf', size: '1.8 MB', date: 'Oct 4, 2026', url: '#', icon: '📄' },
+    { name: '3D Exterior Draft', type: 'pdf', size: '5.1 MB', date: 'Oct 3, 2026', url: '#', icon: '🖼️' },
+    { name: 'BOQ — Preliminary', type: 'xls', size: '320 KB', date: 'Sep 28, 2026', url: '#', icon: '📊' }
+  ];
+}
+
+function renderDocuments(container, docs) {
+  if (!docs || docs.length === 0) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-icon">' +
+          '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' +
+        '</div>' +
+        '<h4>No documents yet</h4>' +
+        '<p>Drawings and deliverables will appear here as your project progresses.</p>' +
+      '</div>';
+    return;
+  }
+
+  var typeIcons = { pdf: '📄', dwg: '📐', xls: '📊', xlsx: '📊', png: '🖼️', jpg: '🖼️' };
+  var typeBg    = { pdf: 'doc-icon-pdf', dwg: 'doc-icon-dwg', xls: 'doc-icon-xls', xlsx: 'doc-icon-xls' };
+
+  container.innerHTML = docs.map(function(d) {
+    var ext     = (d.type || d.name.split('.').pop() || 'pdf').toLowerCase();
+    var icon    = d.icon || typeIcons[ext] || '📄';
+    var iconBg  = typeBg[ext] || 'doc-icon-pdf';
+    var href    = d.url && d.url !== '#' ? d.url : 'mailto:info@serenecreations.org?subject=Document Request: ' + encodeURIComponent(d.name);
+    return (
+      '<div class="doc-item">' +
+        '<div class="doc-icon ' + iconBg + '">' + icon + '</div>' +
+        '<div class="doc-info">' +
+          '<h4>' + (d.name || 'Document') + '</h4>' +
+          '<p>' + (d.date || '') + '</p>' +
+        '</div>' +
+        '<span class="doc-size">' + (d.size || '') + '</span>' +
+        '<a href="' + href + '" class="doc-dl" title="Download" target="_blank" rel="noopener">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+        '</a>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+// ─── Send support message ──────────────────────────────────────────
+function sendMessage() {
+  var subject = document.getElementById('msgSubject').value;
+  var body    = document.getElementById('msgBody').value.trim();
+  if (!subject) { toast('Please select a topic.', 'err'); return; }
+  if (!body)    { toast('Please enter a message.', 'err'); return; }
+
+  var btn = document.getElementById('sendMsgBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Sending…';
+
+  var user  = currentUser;
+  var email = user ? user.email : 'unknown';
+  var name  = user ? (user.displayName || user.email.split('@')[0]) : 'Client';
+
+  fetch(CONTACT_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name:    name,
+      email:   email,
+      subject: subject,
+      message: body,
+      source:  'portal-support'
+    })
+  })
+  .then(function(r) { return r.ok ? r : Promise.reject(r.status); })
+  .then(function() {
+    btn.disabled = false;
+    btn.textContent = 'Send Message';
+    document.getElementById('msgBody').value = '';
+    document.getElementById('msgSubject').value = '';
+    document.getElementById('msgSuccess').classList.add('visible');
+    setTimeout(function() {
+      document.getElementById('msgSuccess').classList.remove('visible');
+    }, 6000);
+  })
+  .catch(function() {
+    // Fallback: open mailto with pre-filled subject/body
+    window.location.href = 'mailto:info@serenecreations.org?subject=' +
+      encodeURIComponent('[Client Portal] ' + subject) +
+      '&body=' + encodeURIComponent(body + '\n\n— Sent from Serene Portal\nAccount: ' + email);
+    btn.disabled = false;
+    btn.textContent = 'Send Message';
+  });
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────
+function friendlyAuthError(code) {
+  var map = {
+    'auth/invalid-email':            'Enter a valid email address.',
+    'auth/user-not-found':           'No account found with that email.',
+    'auth/wrong-password':           'Incorrect password. Try again.',
+    'auth/email-already-in-use':     'That email is already registered — sign in instead.',
+    'auth/weak-password':            'Choose a stronger password (at least 8 characters).',
+    'auth/too-many-requests':        'Too many attempts. Try again in a few minutes.',
+    'auth/network-request-failed':   'Network error — check your connection.',
+    'auth/invalid-credential':       'Incorrect email or password.',
+    'auth/popup-blocked':            'Pop-up blocked. Allow pop-ups for this site and try again.'
+  };
+  return map[code] || 'Something went wrong. Please try again.';
+}
+
+function showErr(id, msg) {
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function clearErr(id) {
+  var el = document.getElementById(id);
+  if (el) { el.textContent = ''; el.classList.remove('visible'); }
+}
+
+function setLoading(btnId, loading, label) {
+  var btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spin"></span> ' + label : label;
+}
+
+var toastTimer;
+function toast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'show' + (type === 'err' ? ' toast-err' : (type === 'ok' ? ' toast-ok' : ''));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.className = ''; }, 3500);
+}
+</script>
+</body>
+</html>
