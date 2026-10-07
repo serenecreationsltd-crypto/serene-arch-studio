@@ -1,110 +1,85 @@
 #!/usr/bin/env bash
 # ============================================================
-# Serene Creations Ltd — Fix GitHub Actions IAM Permissions
+# Serene Creations Ltd — Fix GitHub Actions deploy permissions
 # ============================================================
-# Run this in Google Cloud Shell:
-#   https://console.cloud.google.com/cloudshell
+# Every "Deploy Firebase Backend" run has failed because the service
+# account in the FIREBASE_SERVICE_ACCOUNT_JSON GitHub secret
+#   firebase-adminsdk-fbsvc@serene-arch-studio.iam.gserviceaccount.com
+# can't list/enable APIs, read the project, or deploy functions,
+# schedules and rules. This grants it the roles a full backend deploy
+# needs. Safe to re-run (bindings are idempotent).
 #
-# Or paste this one-liner into Cloud Shell:
+# Run as a project Owner in Google Cloud Shell:
+#   https://console.cloud.google.com/cloudshell?project=serene-arch-studio
+#
 #   curl -sSL https://raw.githubusercontent.com/serenecreationsltd-crypto/serene-arch-studio/main/scripts/fix-iam-permissions.sh | bash
 #
-# What it does:
-#   Grants the two IAM roles that the GitHub Actions service
-#   account needs to deploy Cloud Functions:
-#     - roles/cloudfunctions.developer
-#     - roles/iam.serviceAccountUser
+# If you later switch the secret to a different service account:
+#   curl -sSL <same URL> | SA_EMAIL=<that-account-email> bash
 # ============================================================
 set -euo pipefail
 
 PROJECT="serene-arch-studio"
+SA_EMAIL="${SA_EMAIL:-firebase-adminsdk-fbsvc@${PROJECT}.iam.gserviceaccount.com}"
+
+ROLES=(
+  roles/cloudfunctions.admin              # create/update functions + make HTTPS endpoints public
+  roles/iam.serviceAccountUser            # deploy functions that run as the App Engine default SA
+  roles/serviceusage.serviceUsageAdmin    # check and enable required Google APIs
+  roles/browser                           # read project metadata (billing/plan checks)
+  roles/firebase.viewer                   # read Firebase project config during deploy
+  roles/cloudscheduler.admin              # scheduledDripSend / scheduledCleanup jobs
+  roles/pubsub.editor                     # Pub/Sub topics behind those schedules
+  roles/firebaserules.admin               # Firestore + Storage security rules
+  roles/datastore.indexAdmin              # Firestore composite indexes
+)
 
 echo ""
 echo "════════════════════════════════════════════════════════"
-echo "  Serene Creations — Fix GitHub Actions IAM Permissions"
+echo "  Serene Creations — Fix GitHub Actions deploy permissions"
 echo "════════════════════════════════════════════════════════"
+echo "  Project:         $PROJECT"
+echo "  Service account: $SA_EMAIL"
 echo ""
 
-# ── 1. Confirm project ──────────────────────────────────────
-echo "→ Setting active project to: $PROJECT"
-gcloud config set project "$PROJECT" --quiet
+gcloud config set project "$PROJECT" --quiet >/dev/null
 
-# ── 2. Find the GitHub Actions service account ──────────────
-#    The SA stored in FIREBASE_SERVICE_ACCOUNT_JSON is the
-#    firebase-adminsdk service account OR a manually created
-#    github-actions SA.  We look for both patterns.
-echo ""
-echo "→ Looking for GitHub Actions / Firebase Admin SDK service account ..."
-
-# Try explicit known patterns first
-SA_EMAIL=""
-
-# Pattern 1: manually named github-actions SA
-CANDIDATE=$(gcloud iam service-accounts list \
-  --project="$PROJECT" \
-  --format="value(email)" \
-  --filter="email:github-actions" 2>/dev/null | head -1 || true)
-[ -n "$CANDIDATE" ] && SA_EMAIL="$CANDIDATE"
-
-# Pattern 2: firebase-adminsdk SA (default Firebase SA)
-if [ -z "$SA_EMAIL" ]; then
-  CANDIDATE=$(gcloud iam service-accounts list \
-    --project="$PROJECT" \
-    --format="value(email)" \
-    --filter="email:firebase-adminsdk" 2>/dev/null | head -1 || true)
-  [ -n "$CANDIDATE" ] && SA_EMAIL="$CANDIDATE"
+if ! gcloud iam service-accounts describe "$SA_EMAIL" --project="$PROJECT" >/dev/null 2>&1; then
+  echo "✗ Service account not found: $SA_EMAIL"
+  echo "  Check the client_email field of the FIREBASE_SERVICE_ACCOUNT_JSON secret, then run:"
+  echo "  SA_EMAIL=<that-email> bash fix-iam-permissions.sh"
+  exit 1
 fi
 
-# Pattern 3: any SA that is not the compute default
-if [ -z "$SA_EMAIL" ]; then
-  echo ""
-  echo "⚠  Could not auto-detect the service account."
-  echo "   Please open a new tab and go to:"
-  echo "   https://console.cloud.google.com/iam-admin/serviceaccounts?project=$PROJECT"
-  echo ""
-  echo "   Find the service account email stored in the GitHub secret"
-  echo "   FIREBASE_SERVICE_ACCOUNT_JSON, then re-run this script with:"
-  echo "   SA_EMAIL=<paste-email-here> bash fix-iam-permissions.sh"
-  echo ""
-  if [ -z "${SA_EMAIL:-}" ]; then
-    exit 1
-  fi
-fi
-
-echo "   Found: $SA_EMAIL"
-
-# ── 3. Grant roles ──────────────────────────────────────────
-echo ""
-echo "→ Granting roles/cloudfunctions.developer ..."
-gcloud projects add-iam-policy-binding "$PROJECT" \
-  --member="serviceAccount:${SA_EMAIL}" \
-  --role="roles/cloudfunctions.developer" \
-  --quiet
-echo "   ✓ roles/cloudfunctions.developer granted"
+for ROLE in "${ROLES[@]}"; do
+  printf "→ %-42s" "$ROLE"
+  gcloud projects add-iam-policy-binding "$PROJECT" \
+    --member="serviceAccount:${SA_EMAIL}" \
+    --role="$ROLE" \
+    --condition=None \
+    --quiet >/dev/null
+  echo "✓"
+done
 
 echo ""
-echo "→ Granting roles/iam.serviceAccountUser ..."
-gcloud projects add-iam-policy-binding "$PROJECT" \
-  --member="serviceAccount:${SA_EMAIL}" \
-  --role="roles/iam.serviceAccountUser" \
-  --quiet
-echo "   ✓ roles/iam.serviceAccountUser granted"
+echo "→ Enabling APIs the deploy uses (no-op if already on) ..."
+gcloud services enable \
+  cloudfunctions.googleapis.com cloudbuild.googleapis.com pubsub.googleapis.com \
+  cloudscheduler.googleapis.com cloudbilling.googleapis.com firebaserules.googleapis.com \
+  --project="$PROJECT" --quiet
+echo "   ✓ APIs enabled"
 
-# ── 4. Verify ────────────────────────────────────────────────
 echo ""
-echo "→ Verifying bindings ..."
+echo "→ Roles now held by $SA_EMAIL:"
 gcloud projects get-iam-policy "$PROJECT" \
   --flatten="bindings[].members" \
-  --filter="bindings.members:${SA_EMAIL}" \
-  --format="table(bindings.role)" 2>/dev/null || true
+  --filter="bindings.members:serviceAccount:${SA_EMAIL}" \
+  --format="value(bindings.role)" | sed 's/^/   • /'
 
-# ── 5. Done ──────────────────────────────────────────────────
 echo ""
 echo "════════════════════════════════════════════════════════"
-echo "  ✅  Permissions fixed!"
-echo ""
-echo "  Now re-run the failed GitHub Actions workflow:"
-echo "  https://github.com/serenecreationsltd-crypto/serene-arch-studio/actions"
-echo ""
-echo "  Click the failed run → 'Re-run all jobs'"
+echo "  ✅  Done. Re-run the backend deploy:"
+echo "  https://github.com/serenecreationsltd-crypto/serene-arch-studio/actions/workflows/firebase-deploy.yml"
+echo "  → 'Run workflow' on main"
 echo "════════════════════════════════════════════════════════"
 echo ""
