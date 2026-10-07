@@ -245,7 +245,7 @@ Pro/Studio tier bypasses the limit (set `plan: "pro"` or `plan: "studio"` on the
 
 | Hook | Trigger | URL |
 |------|---------|-----|
-| WELCOME_HOOK | New user created | `https://cloud.activepieces.com/api/v1/webhooks/DdrUpk3GiVuV4iHXuotOj` |
+| WELCOME_HOOK | New user created | `https://cloud.activepieces.com/api/v1/webhooks/uusAJlkobrnDCeGwdQITw` |
 | LEAD_HOOK | "Get Started" clicked | `https://cloud.activepieces.com/api/v1/webhooks/gaqpTTBjcrwCpNPukckrm` |
 
 Both hooks are called server-side from Cloud Functions — never from the browser.
