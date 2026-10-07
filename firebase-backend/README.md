@@ -28,8 +28,8 @@ Portal (Artifact / HTML)
 
 | Tool | Version | Install |
 |------|---------|---------|
-| Node.js | 18 LTS | https://nodejs.org |
-| Firebase CLI | latest | `npm i -g firebase-tools` |
+| Node.js | 20 LTS | https://nodejs.org |
+| Firebase CLI | 13.29.1 | `npm i -g firebase-tools@13.29.1` |
 | Firebase account | — | https://console.firebase.google.com |
 | Replicate account | — | https://replicate.com |
 
