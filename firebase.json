@@ -9,6 +9,13 @@
     "cleanUrls": false,
     "trailingSlash": false,
     "404": "404.html",
+    "redirects": [
+      {
+        "source": "/contact",
+        "destination": "/serene-hub.html",
+        "type": 301
+      }
+    ],
     "headers": [
       {
         "source": "**/*.html",
