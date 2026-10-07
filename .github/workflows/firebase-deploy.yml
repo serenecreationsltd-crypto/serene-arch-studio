@@ -8,6 +8,10 @@ on:
       - '.github/workflows/firebase-deploy.yml'
   workflow_dispatch: {}
 
+concurrency:
+  group: firebase-functions-deploy
+  cancel-in-progress: false
+
 env:
   PROJECT: serene-arch-studio
   REGION: us-central1
