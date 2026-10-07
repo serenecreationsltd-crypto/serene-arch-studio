@@ -54,6 +54,7 @@ jobs:
           echo "REPLICATE_TOKEN=${{ secrets.REPLICATE_TOKEN }}" >> .env
           echo "REPLICATE_MODEL_VERSION=${{ secrets.REPLICATE_MODEL_VERSION }}" >> .env
           echo "REPLICATE_VIDEO_MODEL_VERSION=${{ secrets.REPLICATE_VIDEO_MODEL_VERSION }}" >> .env
+          echo "DRIP_SECRET=${{ secrets.DRIP_SECRET }}" >> .env
 
       - name: Install Cloud Function dependencies
         working-directory: firebase-backend/functions

@@ -2651,7 +2651,120 @@ exports.scheduledDripSend = functions
     return null;
   });
 
-// ─── 13. unsubscribeEmail ────────────────────────────────────────────────────
+// ─── 13. httpDripSend ────────────────────────────────────────────────────────
+// HTTP-triggered twin of scheduledDripSend for Spark plan.
+// Activepieces calls this daily at 08:00 Africa/Kampala via a Schedule trigger.
+// Protected by X-Drip-Secret header matching DRIP_SECRET env var.
+//
+// Activepieces step config:
+//   URL:    https://us-central1-serene-arch-studio.cloudfunctions.net/httpDripSend
+//   Method: POST
+//   Headers: { "X-Drip-Secret": "<DRIP_SECRET value>" }
+//   Body:   {}
+// ─────────────────────────────────────────────────────────────────────────────
+exports.httpDripSend = functions
+  .runWith({ timeoutSeconds: 300, memory: "256MB" })
+  .https.onRequest(async (req, res) => {
+    // CORS pre-flight (Activepieces may send OPTIONS)
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type, X-Drip-Secret");
+    if (req.method === "OPTIONS") return res.status(204).send("");
+
+    // Auth check — reject anything without the correct secret
+    // Set DRIP_SECRET in GitHub repo secrets → it is written to .env by CI.
+    const secret = process.env.DRIP_SECRET;
+    if (!secret) {
+      functions.logger.error("httpDripSend: DRIP_SECRET env var not set");
+      return res.status(500).json({ error: "Server misconfiguration" });
+    }
+    const provided = req.headers["x-drip-secret"] || (req.body && req.body.secret);
+    if (provided !== secret) {
+      functions.logger.warn("httpDripSend: unauthorized attempt", {
+        ip: req.ip,
+        provided: provided ? "[redacted]" : "missing",
+      });
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const now = admin.firestore.Timestamp.now();
+    let snap;
+    try {
+      snap = await db.collection("campaignSubscriptions")
+        .where("completed", "==", false)
+        .where("nextSendAt", "<=", now)
+        .limit(200)
+        .get();
+    } catch (dbErr) {
+      functions.logger.error("httpDripSend: Firestore query error", { err: dbErr.message });
+      return res.status(500).json({ error: "DB error", detail: dbErr.message });
+    }
+
+    if (snap.empty) {
+      functions.logger.info("httpDripSend: no pending subscriptions");
+      return res.status(200).json({ status: "ok", sent: 0, errors: 0, total: 0 });
+    }
+
+    const mailer = getMailer();
+    let sent = 0;
+    let errors = 0;
+
+    await Promise.allSettled(snap.docs.map(async (doc) => {
+      const sub = doc.data();
+      const campaign = CAMPAIGNS[sub.campaignId];
+      if (!campaign) {
+        await doc.ref.update({ completed: true });
+        return;
+      }
+
+      if (sub.unsubscribed) {
+        await doc.ref.update({ completed: true });
+        return;
+      }
+
+      const stage = sub.stage || 0;
+      const emailDef = campaign.emails[stage];
+      if (!emailDef) {
+        await doc.ref.update({ completed: true });
+        return;
+      }
+
+      const token = Buffer.from(doc.id).toString("base64url");
+      const unsubUrl = `https://us-central1-serene-arch-studio.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
+
+      try {
+        await mailer.sendMail({
+          from: FROM_EMAIL,
+          to: sub.email,
+          replyTo: REPLY_TO,
+          subject: emailDef.subject,
+          html: emailDef.html(sub.name || "") + UNSUB_FOOTER(unsubUrl),
+        });
+        sent++;
+      } catch (mailErr) {
+        functions.logger.error("httpDripSend mail error", { email: sub.email, err: mailErr.message });
+        errors++;
+        return;
+      }
+
+      const nextStage = stage + 1;
+      const isLast = nextStage >= campaign.emails.length;
+
+      if (isLast) {
+        await doc.ref.update({ stage: nextStage, completed: true });
+      } else {
+        const nextEmail = campaign.emails[nextStage];
+        const delayMs = (nextEmail.delayDays || 4) * 24 * 60 * 60 * 1000;
+        const nextSendAt = admin.firestore.Timestamp.fromMillis(Date.now() + delayMs);
+        await doc.ref.update({ stage: nextStage, nextSendAt, lastSentAt: now });
+      }
+    }));
+
+    functions.logger.info("httpDripSend complete", { sent, errors, total: snap.size });
+    return res.status(200).json({ status: "ok", sent, errors, total: snap.size });
+  });
+
+// ─── 14. unsubscribeEmail ────────────────────────────────────────────────────
 exports.unsubscribeEmail = functions.https.onRequest(async (req, res) => {
   const token = req.query.token;
   if (!token) return res.status(400).send("Invalid unsubscribe link.");
