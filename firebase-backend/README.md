@@ -98,9 +98,8 @@ Open `.firebaserc` in this folder and replace `YOUR_FIREBASE_PROJECT_ID` with yo
 ## Step 5 — Get Replicate Credentials
 
 1. Sign up at https://replicate.com → **Account settings** → **API tokens** → copy token
-2. Find the SDXL ControlNet model:
-   - Visit https://replicate.com/lucataco/sdxl-controlnet/versions
-   - Copy the latest version hash (long hex string)
+2. That's all. The functions look up the latest version of the render model
+   (`lucataco/sdxl-controlnet` by default) at runtime — no version hash to copy.
 
 ---
 
@@ -109,16 +108,23 @@ Open `.firebaserc` in this folder and replace `YOUR_FIREBASE_PROJECT_ID` with yo
 ```bash
 cd firebase-backend/functions
 npm install
-cd ..
-
-# Set Replicate secrets (never commit these)
-firebase functions:config:set \
-  replicate.token="r8_YOUR_TOKEN_HERE" \
-  replicate.model_version="YOUR_MODEL_VERSION_HASH_HERE"
-
-# Verify
-firebase functions:config:get
 ```
+
+Secrets are passed as environment variables. In CI, the deploy workflow writes
+`firebase-backend/functions/.env` from GitHub repo secrets of the same names
+(Settings → Secrets and variables → Actions):
+
+| Secret | Required | Purpose |
+|--------|----------|---------|
+| `REPLICATE_TOKEN` | yes, for renders | Replicate API token (`r8_…`) |
+| `REPLICATE_MODEL` | no | Render model name; default `lucataco/sdxl-controlnet` |
+| `REPLICATE_MODEL_VERSION` | no | Pin a specific version hash instead of latest |
+| `REPLICATE_VIDEO_MODEL` | no | Video model name — video stays off until set (billed per run) |
+| `REPLICATE_VIDEO_MODEL_VERSION` | no | Pin a video version hash |
+| `DRIP_SECRET` | for `httpDripSend` | Shared secret the Activepieces "Daily Drip Send" flow sends as `X-Drip-Secret` |
+
+For a local deploy, put the same keys in `functions/.env` (gitignored).
+`functions:config` is decommissioned — don't use it.
 
 ---
 
@@ -255,15 +261,13 @@ Both hooks are called server-side from Cloud Functions — never from the browse
 ## Replicate Model Config
 
 The backend uses **SDXL ControlNet** for architectural rendering:
-- Model: `lucataco/sdxl-controlnet`
-- Versions: https://replicate.com/lucataco/sdxl-controlnet/versions
-- Input: base64 image or URL of source drawing + text prompt
+- Model: `lucataco/sdxl-controlnet` (override with `REPLICATE_MODEL`)
+- Version: resolved to the model's latest at runtime and cached per instance; set `REPLICATE_MODEL_VERSION` to pin one
+- Input: URL of source drawing + text prompt. The request is trimmed to the
+  fields the resolved version's schema accepts (e.g. `controlnet_conditioning_scale`
+  is sent as `condition_scale` for this model), so switching models doesn't
+  fail on unknown inputs
 - Output: photorealistic architectural render
-
-Set via:
-```bash
-firebase functions:config:set replicate.token="r8_..." replicate.model_version="abc123..."
-```
 
 ---
 

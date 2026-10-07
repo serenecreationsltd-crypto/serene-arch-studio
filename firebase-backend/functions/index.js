@@ -14,7 +14,9 @@ const db = admin.firestore();
 //
 // Locally / in CI, write firebase-backend/functions/.env (gitignored) with:
 //   REPLICATE_TOKEN=r8_YOUR_TOKEN
-//   REPLICATE_MODEL_VERSION=THE_VERSION_HASH
+//   REPLICATE_MODEL=owner/name            (optional; default lucataco/sdxl-controlnet)
+//   REPLICATE_MODEL_VERSION=hash          (optional; pins a version instead of latest)
+//   DRIP_SECRET=shared_secret             (for httpDripSend / Activepieces)
 //   SMTP_PASSWORD=your_zoho_password
 //   STRIPE_SECRET=sk_live_...
 //   STRIPE_WEBHOOK_SECRET=whsec_...
@@ -27,21 +29,91 @@ const db = admin.firestore();
 // accepts: image, prompt, negative_prompt, controlnet_conditioning_scale,
 // strength, num_inference_steps, guidance_scale (see processRenderJob below).
 //
-// Recommended model for sketch/floor-plan → photoreal architecture:
-//   • batouresearch/sdxl-controlnet-lora   (SDXL, strong on buildings)
-//   • jagilley/controlnet-hough            (MLSD line-guided, great for plans)
-// Open the chosen model on replicate.com, copy its current "Version" hash, and
-// set REPLICATE_TOKEN + REPLICATE_MODEL_VERSION (see CONFIG block above).
-// Until both are set, renders return a friendly "engine not configured" message.
+// Only REPLICATE_TOKEN is required. The model is chosen by name
+// (REPLICATE_MODEL, default lucataco/sdxl-controlnet) and its latest version
+// is looked up at runtime — no hand-copied version hash needed. Set
+// REPLICATE_MODEL_VERSION only to pin a specific version.
+// Inputs are trimmed to what the resolved version's schema accepts (see
+// fitReplicateInput), so switching models doesn't break on unknown fields.
+// Until REPLICATE_TOKEN is set, renders return "engine not configured".
 const REPLICATE_TOKEN         = process.env.REPLICATE_TOKEN || "";
-const REPLICATE_MODEL_VERSION = process.env.REPLICATE_MODEL_VERSION ||
-                                "TODO_REPLACE_WITH_REPLICATE_VERSION_HASH";
+const REPLICATE_MODEL         = process.env.REPLICATE_MODEL || "lucataco/sdxl-controlnet";
+const REPLICATE_MODEL_VERSION = process.env.REPLICATE_MODEL_VERSION || "";
 
 // ── AI video engine (Replicate) ────────────────────────────────────────────
-// Set REPLICATE_VIDEO_MODEL_VERSION to the version hash of a video generation
-// model on replicate.com (e.g. stability-ai/stable-video-diffusion or
-// minimax/video-01-live). Until set, video jobs return a friendly error.
+// Set REPLICATE_VIDEO_MODEL to a video model name (e.g.
+// stability-ai/stable-video-diffusion or minimax/video-01-live) — its latest
+// version is resolved automatically — or REPLICATE_VIDEO_MODEL_VERSION to pin
+// a hash. No default: video generation is billed per run, so it stays off
+// until one of these is set explicitly.
+const REPLICATE_VIDEO_MODEL         = process.env.REPLICATE_VIDEO_MODEL || "";
 const REPLICATE_VIDEO_MODEL_VERSION = process.env.REPLICATE_VIDEO_MODEL_VERSION || "";
+
+// Resolve a Replicate model to { id, schema }. Uses the pinned version when
+// given (fetching its schema if the model name is known), otherwise the
+// model's latest version. Cached per function instance.
+const _replicateVersionCache = new Map();
+async function resolveReplicateVersion(model, pinned) {
+  const usablePin = pinned && !pinned.startsWith("TODO") ? pinned : "";
+  const key = `${model}@${usablePin}`;
+  if (_replicateVersionCache.has(key)) return _replicateVersionCache.get(key);
+
+  const headers = { "Authorization": `Token ${REPLICATE_TOKEN}` };
+  let resolved;
+  if (usablePin) {
+    resolved = { id: usablePin, schema: null };
+    if (model) {
+      try {
+        const { data } = await axios.get(
+          `https://api.replicate.com/v1/models/${model}/versions/${usablePin}`,
+          { headers, timeout: 10000 }
+        );
+        resolved.schema = data.openapi_schema || null;
+      } catch (e) {
+        functions.logger.warn("Pinned version schema lookup failed; sending inputs unfiltered",
+          { model, version: usablePin, error: e.message });
+      }
+    }
+  } else {
+    if (!model) return null;
+    const { data } = await axios.get(
+      `https://api.replicate.com/v1/models/${model}`,
+      { headers, timeout: 10000 }
+    );
+    const latest = data.latest_version;
+    if (!latest || !latest.id) throw new Error(`Replicate model ${model} has no published version`);
+    resolved = { id: latest.id, schema: latest.openapi_schema || null };
+    functions.logger.info("Resolved Replicate model", { model, version: latest.id });
+  }
+  _replicateVersionCache.set(key, resolved);
+  return resolved;
+}
+
+// Keep only inputs the model's schema accepts (right name, type and enum
+// value); `aliases` maps our field names to the model's equivalent names.
+function fitReplicateInput(input, schema, aliases = {}) {
+  const schemas = schema && schema.components && schema.components.schemas;
+  const props   = schemas && schemas.Input && schemas.Input.properties;
+  if (!props) return input;
+  const accepts = (prop, v) => {
+    const ref = prop.$ref || (Array.isArray(prop.allOf) && prop.allOf[0] && prop.allOf[0].$ref);
+    const def = ref ? (schemas[ref.split("/").pop()] || {}) : prop;
+    if (Array.isArray(def.enum)) return def.enum.includes(v);
+    switch (def.type) {
+      case "integer": return Number.isInteger(v);
+      case "number":  return typeof v === "number";
+      case "string":  return typeof v === "string";
+      case "boolean": return typeof v === "boolean";
+      default:        return true;
+    }
+  };
+  const out = {};
+  for (const [k, v] of Object.entries(input)) {
+    const name = [k, ...(aliases[k] || [])].find((n) => props[n] && !(n in out));
+    if (name && accepts(props[name], v)) out[name] = v;
+  }
+  return out;
+}
 
 // Stripe — subscription tier management
 const STRIPE_SECRET         = process.env.STRIPE_SECRET         || "";
@@ -239,7 +311,7 @@ exports.processRenderJob = functions
     });
 
     // ── 1d. Guard: Replicate unconfigured ────────────────────────────────
-    if (!REPLICATE_TOKEN || REPLICATE_MODEL_VERSION.startsWith("TODO")) {
+    if (!REPLICATE_TOKEN) {
       await jobRef.update({
         status:   "error",
         error:    "AI render engine is not configured yet — please check back soon.",
@@ -254,20 +326,22 @@ exports.processRenderJob = functions
       const prompt   = buildPrompt(style, environment, material);
       const negative = buildNegativePrompt(style);
       const strength = STYLE_STRENGTH[style] || 0.75;
+      const version  = await resolveReplicateVersion(REPLICATE_MODEL, REPLICATE_MODEL_VERSION);
+      const input    = fitReplicateInput({
+        image:               sourceURL,
+        prompt,
+        negative_prompt:     negative,
+        controlnet_conditioning_scale: 0.8,
+        strength,
+        num_inference_steps: 30,
+        guidance_scale:      7.5,
+      }, version.schema, {
+        controlnet_conditioning_scale: ["condition_scale", "conditioning_scale"],
+        strength:                      ["prompt_strength"],
+      });
       const { data: prediction } = await axios.post(
         "https://api.replicate.com/v1/predictions",
-        {
-          version: REPLICATE_MODEL_VERSION,
-          input: {
-            image:               sourceURL,
-            prompt,
-            negative_prompt:     negative,
-            controlnet_conditioning_scale: 0.8,
-            strength,
-            num_inference_steps: 30,
-            guidance_scale:      7.5,
-          },
-        },
+        { version: version.id, input },
         {
           headers: { "Authorization": `Token ${REPLICATE_TOKEN}`, "Content-Type": "application/json" },
           timeout: 15000,
@@ -422,7 +496,7 @@ exports.processVideoJob = functions
     functions.logger.info("Video job received", { jobId, uid });
 
     // ── 2a. Guard: video model unconfigured ──────────────────────────────────
-    if (!REPLICATE_TOKEN || !REPLICATE_VIDEO_MODEL_VERSION) {
+    if (!REPLICATE_TOKEN || !(REPLICATE_VIDEO_MODEL || REPLICATE_VIDEO_MODEL_VERSION)) {
       await jobRef.update({
         status:   "error",
         error:    "AI video engine is not configured yet — please check back soon.",
@@ -480,26 +554,29 @@ exports.processVideoJob = functions
       //   • stability-ai/stable-video-diffusion (image → video)
       //   • minimax/video-01-live               (image + prompt → video)
       //   • wan-ai/wan2.1-i2v-480p              (image + prompt → video)
+      // fitReplicateInput drops whichever of these the chosen model rejects.
+      const videoVersion = await resolveReplicateVersion(REPLICATE_VIDEO_MODEL, REPLICATE_VIDEO_MODEL_VERSION);
+      const videoInput   = fitReplicateInput({
+        // image-to-video fields (used by SVD, MiniMax, Wan, etc.)
+        image:          sourceURL,
+        prompt:         videoPrompt,
+        negative_prompt: "blurry, distorted, jittery, low quality, watermark, text",
+        // motion / duration controls
+        video_length:   duration,        // seconds (SVD uses num_frames instead)
+        num_frames:     Math.round(duration * fps),
+        fps,
+        motion_bucket_id: motionStyle === "subtle" ? 40
+                        : motionStyle === "cinematic" ? 127 : 80,
+        // quality
+        num_inference_steps: 25,
+        guidance_scale:      7.5,
+      }, videoVersion.schema, {
+        image: ["first_frame_image", "input_image"],
+        fps:   ["frames_per_second"],
+      });
       const { data: prediction } = await axios.post(
         "https://api.replicate.com/v1/predictions",
-        {
-          version: REPLICATE_VIDEO_MODEL_VERSION,
-          input: {
-            // image-to-video fields (used by SVD, MiniMax, Wan, etc.)
-            image:          sourceURL,
-            prompt:         videoPrompt,
-            negative_prompt: "blurry, distorted, jittery, low quality, watermark, text",
-            // motion / duration controls
-            video_length:   duration,        // seconds (SVD uses num_frames instead)
-            num_frames:     Math.round(duration * fps),
-            fps,
-            motion_bucket_id: motionStyle === "subtle" ? 40
-                            : motionStyle === "cinematic" ? 127 : 80,
-            // quality
-            num_inference_steps: 25,
-            guidance_scale:      7.5,
-          },
-        },
+        { version: videoVersion.id, input: videoInput },
         {
           headers: {
             "Authorization": `Token ${REPLICATE_TOKEN}`,
@@ -2573,87 +2650,108 @@ exports.subscribeToCampaign = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// ─── 12. scheduledDripSend ──────────────────────────────────────────────────
+// ─── 12. Drip batch (shared by scheduledDripSend + httpDripSend) ────────────
+// Both triggers fire at 08:00 Africa/Kampala (Cloud Scheduler and the
+// Activepieces "Daily Drip Send" flow). Each subscription is claimed in a
+// transaction before its email goes out, so overlapping runs never send the
+// same email twice — whichever run claims a subscription first sends it, the
+// other skips it. A failed send releases the claim so it retries next run.
+const DRIP_CLAIM_MS = 15 * 60 * 1000;
+
+async function claimDripSubscription(ref) {
+  return db.runTransaction(async (tx) => {
+    const fresh = await tx.get(ref);
+    if (!fresh.exists) return null;
+    const d = fresh.data();
+    const nowMs = Date.now();
+    if (d.completed) return null;
+    if (d.nextSendAt && d.nextSendAt.toMillis() > nowMs) return null;      // already advanced by another run
+    if (d.claimedUntil && d.claimedUntil.toMillis() > nowMs) return null;  // another run is sending it now
+    tx.update(ref, { claimedUntil: admin.firestore.Timestamp.fromMillis(nowMs + DRIP_CLAIM_MS) });
+    return d;
+  });
+}
+
+async function runDripBatch(label) {
+  const now = admin.firestore.Timestamp.now();
+  const snap = await db.collection("campaignSubscriptions")
+    .where("completed", "==", false)
+    .where("nextSendAt", "<=", now)
+    .limit(200)
+    .get();
+
+  if (snap.empty) {
+    functions.logger.info(`${label}: no pending subscriptions`);
+    return { sent: 0, errors: 0, skipped: 0, total: 0 };
+  }
+
+  const mailer = getMailer();
+  let sent = 0;
+  let errors = 0;
+  let skipped = 0;
+  const releaseClaim = admin.firestore.FieldValue.delete();
+
+  await Promise.allSettled(snap.docs.map(async (doc) => {
+    const sub = await claimDripSubscription(doc.ref);
+    if (!sub) { skipped++; return; }
+
+    const campaign = CAMPAIGNS[sub.campaignId];
+    const stage = sub.stage || 0;
+    const emailDef = campaign && campaign.emails[stage];
+    // Unknown campaign, unsubscribed contact, or no email left → close it out
+    if (!campaign || sub.unsubscribed || !emailDef) {
+      await doc.ref.update({ completed: true, claimedUntil: releaseClaim });
+      return;
+    }
+
+    const token = Buffer.from(doc.id).toString("base64url");
+    const unsubUrl = `https://us-central1-serene-arch-studio.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
+
+    try {
+      await mailer.sendMail({
+        from: FROM_EMAIL,
+        to: sub.email,
+        replyTo: REPLY_TO,
+        subject: emailDef.subject,
+        html: emailDef.html(sub.name || "") + UNSUB_FOOTER(unsubUrl),
+      });
+      sent++;
+    } catch (mailErr) {
+      functions.logger.error(`${label} mail error`, { email: sub.email, err: mailErr.message });
+      errors++;
+      await doc.ref.update({ claimedUntil: releaseClaim }); // don't advance stage; retry next run
+      return;
+    }
+
+    const nextStage = stage + 1;
+    if (nextStage >= campaign.emails.length) {
+      await doc.ref.update({ stage: nextStage, completed: true, lastSentAt: now, claimedUntil: releaseClaim });
+    } else {
+      const delayMs = (campaign.emails[nextStage].delayDays || 4) * 24 * 60 * 60 * 1000;
+      const nextSendAt = admin.firestore.Timestamp.fromMillis(Date.now() + delayMs);
+      await doc.ref.update({ stage: nextStage, nextSendAt, lastSentAt: now, claimedUntil: releaseClaim });
+    }
+  }));
+
+  const result = { sent, errors, skipped, total: snap.size };
+  functions.logger.info(`${label} complete`, result);
+  return result;
+}
+
+// ─── 12a. scheduledDripSend ─────────────────────────────────────────────────
 exports.scheduledDripSend = functions
   .runWith({ timeoutSeconds: 300, memory: "256MB" })
   .pubsub.schedule("0 8 * * *")
   .timeZone("Africa/Kampala")
   .onRun(async () => {
-    const now = admin.firestore.Timestamp.now();
-    const snap = await db.collection("campaignSubscriptions")
-      .where("completed", "==", false)
-      .where("nextSendAt", "<=", now)
-      .limit(200)
-      .get();
-
-    if (snap.empty) {
-      functions.logger.info("scheduledDripSend: no pending subscriptions");
-      return null;
-    }
-
-    const mailer = getMailer();
-    let sent = 0;
-    let errors = 0;
-
-    await Promise.allSettled(snap.docs.map(async (doc) => {
-      const sub = doc.data();
-      const campaign = CAMPAIGNS[sub.campaignId];
-      if (!campaign) {
-        await doc.ref.update({ completed: true });
-        return;
-      }
-
-      // Skip unsubscribed contacts
-      if (sub.unsubscribed) {
-        await doc.ref.update({ completed: true });
-        return;
-      }
-
-      const stage = sub.stage || 0;
-      const emailDef = campaign.emails[stage];
-      if (!emailDef) {
-        await doc.ref.update({ completed: true });
-        return;
-      }
-
-      const token = Buffer.from(doc.id).toString("base64url");
-      const unsubUrl = `https://us-central1-serene-arch-studio.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
-
-      try {
-        await mailer.sendMail({
-          from: FROM_EMAIL,
-          to: sub.email,
-          replyTo: REPLY_TO,
-          subject: emailDef.subject,
-          html: emailDef.html(sub.name || "") + UNSUB_FOOTER(unsubUrl),
-        });
-        sent++;
-      } catch (mailErr) {
-        functions.logger.error("dripSend mail error", { email: sub.email, err: mailErr.message });
-        errors++;
-        return; // don't advance stage on mail failure
-      }
-
-      const nextStage = stage + 1;
-      const isLast = nextStage >= campaign.emails.length;
-
-      if (isLast) {
-        await doc.ref.update({ stage: nextStage, completed: true });
-      } else {
-        const nextEmail = campaign.emails[nextStage];
-        const delayMs = (nextEmail.delayDays || 4) * 24 * 60 * 60 * 1000;
-        const nextSendAt = admin.firestore.Timestamp.fromMillis(Date.now() + delayMs);
-        await doc.ref.update({ stage: nextStage, nextSendAt, lastSentAt: now });
-      }
-    }));
-
-    functions.logger.info("scheduledDripSend complete", { sent, errors, total: snap.size });
+    await runDripBatch("scheduledDripSend");
     return null;
   });
 
 // ─── 13. httpDripSend ────────────────────────────────────────────────────────
-// HTTP-triggered twin of scheduledDripSend for Spark plan.
-// Activepieces calls this daily at 08:00 Africa/Kampala via a Schedule trigger.
+// HTTP-triggered twin of scheduledDripSend, called daily at 08:00
+// Africa/Kampala by the Activepieces "Daily Drip Send" flow. Safe to run
+// alongside scheduledDripSend — see the claim logic in runDripBatch.
 // Protected by X-Drip-Secret header matching DRIP_SECRET env var.
 //
 // Activepieces step config:
@@ -2689,81 +2787,13 @@ exports.httpDripSend = functions
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const now = admin.firestore.Timestamp.now();
-    let snap;
     try {
-      snap = await db.collection("campaignSubscriptions")
-        .where("completed", "==", false)
-        .where("nextSendAt", "<=", now)
-        .limit(200)
-        .get();
-    } catch (dbErr) {
-      functions.logger.error("httpDripSend: Firestore query error", { err: dbErr.message });
-      return res.status(500).json({ error: "DB error", detail: dbErr.message });
+      const result = await runDripBatch("httpDripSend");
+      return res.status(200).json({ status: "ok", ...result });
+    } catch (err) {
+      functions.logger.error("httpDripSend failed", { err: err.message });
+      return res.status(500).json({ error: "Drip batch failed", detail: err.message });
     }
-
-    if (snap.empty) {
-      functions.logger.info("httpDripSend: no pending subscriptions");
-      return res.status(200).json({ status: "ok", sent: 0, errors: 0, total: 0 });
-    }
-
-    const mailer = getMailer();
-    let sent = 0;
-    let errors = 0;
-
-    await Promise.allSettled(snap.docs.map(async (doc) => {
-      const sub = doc.data();
-      const campaign = CAMPAIGNS[sub.campaignId];
-      if (!campaign) {
-        await doc.ref.update({ completed: true });
-        return;
-      }
-
-      if (sub.unsubscribed) {
-        await doc.ref.update({ completed: true });
-        return;
-      }
-
-      const stage = sub.stage || 0;
-      const emailDef = campaign.emails[stage];
-      if (!emailDef) {
-        await doc.ref.update({ completed: true });
-        return;
-      }
-
-      const token = Buffer.from(doc.id).toString("base64url");
-      const unsubUrl = `https://us-central1-serene-arch-studio.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
-
-      try {
-        await mailer.sendMail({
-          from: FROM_EMAIL,
-          to: sub.email,
-          replyTo: REPLY_TO,
-          subject: emailDef.subject,
-          html: emailDef.html(sub.name || "") + UNSUB_FOOTER(unsubUrl),
-        });
-        sent++;
-      } catch (mailErr) {
-        functions.logger.error("httpDripSend mail error", { email: sub.email, err: mailErr.message });
-        errors++;
-        return;
-      }
-
-      const nextStage = stage + 1;
-      const isLast = nextStage >= campaign.emails.length;
-
-      if (isLast) {
-        await doc.ref.update({ stage: nextStage, completed: true });
-      } else {
-        const nextEmail = campaign.emails[nextStage];
-        const delayMs = (nextEmail.delayDays || 4) * 24 * 60 * 60 * 1000;
-        const nextSendAt = admin.firestore.Timestamp.fromMillis(Date.now() + delayMs);
-        await doc.ref.update({ stage: nextStage, nextSendAt, lastSentAt: now });
-      }
-    }));
-
-    functions.logger.info("httpDripSend complete", { sent, errors, total: snap.size });
-    return res.status(200).json({ status: "ok", sent, errors, total: snap.size });
   });
 
 // ─── 14. unsubscribeEmail ────────────────────────────────────────────────────

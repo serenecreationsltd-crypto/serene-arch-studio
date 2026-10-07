@@ -37,7 +37,11 @@ jobs:
         with:
           project_id: ${{ env.PROJECT }}
 
+      # Non-fatal: these APIs are normally already enabled, and the deploy
+      # account may lack serviceusage.services.enable. If an API really is
+      # missing, the firebase deploy step below fails with a clear message.
       - name: Enable required GCP APIs
+        continue-on-error: true
         run: |
           gcloud services enable \
             cloudfunctions.googleapis.com \
@@ -56,7 +60,11 @@ jobs:
           echo "STRIPE_SECRET=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
           echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
           echo "REPLICATE_TOKEN=${{ secrets.REPLICATE_TOKEN }}" >> .env
+          # Optional — model names resolve to their latest version at runtime;
+          # the *_VERSION secrets only pin a specific hash. Unset = defaults.
+          echo "REPLICATE_MODEL=${{ secrets.REPLICATE_MODEL }}" >> .env
           echo "REPLICATE_MODEL_VERSION=${{ secrets.REPLICATE_MODEL_VERSION }}" >> .env
+          echo "REPLICATE_VIDEO_MODEL=${{ secrets.REPLICATE_VIDEO_MODEL }}" >> .env
           echo "REPLICATE_VIDEO_MODEL_VERSION=${{ secrets.REPLICATE_VIDEO_MODEL_VERSION }}" >> .env
           echo "DRIP_SECRET=${{ secrets.DRIP_SECRET }}" >> .env
 
