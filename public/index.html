@@ -480,6 +480,117 @@ footer p a:hover { color: var(--text); }
   text-decoration: underline; text-underline-offset: 2px;
 }
 #lc-skip:hover { color: var(--muted); }
+
+/* ── Showcase: presentation video + 3D renders ── */
+.showcase {
+  padding: clamp(56px,8vw,96px) 24px;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(14,28,48,.55) 0%, transparent 100%);
+}
+.showcase-inner { max-width: 1100px; margin: 0 auto; }
+.eyebrow {
+  display: inline-block; margin-bottom: 10px;
+  font-size: .74rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--gold);
+}
+.showcase-video {
+  position: relative; max-width: 960px; margin: 0 auto;
+  aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
+  border: 1px solid var(--border); background: #000;
+  box-shadow: 0 24px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(10,126,115,.08);
+}
+.showcase-video video { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Play control sits below the poster's centred title so it never covers it */
+.video-play {
+  position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 7%;
+  background: transparent; border: none; cursor: pointer; color: #fff; font: inherit;
+}
+.video-play span {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 11px 22px 11px 16px; border-radius: 999px;
+  background: rgba(10,126,115,.94); box-shadow: 0 0 0 8px rgba(10,126,115,.2), 0 10px 30px rgba(0,0,0,.35);
+  font-size: .95rem; font-weight: 700; letter-spacing: .01em;
+  transition: transform .2s, background .2s;
+}
+.video-play:hover span, .video-play:focus-visible span { transform: scale(1.04); background: #0d9e91; }
+.video-play svg { flex-shrink: 0; }
+@media (max-width: 600px) {
+  .video-play { padding-bottom: 3%; }
+  .video-play span { gap: 6px; padding: 5px 12px 5px 8px; font-size: .74rem; box-shadow: 0 0 0 4px rgba(10,126,115,.2); }
+  .video-play svg { width: 16px; height: 16px; }
+}
+.video-play[hidden] { display: none; }
+.video-note { text-align: center; color: var(--subtle); font-size: .8rem; margin-top: 12px; }
+
+.renders-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px;
+  margin: clamp(48px,6vw,72px) 0 18px;
+}
+.renders-head h3 {
+  font-family: 'Playfair Display', serif; font-size: clamp(1.3rem, 2.6vw, 1.7rem);
+  font-weight: 700; color: #fff;
+}
+.renders-head p { color: var(--muted); font-size: .88rem; }
+.renders {
+  list-style: none; display: grid; gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.render {
+  position: relative; display: block; width: 100%; padding: 0;
+  aspect-ratio: 3 / 2; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--border); background: var(--surface); cursor: zoom-in;
+  font: inherit; color: inherit; text-align: left;
+}
+.render img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  transition: transform .5s ease;
+}
+.render::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(4,10,20,.82) 100%);
+  pointer-events: none;
+}
+.render-cap {
+  position: absolute; left: 12px; right: 12px; bottom: 10px; z-index: 1;
+  font-size: .8rem; font-weight: 600; color: #fff; line-height: 1.3;
+}
+.render:hover img, .render:focus-visible img { transform: scale(1.05); }
+.render:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.showcase-cta { text-align: center; margin-top: 36px; }
+@media (max-width: 860px) {
+  .renders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .render-cap { font-size: .74rem; left: 10px; right: 10px; bottom: 8px; }
+}
+
+/* Lightbox */
+.lightbox {
+  width: min(1200px, 100vw - 32px); max-width: none; max-height: calc(100vh - 32px);
+  margin: auto; padding: 0; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg); color: var(--text); overflow: hidden;
+}
+.lightbox::backdrop { background: rgba(3,8,16,.88); backdrop-filter: blur(4px); }
+.lightbox figure { position: relative; margin: 0; }
+.lightbox img {
+  display: block; width: 100%; max-height: calc(100vh - 110px); object-fit: contain; background: #000;
+}
+.lightbox figcaption {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 16px; font-size: .9rem; color: var(--muted);
+}
+.lightbox figcaption strong { color: #fff; font-weight: 600; }
+.lb-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2);
+  background: rgba(7,16,30,.7); color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.lb-btn:hover { background: var(--teal); }
+.lb-prev { left: 12px; }
+.lb-next { right: 12px; }
+.lb-close {
+  top: 12px; transform: none; right: 12px; width: 38px; height: 38px;
+}
 </style>
 
 <script type="application/ld+json">
@@ -550,6 +661,79 @@ footer p a:hover { color: var(--text); }
     </a>
   </div>
 </section>
+
+<!-- ── Showcase: presentation video + 3D renders ── -->
+<section class="showcase" id="showcase" aria-labelledby="showcase-title">
+  <div class="showcase-inner">
+    <div class="section-header">
+      <span class="eyebrow">Our Work</span>
+      <h2 id="showcase-title">See Your Home Before It's Built</h2>
+      <p>A 35-second introduction to Serene Creations, followed by 3D visualisations from our residential portfolio.</p>
+    </div>
+
+    <div class="showcase-video">
+      <video id="presentationVideo" controls playsinline preload="none"
+             poster="/media/video/presentation-poster.jpg" width="1280" height="720"
+             aria-label="Serene Creations presentation video">
+        <source src="/media/video/serene-creations-presentation.webm" type='video/webm; codecs="vp9"'>
+        <source src="/media/video/serene-creations-presentation.mp4" type="video/mp4">
+        <a href="/media/video/serene-creations-presentation.mp4">Download the Serene Creations presentation (MP4)</a>
+      </video>
+      <button class="video-play" id="videoPlay" type="button" aria-label="Play the Serene Creations presentation" hidden>
+        <span><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Watch the presentation</span>
+      </button>
+    </div>
+    <p class="video-note">35 seconds · no sound</p>
+
+    <div class="renders-head">
+      <h3>3D Visualisations</h3>
+      <p>Tap any render to view it full size.</p>
+    </div>
+    <ul class="renders" id="renders">
+      <li><button class="render" type="button" data-full="/media/renders/villa-dusk-1600.webp">
+        <img src="/media/renders/villa-dusk-800.webp" srcset="/media/renders/villa-dusk-800.webp 800w, /media/renders/villa-dusk-1600.webp 1600w" sizes="(max-width: 860px) 50vw, 270px" width="800" height="600" loading="lazy" decoding="async" alt="3D render of a two-storey villa lit at dusk">
+        <span class="render-cap">Two-storey villa, dusk view</span></button></li>
+      <li><button class="render" type="button" data-full="/media/renders/bungalow-contemporary-1600.webp">
+        <img src="/media/renders/bungalow-contemporary-800.webp" srcset="/media/renders/bungalow-contemporary-800.webp 800w, /media/renders/bungalow-contemporary-1600.webp 1280w" sizes="(max-width: 860px) 50vw, 270px" width="800" height="450" loading="lazy" decoding="async" alt="3D render of a contemporary bungalow with circular windows and a paved driveway">
+        <span class="render-cap">Contemporary bungalow</span></button></li>
+      <li><button class="render" type="button" data-full="/media/renders/residence-street-1600.webp">
+        <img src="/media/renders/residence-street-800.webp" srcset="/media/renders/residence-street-800.webp 800w, /media/renders/residence-street-1600.webp 1600w" sizes="(max-width: 860px) 50vw, 270px" width="800" height="533" loading="lazy" decoding="async" alt="3D street view of a family residence with a stone-clad feature column">
+        <span class="render-cap">Family residence, street view</span></button></li>
+      <li><button class="render" type="button" data-full="/media/renders/villa-cantilever-1600.webp">
+        <img src="/media/renders/villa-cantilever-800.webp" srcset="/media/renders/villa-cantilever-800.webp 800w, /media/renders/villa-cantilever-1600.webp 1600w" sizes="(max-width: 860px) 50vw, 270px" width="800" height="450" loading="lazy" decoding="async" alt="3D render of a modern villa with a cantilevered white upper floor">
+        <span class="render-cap">Modern cantilevered villa</span></button></li>
+      <li><button class="render" type="button" data-full="/media/renders/corner-residence-1600.webp">
+        <img src="/media/renders/corner-residence-800.webp" srcset="/media/renders/corner-residence-800.webp 800w, /media/renders/corner-residence-1600.webp 1600w" sizes="(max-width: 860px) 50vw, 270px" width="800" height="533" loading="lazy" decoding="async" alt="3D render of a two-storey corner-plot residence">
+        <span class="render-cap">Two-storey corner residence</span></button></li>
+      <li><button class="render" type="button" data-full="/media/renders/stone-feature-home-1600.webp">
+        <img src="/media/renders/stone-feature-home-800.webp" srcset="/media/renders/stone-feature-home-800.webp 800w, /media/renders/stone-feature-home-1600.webp 1600w" sizes="(max-width: 860px) 50vw, 270px" width="800" height="600" loading="lazy" decoding="async" alt="3D render of a family home with a stone feature wall and covered parking">
+        <span class="render-cap">Family home, stone feature wall</span></button></li>
+      <li><button class="render" type="button" data-full="/media/renders/residence-balconies-1600.webp">
+        <img src="/media/renders/residence-balconies-800.webp" srcset="/media/renders/residence-balconies-800.webp 800w, /media/renders/residence-balconies-1600.webp 1600w" sizes="(max-width: 860px) 50vw, 270px" width="800" height="533" loading="lazy" decoding="async" alt="3D render of a two-storey residence with balconies and an orange accent facade">
+        <span class="render-cap">Two-storey residence with balconies</span></button></li>
+      <li><button class="render" type="button" data-full="/media/renders/townhouse-three-storey-1600.webp">
+        <img src="/media/renders/townhouse-three-storey-800.webp" srcset="/media/renders/townhouse-three-storey-800.webp 800w, /media/renders/townhouse-three-storey-1600.webp 1600w" sizes="(max-width: 860px) 50vw, 270px" width="800" height="533" loading="lazy" decoding="async" alt="3D render of a three-storey townhouse with stone cladding">
+        <span class="render-cap">Three-storey townhouse</span></button></li>
+    </ul>
+
+    <div class="showcase-cta">
+      <button class="btn-primary" type="button" onclick="openPopup()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Start Your Design: Free Consultation
+      </button>
+    </div>
+  </div>
+</section>
+
+<dialog class="lightbox" id="lightbox" aria-label="3D render viewer">
+  <figure>
+    <img id="lbImg" src="" alt="">
+    <button class="lb-btn lb-close" type="button" id="lbClose" aria-label="Close"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <button class="lb-btn lb-prev" type="button" id="lbPrev" aria-label="Previous render"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="lb-btn lb-next" type="button" id="lbNext" aria-label="Next render"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    <figcaption><strong id="lbCap"></strong><span id="lbCount"></span></figcaption>
+  </figure>
+</dialog>
 
 <!-- ── Stats ── -->
 <div class="stats">
@@ -975,6 +1159,57 @@ footer p a:hover { color: var(--text); }
       btn.textContent = '📥 Send me the free BOQ';
     });
   });
+})();
+</script>
+
+<!-- Showcase: video play button + render lightbox -->
+<script>
+(function () {
+  // Presentation video: show a large play button until first play.
+  var video = document.getElementById('presentationVideo');
+  var playBtn = document.getElementById('videoPlay');
+  if (video && playBtn) {
+    video.removeAttribute('controls');
+    playBtn.hidden = false;
+    playBtn.addEventListener('click', function () {
+      video.setAttribute('controls', '');
+      playBtn.hidden = true;
+      var p = video.play();
+      if (p && p.catch) p.catch(function () { /* user can press play in the native controls */ });
+    });
+    video.addEventListener('play', function () { playBtn.hidden = true; video.setAttribute('controls', ''); });
+    video.addEventListener('ended', function () { playBtn.hidden = false; video.removeAttribute('controls'); });
+  }
+
+  // 3D render lightbox
+  var dlg = document.getElementById('lightbox');
+  var tiles = Array.prototype.slice.call(document.querySelectorAll('#renders .render'));
+  if (!dlg || !tiles.length || typeof dlg.showModal !== 'function') return;
+  var img = document.getElementById('lbImg');
+  var cap = document.getElementById('lbCap');
+  var count = document.getElementById('lbCount');
+  var idx = 0;
+
+  function show(i) {
+    idx = (i + tiles.length) % tiles.length;
+    var t = tiles[idx], thumb = t.querySelector('img');
+    img.src = t.getAttribute('data-full');
+    img.alt = thumb ? thumb.alt : '';
+    cap.textContent = t.querySelector('.render-cap').textContent;
+    count.textContent = (idx + 1) + ' / ' + tiles.length;
+  }
+  tiles.forEach(function (t, i) {
+    t.addEventListener('click', function () { show(i); dlg.showModal(); });
+  });
+  document.getElementById('lbPrev').addEventListener('click', function () { show(idx - 1); });
+  document.getElementById('lbNext').addEventListener('click', function () { show(idx + 1); });
+  document.getElementById('lbClose').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });   // backdrop
+  dlg.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft') show(idx - 1);
+    if (e.key === 'ArrowRight') show(idx + 1);
+  });
+  dlg.addEventListener('close', function () { tiles[idx].focus(); });
 })();
 </script>
 </body>

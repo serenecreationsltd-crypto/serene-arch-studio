@@ -1,0 +1,93 @@
+<!--
+  Serene Creations — "See Your Home Before It's Built" showcase block
+  Paste into Landingsite.ai as a custom HTML / embed block, directly below the hero section.
+  Self-contained: scoped styles (all classes start with "scsx-"), no scripts.
+  Media is served from the Firebase site: https://serene-arch-studio.web.app/media/...
+-->
+<section class="scsx" aria-labelledby="scsx-title">
+  <style>
+    .scsx { --scsx-bg:#07101e; --scsx-surface:#0e1c30; --scsx-border:#1e3550; --scsx-teal:#0A7E73;
+            --scsx-gold:#C8920F; --scsx-muted:#7a9ab8; --scsx-subtle:#4a6a85;
+            background:var(--scsx-bg); color:#e2eaf4; padding:clamp(48px,7vw,88px) 16px;
+            font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+    .scsx *, .scsx *::before, .scsx *::after { box-sizing:border-box; }
+    .scsx-inner { max-width:1100px; margin:0 auto; }
+    .scsx-head { text-align:center; margin-bottom:36px; }
+    .scsx-eyebrow { display:inline-block; margin-bottom:10px; font-size:12px; font-weight:700;
+                    letter-spacing:.12em; text-transform:uppercase; color:var(--scsx-gold); }
+    .scsx-head h2 { margin:0 0 12px; font-family:'Playfair Display',Georgia,serif; font-weight:700;
+                    font-size:clamp(26px,3.6vw,38px); line-height:1.2; color:#fff; text-wrap:balance; }
+    .scsx-head p { margin:0 auto; max-width:540px; color:var(--scsx-muted); }
+    .scsx-video { max-width:960px; margin:0 auto; aspect-ratio:16/9; border-radius:14px; overflow:hidden;
+                  border:1px solid var(--scsx-border); background:#000; box-shadow:0 24px 60px rgba(0,0,0,.45); }
+    .scsx-video video { display:block; width:100%; height:100%; object-fit:cover; }
+    .scsx-note { text-align:center; color:var(--scsx-subtle); font-size:13px; margin:12px 0 0; }
+    .scsx-sub { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 16px;
+                margin:clamp(40px,6vw,64px) 0 16px; }
+    .scsx-sub h3 { margin:0; font-family:'Playfair Display',Georgia,serif; font-size:clamp(21px,2.6vw,27px); color:#fff; }
+    .scsx-sub p { margin:0; color:var(--scsx-muted); font-size:14px; }
+    .scsx-grid { list-style:none; margin:0; padding:0; display:grid; gap:14px; grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .scsx-grid a { position:relative; display:block; aspect-ratio:3/2; border-radius:10px; overflow:hidden;
+                   border:1px solid var(--scsx-border); background:var(--scsx-surface); text-decoration:none; }
+    .scsx-grid img { display:block; width:100%; height:100%; object-fit:cover; transition:transform .5s ease; }
+    .scsx-grid a::after { content:""; position:absolute; inset:0; pointer-events:none;
+                          background:linear-gradient(180deg,transparent 55%,rgba(4,10,20,.82) 100%); }
+    .scsx-grid span { position:absolute; left:12px; right:12px; bottom:10px; z-index:1;
+                      font-size:13px; font-weight:600; color:#fff; line-height:1.3; }
+    .scsx-grid a:hover img, .scsx-grid a:focus-visible img { transform:scale(1.05); }
+    .scsx-grid a:focus-visible { outline:2px solid var(--scsx-teal); outline-offset:2px; }
+    .scsx-cta { text-align:center; margin-top:32px; }
+    .scsx-cta a { display:inline-flex; align-items:center; gap:8px; padding:13px 26px; border-radius:9px;
+                  background:var(--scsx-teal); color:#fff; font-weight:700; font-size:15px; text-decoration:none; }
+    .scsx-cta a:hover { background:#0d9e91; }
+    @media (max-width:860px) {
+      .scsx-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+      .scsx-grid span { font-size:12px; left:10px; right:10px; bottom:8px; }
+    }
+  </style>
+
+  <div class="scsx-inner">
+    <div class="scsx-head">
+      <span class="scsx-eyebrow">Our Work</span>
+      <h2 id="scsx-title">See Your Home Before It's Built</h2>
+      <p>A 35-second introduction to Serene Creations, followed by 3D visualisations from our residential portfolio.</p>
+    </div>
+
+    <div class="scsx-video">
+      <video controls playsinline preload="none" width="1280" height="720"
+             poster="https://serene-arch-studio.web.app/media/video/presentation-poster.jpg"
+             aria-label="Serene Creations presentation video">
+        <source src="https://serene-arch-studio.web.app/media/video/serene-creations-presentation.webm" type='video/webm; codecs="vp9"'>
+        <source src="https://serene-arch-studio.web.app/media/video/serene-creations-presentation.mp4" type="video/mp4">
+      </video>
+    </div>
+    <p class="scsx-note">35 seconds &middot; no sound</p>
+
+    <div class="scsx-sub">
+      <h3>3D Visualisations</h3>
+      <p>Tap any render to view it full size.</p>
+    </div>
+    <ul class="scsx-grid">
+      <li><a href="https://serene-arch-studio.web.app/media/renders/villa-dusk-1600.webp" target="_blank" rel="noopener">
+        <img src="https://serene-arch-studio.web.app/media/renders/villa-dusk-800.webp" width="800" height="600" loading="lazy" decoding="async" alt="3D render of a two-storey villa lit at dusk"><span>Two-storey villa, dusk view</span></a></li>
+      <li><a href="https://serene-arch-studio.web.app/media/renders/bungalow-contemporary-1600.webp" target="_blank" rel="noopener">
+        <img src="https://serene-arch-studio.web.app/media/renders/bungalow-contemporary-800.webp" width="800" height="450" loading="lazy" decoding="async" alt="3D render of a contemporary bungalow with circular windows and a paved driveway"><span>Contemporary bungalow</span></a></li>
+      <li><a href="https://serene-arch-studio.web.app/media/renders/residence-street-1600.webp" target="_blank" rel="noopener">
+        <img src="https://serene-arch-studio.web.app/media/renders/residence-street-800.webp" width="800" height="533" loading="lazy" decoding="async" alt="3D street view of a family residence with a stone-clad feature column"><span>Family residence, street view</span></a></li>
+      <li><a href="https://serene-arch-studio.web.app/media/renders/villa-cantilever-1600.webp" target="_blank" rel="noopener">
+        <img src="https://serene-arch-studio.web.app/media/renders/villa-cantilever-800.webp" width="800" height="450" loading="lazy" decoding="async" alt="3D render of a modern villa with a cantilevered white upper floor"><span>Modern cantilevered villa</span></a></li>
+      <li><a href="https://serene-arch-studio.web.app/media/renders/corner-residence-1600.webp" target="_blank" rel="noopener">
+        <img src="https://serene-arch-studio.web.app/media/renders/corner-residence-800.webp" width="800" height="533" loading="lazy" decoding="async" alt="3D render of a two-storey corner-plot residence"><span>Two-storey corner residence</span></a></li>
+      <li><a href="https://serene-arch-studio.web.app/media/renders/stone-feature-home-1600.webp" target="_blank" rel="noopener">
+        <img src="https://serene-arch-studio.web.app/media/renders/stone-feature-home-800.webp" width="800" height="600" loading="lazy" decoding="async" alt="3D render of a family home with a stone feature wall and covered parking"><span>Family home, stone feature wall</span></a></li>
+      <li><a href="https://serene-arch-studio.web.app/media/renders/residence-balconies-1600.webp" target="_blank" rel="noopener">
+        <img src="https://serene-arch-studio.web.app/media/renders/residence-balconies-800.webp" width="800" height="533" loading="lazy" decoding="async" alt="3D render of a two-storey residence with balconies and an orange accent facade"><span>Two-storey residence with balconies</span></a></li>
+      <li><a href="https://serene-arch-studio.web.app/media/renders/townhouse-three-storey-1600.webp" target="_blank" rel="noopener">
+        <img src="https://serene-arch-studio.web.app/media/renders/townhouse-three-storey-800.webp" width="800" height="533" loading="lazy" decoding="async" alt="3D render of a three-storey townhouse with stone cladding"><span>Three-storey townhouse</span></a></li>
+    </ul>
+
+    <div class="scsx-cta">
+      <a href="https://www.serenecreations.org/contact">Start Your Design: Free Consultation</a>
+    </div>
+  </div>
+</section>
