@@ -12,17 +12,22 @@ Pushing a change under `workers/` to `main` deploys it via
 `.github/workflows/cloudflare-workers-deploy.yml`. You can also run that workflow by
 hand (Actions → Deploy Cloudflare Workers → Run workflow) for one Worker or all.
 
+| | |
+|---|---|
+| Cloudflare account ID | `aec23a55e10eea9fcb2cb9bcbaf69298` (already set in the workflow) |
+| workers.dev subdomain | `serenecreationsltd.workers.dev` |
+| Worker URLs | `https://serene-backend.serenecreationsltd.workers.dev`, `https://serene-growth.serenecreationsltd.workers.dev` |
+
 ## One-time setup: authentication (replaces the `{API_TOKEN}` placeholder)
 
 1. Create the token: Cloudflare dashboard → **My Profile → API Tokens → Create Token**
-   → template **Edit Cloudflare Workers** → Account resources: your account;
+   → template **Edit Cloudflare Workers** → Account resources: Serene Creations Ltd;
    Zone resources: `serenecreations.org` → Create. Copy the token; it's shown once.
-2. Find the account ID: Cloudflare dashboard → **Workers & Pages** → right-hand
-   sidebar, **Account ID**.
-3. Add both as GitHub repository secrets (repo → Settings → Secrets and variables →
-   Actions → New repository secret):
-   - `CLOUDFLARE_API_TOKEN`
-   - `CLOUDFLARE_ACCOUNT_ID`
+2. Add it as a GitHub repository secret named **`CLOUDFLARE_API_TOKEN`**
+   (repo → Settings → Secrets and variables → Actions → New repository secret).
+
+That's the only secret needed: the account ID isn't sensitive and is already in the
+workflow.
 
 Never paste the token into code, chat or a config file. If it's ever exposed,
 roll it from the same API Tokens page.

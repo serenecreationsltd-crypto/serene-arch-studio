@@ -2,9 +2,11 @@ name: Deploy Cloudflare Workers
 
 # Deploys every Worker in workers/<name>/ that has a wrangler config
 # (wrangler.toml / wrangler.jsonc / wrangler.json), e.g. serene-backend
-# and serene-growth. Authenticated with repository secrets — no token in code:
+# and serene-growth. Authenticated with one repository secret, no token in code:
 #   CLOUDFLARE_API_TOKEN   API token from the "Edit Cloudflare Workers" template
-#   CLOUDFLARE_ACCOUNT_ID  Cloudflare account ID
+# The account ID is an identifier, not a secret, so it is set below
+# (a CLOUDFLARE_ACCOUNT_ID secret, if present, overrides it).
+# Workers are served at https://<worker-name>.serenecreationsltd.workers.dev
 # See workers/README.md.
 
 on:
@@ -23,6 +25,9 @@ on:
 concurrency:
   group: cloudflare-workers-deploy
   cancel-in-progress: false
+
+env:
+  CF_ACCOUNT_ID: aec23a55e10eea9fcb2cb9bcbaf69298   # Serene Creations Ltd Cloudflare account
 
 jobs:
   discover:
@@ -61,10 +66,9 @@ jobs:
       - name: Check Cloudflare credentials
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
-            echo "::error title=Cloudflare credentials missing::Add repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (see workers/README.md), then re-run this workflow."
+          if [ -z "$CF_TOKEN" ]; then
+            echo "::error title=Cloudflare token missing::Add the repository secret CLOUDFLARE_API_TOKEN (see workers/README.md), then re-run this workflow."
             exit 1
           fi
 
@@ -79,6 +83,6 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || env.CF_ACCOUNT_ID }}
           workingDirectory: workers/${{ matrix.worker }}
           command: deploy
