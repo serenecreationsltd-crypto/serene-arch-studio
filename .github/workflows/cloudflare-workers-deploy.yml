@@ -1,0 +1,84 @@
+name: Deploy Cloudflare Workers
+
+# Deploys every Worker in workers/<name>/ that has a wrangler config
+# (wrangler.toml / wrangler.jsonc / wrangler.json), e.g. serene-backend
+# and serene-growth. Authenticated with repository secrets — no token in code:
+#   CLOUDFLARE_API_TOKEN   API token from the "Edit Cloudflare Workers" template
+#   CLOUDFLARE_ACCOUNT_ID  Cloudflare account ID
+# See workers/README.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'workers/**'
+      - '.github/workflows/cloudflare-workers-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: 'Folder under workers/ to deploy (leave blank for all)'
+        required: false
+        default: ''
+
+concurrency:
+  group: cloudflare-workers-deploy
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Find Workers
+    runs-on: ubuntu-latest
+    outputs:
+      workers: ${{ steps.find.outputs.workers }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: find
+        env:
+          WANT: ${{ github.event.inputs.worker }}
+        run: |
+          list=$(for d in workers/*/; do
+                   [ -d "$d" ] || continue
+                   [ -f "$d/wrangler.toml" ] || [ -f "$d/wrangler.jsonc" ] || [ -f "$d/wrangler.json" ] || continue
+                   n=$(basename "$d")
+                   if [ -z "$WANT" ] || [ "$WANT" = "$n" ]; then echo "$n"; fi
+                 done | jq -R . | jq -sc .)
+          [ -n "$list" ] || list='[]'
+          echo "workers=$list" >> "$GITHUB_OUTPUT"
+          echo "Workers to deploy: $list"
+
+  deploy:
+    name: Deploy ${{ matrix.worker }}
+    needs: discover
+    if: needs.discover.outputs.workers != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: ${{ fromJson(needs.discover.outputs.workers) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Cloudflare credentials
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
+            echo "::error title=Cloudflare credentials missing::Add repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (see workers/README.md), then re-run this workflow."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        working-directory: workers/${{ matrix.worker }}
+        run: |
+          if [ -f package-lock.json ]; then npm ci
+          elif [ -f package.json ]; then npm install
+          else echo "No package.json — plain Worker"; fi
+
+      - name: Deploy with Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/${{ matrix.worker }}
+          command: deploy
