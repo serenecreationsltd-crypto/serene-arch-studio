@@ -1,12 +1,16 @@
 name: Deploy Cloudflare Workers
 
-# Deploys every Worker in workers/<name>/ that has a wrangler config
-# (wrangler.toml / wrangler.jsonc / wrangler.json), e.g. serene-backend
-# and serene-growth. Authenticated with one repository secret, no token in code:
+# Deploys every Worker in workers/<folder>/ that has a wrangler.toml
+# (serene-ai-proxy, serene-growth, serene-blog). Authenticated with one
+# repository secret, no token in code:
 #   CLOUDFLARE_API_TOKEN   API token from the "Edit Cloudflare Workers" template
 # The account ID is an identifier, not a secret, so it is set below
 # (a CLOUDFLARE_ACCOUNT_ID secret, if present, overrides it).
-# Workers are served at https://<worker-name>.serenecreationsltd.workers.dev
+#
+# Each run: 1) build check (wrangler --dry-run, no token needed);
+# 2) drift check: compares wrangler.toml with the live Worker and stops if
+#    the deploy would remove or change a live binding or setting;
+# 3) deploy. Without the token, only step 1 runs and the job passes with a warning.
 # See workers/README.md.
 
 on:
@@ -14,6 +18,7 @@ on:
     branches: [main]
     paths:
       - 'workers/**'
+      - 'scripts/cf-worker-drift.py'
       - '.github/workflows/cloudflare-workers-deploy.yml'
   workflow_dispatch:
     inputs:
@@ -21,6 +26,11 @@ on:
         description: 'Folder under workers/ to deploy (leave blank for all)'
         required: false
         default: ''
+      allow_drift:
+        description: 'Allow config changes (deploy even if wrangler.toml differs from the live Worker)'
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: cloudflare-workers-deploy
@@ -28,6 +38,8 @@ concurrency:
 
 env:
   CF_ACCOUNT_ID: aec23a55e10eea9fcb2cb9bcbaf69298   # Serene Creations Ltd Cloudflare account
+  WRANGLER_VERSION: 4.139.0
+  WRANGLER_SEND_METRICS: 'false'
 
 jobs:
   discover:
@@ -43,7 +55,7 @@ jobs:
         run: |
           list=$(for d in workers/*/; do
                    [ -d "$d" ] || continue
-                   [ -f "$d/wrangler.toml" ] || [ -f "$d/wrangler.jsonc" ] || [ -f "$d/wrangler.json" ] || continue
+                   [ -f "$d/wrangler.toml" ] || continue   # the drift check reads wrangler.toml
                    n=$(basename "$d")
                    if [ -z "$WANT" ] || [ "$WANT" = "$n" ]; then echo "$n"; fi
                  done | jq -R . | jq -sc .)
@@ -63,14 +75,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check Cloudflare credentials
-        env:
-          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          if [ -z "$CF_TOKEN" ]; then
-            echo "::error title=Cloudflare token missing::Add the repository secret CLOUDFLARE_API_TOKEN (see workers/README.md), then re-run this workflow."
-            exit 1
-          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Install dependencies
         working-directory: workers/${{ matrix.worker }}
@@ -79,10 +86,36 @@ jobs:
           elif [ -f package.json ]; then npm install
           else echo "No package.json — plain Worker"; fi
 
+      - name: Build check (no upload)
+        working-directory: workers/${{ matrix.worker }}
+        run: npx --yes "wrangler@${WRANGLER_VERSION}" deploy --dry-run --outdir "$RUNNER_TEMP/dist"
+
+      - name: Check Cloudflare credentials
+        id: creds
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CF_TOKEN" ]; then
+            echo "::warning title=Not deployed (Cloudflare token missing)::Build check passed. Add the repository secret CLOUDFLARE_API_TOKEN (see workers/README.md) and re-run to deploy."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Drift check against the live Worker
+        if: steps.creds.outputs.deploy == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || env.CF_ACCOUNT_ID }}
+          ALLOW_DRIFT: ${{ github.event.inputs.allow_drift }}
+        run: python3 scripts/cf-worker-drift.py "workers/${{ matrix.worker }}"
+
       - name: Deploy with Wrangler
+        if: steps.creds.outputs.deploy == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || env.CF_ACCOUNT_ID }}
           workingDirectory: workers/${{ matrix.worker }}
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
           command: deploy
