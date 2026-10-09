@@ -63,11 +63,19 @@ done
 
 echo ""
 echo "→ Enabling APIs the deploy uses (no-op if already on) ..."
-gcloud services enable \
+if ! gcloud services enable \
   cloudfunctions.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com \
   pubsub.googleapis.com cloudscheduler.googleapis.com cloudbilling.googleapis.com \
   firebaserules.googleapis.com \
-  --project="$PROJECT" --quiet
+  --project="$PROJECT" --quiet; then
+  echo ""
+  echo "✗ The roles above were granted, but the APIs couldn't be switched on."
+  echo "  If the error mentions billing, the project is on Firebase's free Spark plan."
+  echo "  Cloud Functions needs the Blaze (pay-as-you-go) plan; it keeps a free monthly allowance:"
+  echo "    https://console.firebase.google.com/project/${PROJECT}/usage/details  → Modify plan → Blaze"
+  echo "  Then run this script again."
+  exit 1
+fi
 echo "   ✓ APIs enabled"
 
 echo ""
