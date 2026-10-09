@@ -46,6 +46,7 @@ jobs:
           gcloud services enable \
             cloudfunctions.googleapis.com \
             cloudbuild.googleapis.com \
+            artifactregistry.googleapis.com \
             pubsub.googleapis.com \
             cloudscheduler.googleapis.com \
             cloudbilling.googleapis.com \

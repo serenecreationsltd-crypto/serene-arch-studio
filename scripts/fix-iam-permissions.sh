@@ -64,8 +64,9 @@ done
 echo ""
 echo "→ Enabling APIs the deploy uses (no-op if already on) ..."
 gcloud services enable \
-  cloudfunctions.googleapis.com cloudbuild.googleapis.com pubsub.googleapis.com \
-  cloudscheduler.googleapis.com cloudbilling.googleapis.com firebaserules.googleapis.com \
+  cloudfunctions.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com \
+  pubsub.googleapis.com cloudscheduler.googleapis.com cloudbilling.googleapis.com \
+  firebaserules.googleapis.com \
   --project="$PROJECT" --quiet
 echo "   ✓ APIs enabled"
 
