@@ -54,6 +54,39 @@ Firebase auth domains referenced: ${FB_DOMAINS:-none}
 signInWithOAuth calls: $(count 'signInWithOAuth') | provider google mentions: $(count "provider:[[:space:]]*['\"]google['\"]")
 Firebase GoogleAuthProvider: $(count 'GoogleAuthProvider') | 'setup pending' text: $(count -i -e 'setup pending')"
 
+# The page's own code around each Google sign-in marker (public page source).
+snip() {  # pattern, label
+  python3 - "$TMP/all.txt" "$1" "$2" <<'PY'
+import re, sys
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+out = []
+for m in list(re.finditer(sys.argv[2], text, re.I))[:3]:
+    s = text[max(0, m.start() - 450): m.end() + 450]
+    s = re.sub(r"\s+", " ", s)
+    s = re.sub(r"(AIza[0-9A-Za-z_-]{6})[0-9A-Za-z_-]+", r"\1…", s)   # shorten keys
+    out.append("… " + s + " …")
+print(f"{sys.argv[3]} ({len(out)} shown):\n" + "\n---\n".join(out) if out else f"{sys.argv[3]}: not found")
+PY
+}
+ann notice "1b Code: Google buttons" "$(snip 'GoogleAuthProvider|signInWithOAuth' 'Google sign-in calls')"
+ann notice "1c Code: setup-pending notice" "$(snip 'setup pending' 'Setup-pending notice')"
+
+# Every Firebase web key on the page: which project, its allowed domains,
+# and whether Google sign-in starts from www.serenecreations.org.
+for key in $(grep -oE 'AIza[0-9A-Za-z_-]{35}' "$TMP/all.txt" | sort -u | head -3); do
+  pc=$(curl -sS --max-time 20 "https://identitytoolkit.googleapis.com/v1/projects?key=$key" 2>&1 || true)
+  pid=$(echo "$pc" | jq -r '.projectId // "?"' 2>/dev/null)
+  doms=$(echo "$pc" | jq -r '(.authorizedDomains // []) | join(" ")' 2>/dev/null)
+  au=$(curl -sS --max-time 20 -X POST "https://identitytoolkit.googleapis.com/v1/accounts:createAuthUri?key=$key" \
+       -H 'Content-Type: application/json' \
+       -d "{\"providerId\":\"google.com\",\"continueUri\":\"$SITE/account\"}" 2>&1 || true)
+  if echo "$au" | jq -e '.authUri' >/dev/null 2>&1; then gs="OK from $SITE"; else gs=$(echo "$au" | jq -r '.error.message // .' 2>/dev/null | head -c 160); fi
+  case " $doms " in *" www.serenecreations.org "*) wd=yes;; *) wd=NO;; esac
+  ann notice "5 Firebase key on page: $pid" "Project: $pid | www.serenecreations.org allowed: $wd
+Allowed domains: ${doms:-?}
+Google sign-in from the site: $gs"
+done
+
 # ---------- 2. Supabase Google provider ----------
 REFS=${SB_REFS:-$FALLBACK_SB_REF}
 for ref in $REFS; do
