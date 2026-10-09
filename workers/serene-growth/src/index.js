@@ -47,6 +47,9 @@ const json = (d, env, s = 200) =>
 const esc = (x = "") =>
   String(x).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmtUGX = (n) => "UGX " + Number(n || 0).toLocaleString("en-UG");
+// Admin routes fail closed: if ADMIN_KEY isn't set, no request is accepted
+// (before, a request without a key matched an unset ADMIN_KEY).
+const isAdmin = (env, key) => !!env.ADMIN_KEY && typeof key === "string" && key === env.ADMIN_KEY;
 
 async function sendEmail(env, { to, subject, html, replyTo }) {
   if (!env.RESEND_API_KEY) return false;
@@ -266,7 +269,7 @@ export default {
       }
 
       if (path === "/blog/generate") {
-        if (url.searchParams.get("key") !== env.ADMIN_KEY) return json({ error: "Unauthorized" }, env, 401);
+        if (!isAdmin(env, url.searchParams.get("key"))) return json({ error: "Unauthorized" }, env, 401);
         const rec = await generateBlogPost(env);
         return json({ ok: true, published: rec }, env);
       }
@@ -279,7 +282,7 @@ export default {
 
       if (path === "/listings/add" && request.method === "POST") {
         const b = await request.json();
-        if (b.key !== env.ADMIN_KEY) return json({ error: "Unauthorized" }, env, 401);
+        if (!isAdmin(env, b.key)) return json({ error: "Unauthorized" }, env, 401);
         const listing = {
           id: "L-" + Date.now(),
           title: String(b.title || "").slice(0, 120),
@@ -300,7 +303,7 @@ export default {
 
       if (path === "/listings/update" && request.method === "POST") {
         const b = await request.json();
-        if (b.key !== env.ADMIN_KEY) return json({ error: "Unauthorized" }, env, 401);
+        if (!isAdmin(env, b.key)) return json({ error: "Unauthorized" }, env, 401);
         let index = JSON.parse((await env.KV.get("listings:index")) || "[]");
         if (b.action === "delete") index = index.filter((l) => l.id !== b.id);
         else index = index.map((l) => (l.id === b.id ? { ...l, status: b.status || l.status, price: b.price ?? l.price } : l));
@@ -316,7 +319,7 @@ export default {
 
       if (path === "/adverts/update" && request.method === "POST") {
         const b = await request.json();
-        if (b.key !== env.ADMIN_KEY) return json({ error: "Unauthorized" }, env, 401);
+        if (!isAdmin(env, b.key)) return json({ error: "Unauthorized" }, env, 401);
         const advert = {
           active: !!b.active,
           text: String(b.text || "").slice(0, 200),        // e.g. "🔥 Promo: 2 plots left in Nsambwe at UGX 25M — ends Friday"
@@ -342,108 +345,4 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(generateBlogPost(env).catch((e) => console.log("Auto-blog failed:", e.message)));
   },
-};// ============================================================
-// Mailchimp Integration Route for Serene Creations
-// Endpoint: POST /mailchimp
-// ============================================================
-
-// 🔒 SET YOUR SECRETS HERE (stored server-side, never exposed to the browser)
-const MAILCHIMP_API_KEY = 'YOUR_MAILCHIMP_API_KEY'    // e.g. "abc123...-us21"
-const MAILCHIMP_LIST_ID = 'YOUR_AUDIENCE_OR_LIST_ID'  // e.g. "a1b2c3d4e5"
-
-// Extract datacenter from the API key (e.g. "us21" from "...-us21")
-const DATACENTER = MAILCHIMP_API_KEY.split('-')[1]
-
-// ============================================================
-// Main route handler — call this from your existing fetch handler
-// ============================================================
-async function handleMailchimp(request) {
-  // Only allow POST
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
-  }
-
-  // CORS headers (so the browser can call this endpoint from your site)
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  }
-
-  // Handle preflight
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
-  }
-
-  try {
-    const body = await request.json()
-    const email = body.email_address
-    const mergeFields = body.merge_fields || {}
-
-    if (!email || !email.includes('@')) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid email address' }),
-        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
-    }
-
-    // Build the Mailchimp payload
-    const payload = {
-      email_address: email,
-      status: 'subscribed',
-      merge_fields: {
-        FNAME: mergeFields.FNAME || '',
-        LNAME: mergeFields.LNAME || '',
-        PHONE: mergeFields.PHONE || '',
-      },
-      tags: body.tags || [],
-    }
-
-    // Add/update member via Mailchimp API (no MD5 required)
-    const url = `https://${DATACENTER}.api.mailchimp.com/3.0/lists/${MAILCHIMP_LIST_ID}/members`
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${btoa('anystring:' + MAILCHIMP_API_KEY)}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...payload,
-        status: 'subscribed',
-        status_if_new: 'subscribed',
-      }),
-    })
-
-    const data = await res.json()
-
-    if (res.ok) {
-      return new Response(
-        JSON.stringify({ success: true, id: data.id, status: data.status }),
-        { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
-    }
-
-    // Mailchimp may return "Member Exists" (400) — that's fine, they're already on the list
-    if (data.title === 'Member Exists') {
-      return new Response(
-        JSON.stringify({ success: true, status: 'existing' }),
-        { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: data.title || 'Mailchimp error',
-        detail: data.detail || '',
-      }),
-      { status: res.status, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    )
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ success: false, error: err.message || 'Server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    )
-  }
-}
+};
