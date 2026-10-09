@@ -1,0 +1,47 @@
+name: Turn on Google sign-in (Supabase)
+
+# Copies the Google sign-in key Firebase serene-arch-studio already uses into
+# Supabase (the website's login), after checking Google accepts Supabase's
+# callback. Also allows www.serenecreations.org in Firebase serene-creations
+# when this deploy account can. Results appear as annotations on the run.
+# See scripts/supabase-google.sh.
+#
+# Secrets: FIREBASE_SERVICE_ACCOUNT_JSON (existing), SUPABASE_ACCESS_TOKEN
+# (supabase.com/dashboard/account/tokens), optional GOOGLE_OAUTH_CLIENT_SECRET.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/supabase-google-auth.yml'
+      - 'scripts/supabase-google.sh'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-google-auth
+  cancel-in-progress: false
+
+jobs:
+  google:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: serene-arch-studio
+
+      - name: Turn on Google sign-in
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+        run: bash scripts/supabase-google.sh
