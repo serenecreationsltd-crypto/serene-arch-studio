@@ -44,7 +44,11 @@ if [ "$cb" = "ENABLED" ] && [ "$bstatus" = "completed" ] && [ "$bconc" = "failur
   if dispatch firebase-deploy.yml; then ann notice "Backend" "Cloud Build is now on: started the backend deploy."
   else ann warning "Backend" "Cloud Build is on, but starting the backend deploy failed."; fi
 else
-  ann notice "Backend" "No action. Cloud Build API: ${cb:-?}. Last backend deploy: ${bconc:-?}."
+  if [ "$cb" = "ENABLED" ]; then
+    ann notice "Backend" "No action. Cloud Build API is on; last backend deploy: ${bconc:-?}."
+  else
+    ann notice "Backend" "Waiting for Part 1 (Blaze plan + permissions script). Cloud Build API: ${cb:-?} (UNKNOWN = the deploy account can't read it yet; the script grants that)."
+  fi
 fi
 
 # ---------- Workers ----------
