@@ -1,0 +1,24 @@
+# Live Worker "throbbing-dew-b70b" (the serene-growth backend), imported from
+# the Cloudflare dashboard on 2026-10-09.
+# Newsletter (/subscribe), calculator leads (/calc-lead), quotes (/bids),
+# AI assistant (/ai), auto-blog (/blog/*), listings (/listings*), promo banner (/adverts*).
+#
+# Before every deploy, CI compares this file with the live Worker
+# (scripts/cf-worker-drift.py) and stops if a deploy would remove or change
+# a live binding, schedule or setting.
+
+name = "throbbing-dew-b70b"
+main = "src/index.js"
+compatibility_date = "2026-07-05"   # the Worker's creation date; the drift check confirms it
+workers_dev = true                  # https://throbbing-dew-b70b.serenecreationsltd.workers.dev
+keep_vars = true                    # keep OWNER_EMAIL, FROM_EMAIL, ALLOWED_ORIGIN, SITE_NAME
+
+# KV: the code reads env.KV (subscribers, blog posts, listings, adverts).
+# The account has no "SERENE_KV" namespace, so it's not declared here. If the
+# live Worker has a KV binding, the drift check stops the first deploy and
+# prints the exact [[kv_namespaces]] block to add.
+
+# Secrets live in Cloudflare and survive deploys (never put them here):
+#   RESEND_API_KEY, ANTHROPIC_API_KEY, ADMIN_KEY
+# Cron (weekly auto-blog): kept as set in the dashboard.
+# There's no [triggers] block, so deploys leave it untouched.

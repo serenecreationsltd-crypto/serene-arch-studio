@@ -1,0 +1,16 @@
+# Live Worker "crimson-wave-dc4e" (blog pages), imported from the Cloudflare
+# dashboard on 2026-10-09. Renders serenecreations.org/blog* from the public
+# Firebase RTDB /blog node.
+#
+# Before every deploy, CI compares this file with the live Worker
+# (scripts/cf-worker-drift.py) and stops if a deploy would remove or change
+# a live binding, schedule or setting.
+
+name = "crimson-wave-dc4e"
+main = "src/index.js"
+compatibility_date = "2026-09-01"   # the Worker's creation date; the drift check confirms it
+workers_dev = true
+keep_vars = true
+
+# Route serenecreations.org/blog* is managed in the dashboard. With no
+# routes listed here, deploys leave it in place.

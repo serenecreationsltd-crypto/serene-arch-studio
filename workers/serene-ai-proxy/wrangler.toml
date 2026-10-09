@@ -1,0 +1,22 @@
+# Live Worker "serene-ai-proxy", imported from the Cloudflare dashboard on 2026-10-09.
+# AI estimates (POST /boq-generate), live tenders (/scrape + daily cron),
+# industry news (GET /news), Anthropic proxy for Activepieces (POST /).
+#
+# Before every deploy, CI compares this file with the live Worker
+# (scripts/cf-worker-drift.py) and stops if a deploy would remove or change
+# a live binding, schedule or setting.
+
+name = "serene-ai-proxy"
+main = "src/index.js"
+compatibility_date = "2026-09-22"   # the Worker's creation date; the drift check confirms it
+workers_dev = true                  # https://serene-ai-proxy.serenecreationsltd.workers.dev
+keep_vars = true                    # keep DAILY_AI_CAP and any other dashboard variables
+
+[[kv_namespaces]]
+binding = "RATE_KV"
+id = "23c4e60cf76d4deab1cfa879414ed1df"   # serene-ai-ratelimit
+
+# Secrets live in Cloudflare and survive deploys (never put them here):
+#   ANTHROPIC_API_KEY, SERVER_SECRET, FIREBASE_SECRET
+# Cron: the daily tender-scrape schedule stays as set in the dashboard.
+# There's no [triggers] block, so deploys leave it untouched.
