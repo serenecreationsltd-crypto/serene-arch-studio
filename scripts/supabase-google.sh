@@ -41,6 +41,12 @@ gapi() {  # method url [json]
        -H "X-Goog-User-Project: $FB_PROJECT" -H 'Content-Type: application/json' ${3:+-d "$3"}
 }
 
+# Hourly mode (AUTO=1, from auto-continue): nothing to do once sign-in works.
+if [ "${AUTO:-}" = 1 ]; then
+  g0=$(curl -sS --max-time 20 "$SB_URL/auth/v1/settings" -H "apikey: $SB_PUBLISHABLE" | jq -r '.external.google | tostring' 2>/dev/null)
+  if [ "$g0" = "true" ]; then ann notice "Google sign-in" "Already on in Supabase; nothing to do."; exit 0; fi
+fi
+
 # ---------- 0. Firebase serene-creations: allow www ----------
 done_portal=""
 for p in "${PORTAL_PROJECTS[@]}"; do
@@ -122,6 +128,10 @@ else
   if ! echo "$cur" | jq -e 'has("site_url")' >/dev/null 2>&1; then
     ann error "3 Supabase" "Couldn't read the project's auth settings: $(echo "$cur" | jq -r '.message // .error // .' 2>/dev/null | head -c 200)"
   else
+    if [ "${AUTO:-}" = 1 ] && [ -n "$(echo "$cur" | jq -r '.external_google_client_id // empty')" ]; then
+      ann notice "3 Supabase" "Google was set up before and is now off; leaving it as the owner set it."
+      exit 0
+    fi
     site=$(echo "$cur" | jq -r '.site_url // ""')
     allow=$(echo "$cur" | jq -r '.uri_allow_list // ""')
     merged=$( (echo "$allow" | tr ',' '\n'; printf '%s\n' "${WANT_REDIRECTS[@]}") | sed 's/^ *//;s/ *$//' | grep -v '^$' | awk '!s[$0]++' | paste -sd, -)
@@ -148,4 +158,4 @@ ann "$lvl" "4 Live result" "Supabase reports Google on: $g | Sign-in link (HTTP 
 $([ "$lvl" = notice ] && echo "The account page now shows 'Continue with Google'. Test in a private window with a Google account other than yours.")"
 
 # Red run until Google sign-in works end to end (also lets it be re-run as a failed job).
-[ "$lvl" = notice ] || exit 1
+[ "$lvl" = notice ] || { [ "${AUTO:-}" = 1 ] && exit 0; exit 1; }

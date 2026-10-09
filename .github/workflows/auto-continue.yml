@@ -1,0 +1,49 @@
+name: Auto-continue setup
+
+# Hourly: as soon as the owner finishes a step (Blaze + permissions script,
+# Cloudflare token, Supabase token + Google redirect address), this starts the
+# matching deploy or switches Google sign-in on. Quiet (green) while waiting.
+# See scripts/auto-continue.sh.
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/auto-continue.yml'
+      - 'scripts/auto-continue.sh'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write
+  checks: read
+
+concurrency:
+  group: auto-continue
+  cancel-in-progress: false
+
+jobs:
+  continue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: serene-arch-studio
+
+      - name: Continue whatever is ready
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+        run: bash scripts/auto-continue.sh
