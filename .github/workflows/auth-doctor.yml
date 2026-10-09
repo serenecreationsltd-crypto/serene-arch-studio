@@ -1,0 +1,35 @@
+name: Google sign-in doctor
+
+# Checks Google sign-in end to end for serenecreations.org and fixes what it
+# safely can (adds the website domains to Firebase's allowed sign-in list).
+# Results appear as annotations on the run. See scripts/auth-doctor.sh.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/auth-doctor.yml'
+      - 'scripts/auth-doctor.sh'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  doctor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: serene-arch-studio
+
+      - name: Check and fix Google sign-in
+        run: bash scripts/auth-doctor.sh
