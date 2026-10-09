@@ -69,7 +69,7 @@ print(f"{sys.argv[3]} ({len(out)} shown):\n" + "\n---\n".join(out) if out else f
 PY
 }
 ann notice "1b Code: Google buttons" "$(snip 'GoogleAuthProvider|signInWithOAuth' 'Google sign-in calls')"
-ann notice "1c Code: setup-pending notice" "$(snip 'setup pending' 'Setup-pending notice')"
+ann notice "1c Code: what switches Google on" "$(snip 'showGooglePending\(\)(?!\s*\{)|function showGoogleReady|external\.google|external\[.google' 'Decision code')"
 
 # Every Firebase web key on the page: which project, its allowed domains,
 # and whether Google sign-in starts from www.serenecreations.org.
