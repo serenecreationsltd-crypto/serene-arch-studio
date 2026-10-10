@@ -1,0 +1,39 @@
+name: Popup doctor
+
+# Read-only browser check of the website popups (Free Consultation modal and
+# BOQ slide-in) on desktop and phone. Results appear as annotations on the run;
+# screenshots are attached as an artifact. See scripts/popup-doctor.mjs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/popup-doctor.yml'
+      - 'scripts/popup-doctor.mjs'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  doctor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright (Chromium)
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Check popups
+        run: node scripts/popup-doctor.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: popup-screenshots
+          path: popup-shots/
+          retention-days: 7
