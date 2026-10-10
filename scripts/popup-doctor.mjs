@@ -55,44 +55,72 @@ const inspect = () => {
   };
 };
 
+const T = (p, ms, label) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout:' + label)), ms))]);
+const results = [];
+let emitted = false;
+const emitAll = () => { if (emitted) return; emitted = true; for (const r of results) note(r.tag, r); };
+// Watchdog: never let a frozen page hang the job; report whatever we have.
+setTimeout(() => { for (const r of results) if (!r.done) r.stage = 'WATCHDOG at ' + r.stage; emitAll(); process.exit(0); }, 11 * 60 * 1000).unref();
+
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 for (const url of URLS) {
   for (const view of VIEWS) {
+    const host = new URL(url).host;
+    const result = { tag: `${host} ${view.name}`, url, view: view.name, stage: 'start', done: false, timeline: [] };
+    results.push(result);
+    const t0 = Date.now();
+    const step = name => { result.stage = name; result.timeline.push(`${name}@${Math.round((Date.now() - t0) / 1000)}s`); };
     const ctx = await browser.newContext(view.opts);
+    // Record main-thread long tasks (anything >50 ms blocks clicks).
+    await ctx.addInitScript(() => {
+      window.__lt = { n: 0, total: 0, max: 0 };
+      try { new PerformanceObserver(l => { for (const e of l.getEntries()) { __lt.n++; __lt.total += e.duration; __lt.max = Math.max(__lt.max, e.duration); } }).observe({ type: 'longtask', buffered: true }); } catch {}
+    });
     const page = await ctx.newPage();
+    page.setDefaultTimeout(15000);
     const errors = [], failed = [];
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text().slice(0, 160)); });
     page.on('pageerror', e => errors.push('pageerror: ' + e.message.slice(0, 160)));
     page.on('requestfailed', r => failed.push(r.url().slice(0, 100) + ' ' + (r.failure()?.errorText || '')));
-    const tag = `${new URL(url).host} ${view.name}`;
-    const result = { url, view: view.name };
+    const ping = async label => {
+      const a = Date.now();
+      try { await T(page.evaluate(() => 1), 8000, 'ping'); result[label] = `responds in ${Date.now() - a} ms`; }
+      catch { result[label] = 'NOT RESPONDING (main thread blocked >8 s)'; }
+    };
     try {
-      const res = await page.goto(url, { waitUntil: 'load', timeout: 60000 });
+      step('goto');
+      const res = await T(page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 }), 50000, 'goto');
       result.status = res?.status();
-      await page.waitForTimeout(4000);
-      // Find the frame (main page or an embed iframe) that holds the popup.
+      step('settle');
+      await page.waitForTimeout(6000);
+      await ping('responsiveAfterLoad');
+      step('inspect');
       const frames = [];
       for (const f of page.frames()) {
-        try { const i = await f.evaluate(inspect); if (i.counts.sasOverlay || i.counts.sasTrigger || i.counts.lcWrap || f === page.mainFrame()) frames.push({ url: f.url().slice(0, 100), ...i, _f: f }); } catch {}
+        try { const i = await T(f.evaluate(inspect), 10000, 'inspect'); if (i.counts.sasOverlay || i.counts.sasTrigger || i.counts.lcWrap || f === page.mainFrame()) frames.push({ url: f.url().slice(0, 100), ...i, _f: f }); }
+        catch (e) { (result.frameErrors ||= []).push(f.url().slice(0, 60) + ' ' + e.message.slice(0, 60)); }
       }
       result.frames = frames.map(({ _f, ...rest }) => rest);
-      result.iframes = await page.evaluate(() => [...document.querySelectorAll('iframe')].map(f => ({ src: (f.src || '(srcdoc)').slice(0, 90), h: f.offsetHeight, w: f.offsetWidth })));
-      await page.screenshot({ path: `popup-shots/${view.name}-${new URL(url).host}-1-loaded.png` });
+      result.iframes = await T(page.evaluate(() => [...document.querySelectorAll('iframe')].map(f => ({ src: (f.src || '(srcdoc)').slice(0, 90), h: f.offsetHeight, w: f.offsetWidth }))), 10000, 'iframes').catch(e => e.message);
+      result.longTasks = await T(page.evaluate(() => window.__lt), 8000, 'lt').catch(e => e.message);
+      step('shot1');
+      await T(page.screenshot({ path: `popup-shots/${view.name}-${host}-1-loaded.png`, timeout: 15000 }), 20000, 'shot1').catch(e => { result.shot1 = e.message; });
 
-      // Click the floating trigger (or the first visible "Free Consultation" control) and see whether the overlay shows.
+      step('click');
       const holder = frames.find(f => f.counts.sasTrigger || f.counts.sasOverlay) || frames[0];
       const f = holder?._f || page.mainFrame();
       let clicked = 'none';
       try {
-        if (await f.isVisible('#sas-trigger')) { await f.click('#sas-trigger', { timeout: 5000 }); clicked = '#sas-trigger'; }
+        if (await T(f.isVisible('#sas-trigger'), 8000, 'vis')) { await T(f.click('#sas-trigger', { timeout: 8000 }), 10000, 'click'); clicked = '#sas-trigger'; }
         else {
           const c = f.getByText(/free consultation/i).first();
-          if (await c.isVisible()) { await c.click({ timeout: 5000 }); clicked = 'text:Free Consultation'; }
+          if (await T(c.isVisible(), 8000, 'vis2')) { await T(c.click({ timeout: 8000 }), 10000, 'click2'); clicked = 'text:Free Consultation'; }
         }
       } catch (e) { clicked += ' (click error: ' + e.message.split('\n')[0].slice(0, 120) + ')'; }
-      await page.waitForTimeout(1200);
       result.clicked = clicked;
-      result.afterClick = await f.evaluate(() => {
+      await page.waitForTimeout(1500);
+      step('afterClick');
+      result.afterClick = await T(f.evaluate(() => {
         const o = document.getElementById('sas-overlay');
         if (!o) return { overlay: 'missing' };
         const r = o.getBoundingClientRect(), cs = getComputedStyle(o);
@@ -101,23 +129,28 @@ for (const url of URLS) {
         return { hasOpenClass: o.classList.contains('open'), display: cs.display, rect: [r.x, r.y, r.width, r.height].map(Math.round),
           viewport: [innerWidth, innerHeight], centreElement: top ? `${top.tagName.toLowerCase()}#${top.id}.${String(top.className).slice(0, 40)}` : null,
           centreIsInsidePopup: !!(top && o.contains(top)) };
-      });
-      await page.screenshot({ path: `popup-shots/${view.name}-${new URL(url).host}-2-after-click.png` });
+      }), 10000, 'afterClick').catch(e => e.message);
+      step('shot2');
+      await T(page.screenshot({ path: `popup-shots/${view.name}-${host}-2-after-click.png`, timeout: 15000 }), 20000, 'shot2').catch(e => { result.shot2 = e.message; });
 
-      // BOQ slide-in: appears after 12 s or 45 % scroll.
+      step('lc-wait');
       await page.keyboard.press('Escape').catch(() => {});
       await page.waitForTimeout(13000);
-      result.lcAfterWait = await page.evaluate(() => {
+      result.lcAfterWait = await T(page.evaluate(() => {
         const w = document.getElementById('lc-wrap');
         return w ? { open: w.classList.contains('open'), transform: getComputedStyle(w).transform } : 'missing';
-      });
+      }), 8000, 'lc').catch(e => e.message);
+      await ping('responsiveAtEnd');
+      step('done');
+      result.done = true;
     } catch (e) {
       result.error = e.message.split('\n')[0].slice(0, 200);
     }
     result.errors = errors.slice(0, 8);
     result.failedRequests = failed.slice(0, 6);
-    note(tag, result);
-    await ctx.close();
+    await T(ctx.close(), 10000, 'close').catch(() => {});
   }
 }
-await browser.close();
+emitAll();
+await T(browser.close(), 10000, 'browser-close').catch(() => {});
+process.exit(0);
