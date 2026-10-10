@@ -101,7 +101,23 @@ for (const url of URLS) {
         catch (e) { (result.frameErrors ||= []).push(f.url().slice(0, 60) + ' ' + e.message.slice(0, 60)); }
       }
       result.frames = frames.map(({ _f, ...rest }) => rest);
-      result.iframes = await T(page.evaluate(() => [...document.querySelectorAll('iframe')].map(f => ({ src: (f.src || '(srcdoc)').slice(0, 90), h: f.offsetHeight, w: f.offsetWidth }))), 10000, 'iframes').catch(e => e.message);
+      result.iframes = await T(page.evaluate(() => [...document.querySelectorAll('iframe')].map(f => {
+        const sd = f.getAttribute('srcdoc') || '';
+        const anc = [];
+        for (let p = f.parentElement, i = 0; p && i < 4; p = p.parentElement, i++) {
+          const c = getComputedStyle(p);
+          anc.push(`${p.tagName.toLowerCase()}${p.id ? '#' + p.id : ''}${typeof p.className === 'string' && p.className ? '.' + p.className.trim().split(/\s+/).slice(0, 2).join('.') : ''} ${p.offsetWidth}x${p.offsetHeight} ${c.display}/${c.overflow}`);
+        }
+        return { src: (f.src || '(srcdoc)').slice(0, 90), h: f.offsetHeight, w: f.offsetWidth, sandbox: f.getAttribute('sandbox'), style: (f.getAttribute('style') || '').slice(0, 120),
+          srcdocLength: sd.length, srcdocHas: { sasOverlay: sd.includes('sas-overlay'), sasTrigger: sd.includes('sas-trigger'), lcWrap: sd.includes('lc-wrap'), script: /<script/i.test(sd), consultation: /free consultation/i.test(sd) },
+          srcdocStart: sd.replace(/\s+/g, ' ').slice(0, 160), parents: anc };
+      })), 10000, 'iframes').catch(e => e.message);
+      result.pageText = await T(page.evaluate(() => ({
+        startYourFreeConsultation: (document.body.innerText.match(/Start Your Free Consultation/gi) || []).length,
+        consultIds: [...document.querySelectorAll('[id*="consult" i],[class*="consult" i],[id*="popup" i],[class*="popup" i],[id*="modal" i],[class*="modal" i]')].slice(0, 12)
+          .map(e => `${e.tagName.toLowerCase()}#${e.id}.${String(e.className).slice(0, 50)} ${getComputedStyle(e).display}`),
+        scheduleBtn: (() => { const b = [...document.querySelectorAll('button,a')].find(e => /schedule consultation/i.test(e.textContent)); return b ? { tag: b.tagName, attrs: [...b.attributes].map(a => a.name + '=' + a.value.slice(0, 60)).slice(0, 6) } : null; })(),
+      })), 10000, 'pageText').catch(e => e.message);
       result.longTasks = await T(page.evaluate(() => window.__lt), 8000, 'lt').catch(e => e.message);
       step('shot1');
       await T(page.screenshot({ path: `popup-shots/${view.name}-${host}-1-loaded.png`, timeout: 15000 }), 20000, 'shot1').catch(e => { result.shot1 = e.message; });
