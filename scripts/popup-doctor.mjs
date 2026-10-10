@@ -58,7 +58,16 @@ const inspect = () => {
 const T = (p, ms, label) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout:' + label)), ms))]);
 const results = [];
 let emitted = false;
-const emitAll = () => { if (emitted) return; emitted = true; for (const r of results) note(r.tag, r); };
+const emitAll = () => {
+  if (emitted) return; emitted = true;
+  for (const r of results) {
+    // Annotations are capped at ~4 KB, so send the essentials and the details separately.
+    note(r.tag + ' summary', { stage: r.stage, status: r.status, clicked: r.clicked, afterClick: r.afterClick, lc: r.lcAfterWait,
+      responsive: [r.responsiveAfterLoad, r.responsiveAtEnd], longTasks: r.longTasks, hunt: r.hunt, error: r.error });
+    note(r.tag + ' details', { errors: r.errors, failed: r.failedRequests, frames: (r.frames || []).map(f => ({ url: f.url, counts: f.counts, fns: f.fns,
+      trigger: f.trigger, overlay: f.overlay })), timeline: r.timeline });
+  }
+};
 // Watchdog: never let a frozen page hang the job; report whatever we have.
 setTimeout(() => { for (const r of results) if (!r.done) r.stage = 'WATCHDOG at ' + r.stage; emitAll(); process.exit(0); }, 11 * 60 * 1000).unref();
 
@@ -80,7 +89,7 @@ for (const url of URLS) {
     page.setDefaultTimeout(15000);
     const errors = [], failed = [];
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text().slice(0, 160)); });
-    page.on('pageerror', e => errors.push('pageerror: ' + e.message.slice(0, 160)));
+    page.on('pageerror', e => errors.push('pageerror: ' + e.message.slice(0, 120) + ' @ ' + String(e.stack || '').split('\n').slice(1, 3).map(s => s.trim()).join(' | ').slice(0, 220)));
     page.on('requestfailed', r => failed.push(r.url().slice(0, 100) + ' ' + (r.failure()?.errorText || '')));
     const ping = async label => {
       const a = Date.now();
@@ -119,6 +128,23 @@ for (const url of URLS) {
         scheduleBtn: (() => { const b = [...document.querySelectorAll('button,a')].find(e => /schedule consultation/i.test(e.textContent)); return b ? { tag: b.tagName, attrs: [...b.attributes].map(a => a.name + '=' + a.value.slice(0, 60)).slice(0, 6) } : null; })(),
       })), 10000, 'pageText').catch(e => e.message);
       result.longTasks = await T(page.evaluate(() => window.__lt), 8000, 'lt').catch(e => e.message);
+      // Hunt for a consultation popup under any id (hidden text included), what opens it, and try opening it.
+      result.hunt = await T(page.evaluate(() => {
+        const out = {};
+        const all = [...document.querySelectorAll('body *')];
+        const heads = all.filter(e => e.children.length === 0 && /free consultation/i.test(e.textContent) && /start|book|request|get/i.test(e.textContent));
+        out.textMatches = heads.slice(0, 6).map(e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + ': ' + e.textContent.trim().slice(0, 50));
+        const fixedAncestor = el => { for (let p = el; p && p !== document.body; p = p.parentElement) { const c = getComputedStyle(p); if (c.position === 'fixed') return p; } return null; };
+        const ovs = [...new Set(heads.map(fixedAncestor).filter(Boolean))];
+        out.overlays = ovs.slice(0, 3).map(o => {
+          const c = getComputedStyle(o), id = o.id;
+          const refs = id ? [...document.scripts].filter(s => s.textContent.includes(id)).map(s => { const i = s.textContent.indexOf(id); return s.textContent.slice(Math.max(0, i - 120), i + 120).replace(/\s+/g, ' '); }).slice(0, 3) : [];
+          const openers = id ? [...document.querySelectorAll('[onclick],[data-target],[data-modal],[href]')].filter(e => [...e.attributes].some(a => a.value.includes(id))).slice(0, 5)
+            .map(e => `${e.tagName.toLowerCase()} "${e.textContent.trim().slice(0, 30)}" ${[...e.attributes].filter(a => a.value.includes(id)).map(a => a.name + '=' + a.value.slice(0, 70)).join(' ')}`) : [];
+          return { tag: o.tagName.toLowerCase(), id, cls: String(o.className).slice(0, 80), display: c.display, visibility: c.visibility, opacity: c.opacity, z: c.zIndex, scriptRefs: refs, openers };
+        });
+        return out;
+      }), 10000, 'hunt').catch(e => e.message);
       step('shot1');
       await T(page.screenshot({ path: `popup-shots/${view.name}-${host}-1-loaded.png`, timeout: 15000 }), 20000, 'shot1').catch(e => { result.shot1 = e.message; });
 
