@@ -3,7 +3,7 @@
 // finds what could be hiding or trapping the popup, clicks the trigger, and
 // reports the result as GitHub annotations. Submits no forms.
 import { chromium, devices } from 'playwright';
-import { mkdirSync } from 'fs';
+import { mkdirSync, readFileSync, existsSync } from 'fs';
 
 const URLS = (process.env.POPUP_URLS || 'https://www.serenecreations.org/').split(',');
 const VIEWS = [
@@ -64,11 +64,11 @@ const emitAll = () => {
     // Annotations are capped at ~4 KB, so send the essentials and the details separately.
     note(r.tag + ' summary', { stage: r.stage, status: r.status, clicked: r.clicked, afterClick: r.afterClick, lc: r.lcAfterWait,
       responsive: [r.responsiveAfterLoad, r.responsiveAtEnd], longTasks: r.longTasks, hunt: r.hunt, error: r.error });
+    if (r.fixTest || r.newsletter) note(r.tag + ' fix-test', { newsletter: r.newsletter, fixTest: r.fixTest });
     if (r.scPopup && typeof r.scPopup === 'object') {
       const { controllerScript, ...rest } = r.scPopup;
       note(r.tag + ' sc-popup', { ...rest, outerStart: undefined, externalScripts: undefined });
-      if (controllerScript) note(r.tag + ' controller', controllerScript.slice(0, 1900));
-      if (controllerScript && controllerScript.length > 1900) note(r.tag + ' controller (cont)', controllerScript.slice(1900, 3800));
+
     }
     note(r.tag + ' details', { errors: r.errors, failed: r.failedRequests, frames: (r.frames || []).map(f => ({ url: f.url, counts: f.counts, fns: f.fns,
       trigger: f.trigger, overlay: f.overlay })), timeline: r.timeline });
@@ -230,6 +230,47 @@ for (const url of URLS) {
         const w = document.getElementById('lc-wrap');
         return w ? { open: w.classList.contains('open'), transform: getComputedStyle(w).transform } : 'missing';
       }), 8000, 'lc').catch(e => e.message);
+      // Newsletter popup (built by the page script after ~25 s): did it appear?
+      result.newsletter = await T(page.evaluate(() => {
+        const c = document.getElementById('scnl-card');
+        if (!c) return 'not shown';
+        const r = c.getBoundingClientRect();
+        return { shown: r.width > 0 && r.height > 0, rect: [r.x, r.y, r.width, r.height].map(Math.round) };
+      }), 8000, 'nl').catch(e => e.message);
+      // Test the proposed fix (embeds/consultation-popup-fix.html) on the live page, without changing the site.
+      const fixFile = process.env.POPUP_FIX || 'embeds/consultation-popup-fix.html';
+      if (existsSync(fixFile) && host.includes('serenecreations.org')) {
+        step('fix-test');
+        const fix = {};
+        await page.evaluate(() => { const b = document.getElementById('scnl-close'); if (b) b.click(); }).catch(() => {});
+        await page.keyboard.press('Escape').catch(() => {});
+        const src = readFileSync(fixFile, 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+        await T(page.addScriptTag({ content: src }), 10000, 'inject').catch(e => { fix.inject = e.message; });
+        const cand = page.locator('a:visible, button:visible').filter({ hasText: /schedule consultation|free consultation|book consultation/i }).first();
+        try { fix.clicked = (await cand.textContent({ timeout: 5000 })).trim().slice(0, 40); await cand.click({ timeout: 8000 }); }
+        catch (e) { fix.clickError = e.message.split('\n')[0].slice(0, 120); }
+        await page.waitForTimeout(800);
+        fix.opened = await page.evaluate(() => {
+          const o = document.getElementById('sc-popup-overlay');
+          const card = document.getElementById('sc-popup');
+          const r = card ? card.getBoundingClientRect() : { x: 0, y: 0, width: 0, height: 0 };
+          const top = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+          return { active: !!(o && o.classList.contains('active')), parentIsBody: !!(o && o.parentElement === document.body),
+            card: [r.x, r.y, r.width, r.height].map(Math.round), centreInside: !!(top && o && o.contains(top)) };
+        }).catch(e => e.message);
+        await T(page.screenshot({ path: `popup-shots/${view.name}-${host}-3-fix-open.png`, timeout: 15000 }), 20000, 'shot3').catch(() => {});
+        fix.chip = await page.evaluate(() => {
+          const b = document.querySelector('#sc-interest button, #sc-interest [data-interest]');
+          if (!b) return 'no chip found';
+          b.click();
+          const f = document.getElementById('sc-interest-field');
+          return { chip: b.textContent.trim(), field: f ? f.value : 'no field', selected: b.classList.contains('selected') };
+        }).catch(e => e.message);
+        await page.keyboard.press('Escape').catch(() => {});
+        await page.waitForTimeout(400);
+        fix.closedByEsc = await page.evaluate(() => !document.getElementById('sc-popup-overlay').classList.contains('active')).catch(e => e.message);
+        result.fixTest = fix;
+      }
       await ping('responsiveAtEnd');
       step('done');
       result.done = true;

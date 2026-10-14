@@ -1,0 +1,79 @@
+<!--
+  Serene Creations — Free Consultation popup fix (Landingsite)
+
+  Why: on www.serenecreations.org the consultation popup (#sc-popup-overlay) is
+  on the page but (1) sits inside a hidden wrapper, so it can never show, and
+  (2) has no script that opens it (its CSS only shows it with the "active" class).
+
+  What this does: moves the popup out of the hidden wrapper, opens it from every
+  "Free Consultation" / "Schedule Consultation" / "Book Consultation" button or
+  link, closes it with the X, a click outside or Esc, and makes the service
+  buttons (House Plans, BOQ & Costing, …) selectable so the choice is sent with
+  the form. The form itself is still submitted by Landingsite as before.
+
+  Paste: Landingsite editor → the code/HTML section that contains the popup
+  (or Site settings → custom code, before </body>) → add this at the end → Publish.
+-->
+<script>
+(function () {
+  'use strict';
+  function ready(fn) { if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  ready(function () {
+    var ov = document.getElementById('sc-popup-overlay');
+    if (!ov || ov.getAttribute('data-sc-fixed')) return;
+    ov.setAttribute('data-sc-fixed', '1');
+
+    // 1. Escape the hidden wrapper so the popup can actually display.
+    if (ov.parentElement !== document.body) document.body.appendChild(ov);
+    ov.style.position = 'fixed';
+    ov.style.inset = '0';
+    ov.style.zIndex = '2147483000';
+    ov.setAttribute('role', 'presentation');
+
+    var lastFocus = null;
+    function open(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      lastFocus = document.activeElement;
+      ov.classList.add('active');
+      document.documentElement.style.overflow = 'hidden';
+      var first = ov.querySelector('input[type="email"], input:not([type="hidden"]), button');
+      if (first) setTimeout(function () { first.focus(); }, 50);
+    }
+    function close() {
+      ov.classList.remove('active');
+      document.documentElement.style.overflow = '';
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+    window.scOpenConsultation = open;
+    window.scCloseConsultation = close;
+
+    // 2. Close: X button, click on the dark backdrop, Esc key.
+    var x = document.getElementById('sc-close');
+    if (x) x.addEventListener('click', close);
+    ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && ov.classList.contains('active')) close(); });
+
+    // 3. Open from consultation buttons/links anywhere on the page.
+    var opener = /free consultation|schedule (a )?consultation|book (a )?(free )?consultation|request (a )?(free )?consultation/i;
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest ? e.target.closest('a, button') : null;
+      if (!el || ov.contains(el)) return;
+      if (opener.test((el.textContent || '').trim()) || el.hasAttribute('data-open-consultation') || (el.getAttribute('href') || '') === '#consultation') open(e);
+    }, true);
+    if (location.hash === '#consultation') open();
+
+    // 4. Service choice buttons inside the popup → hidden "interest" field.
+    var field = document.getElementById('sc-interest-field');
+    var chips = ov.querySelectorAll('#sc-interest button, #sc-interest [data-interest]');
+    Array.prototype.forEach.call(chips, function (b) {
+      b.setAttribute('type', 'button');
+      b.addEventListener('click', function () {
+        Array.prototype.forEach.call(chips, function (c) { c.classList.remove('selected'); c.setAttribute('aria-pressed', 'false'); });
+        b.classList.add('selected');
+        b.setAttribute('aria-pressed', 'true');
+        if (field) field.value = b.getAttribute('data-interest') || b.textContent.trim();
+      });
+    });
+  });
+})();
+</script>
