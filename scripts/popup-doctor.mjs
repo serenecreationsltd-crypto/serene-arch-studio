@@ -248,7 +248,14 @@ for (const url of URLS) {
         await T(page.addScriptTag({ content: src }), 10000, 'inject').catch(e => { fix.inject = e.message; });
         const cand = page.locator('a:visible, button:visible').filter({ hasText: /schedule consultation|free consultation|book consultation/i }).first();
         try { fix.clicked = (await cand.textContent({ timeout: 5000 })).trim().slice(0, 40); await cand.click({ timeout: 8000 }); }
-        catch (e) { fix.clickError = e.message.split('\n')[0].slice(0, 120); }
+        catch (e) {
+          fix.clickError = e.message.split('\n').filter(l => /intercepts|not visible|not stable|outside of the viewport|waiting for/i.test(l)).slice(-3).map(l => l.trim().slice(0, 160));
+          // Real taps land on whatever covers the button; report it, then try a direct click to test the fix itself.
+          fix.coveredBy = await cand.evaluate(el => { const r = el.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+            return t ? `${t.tagName.toLowerCase()}#${t.id}.${String(t.className).slice(0, 60)} (button at ${Math.round(r.x)},${Math.round(r.y)} ${Math.round(r.width)}x${Math.round(r.height)})` : 'nothing'; }).catch(err => err.message.slice(0, 80));
+          await cand.evaluate(el => el.click()).catch(() => {});
+          fix.usedDirectClick = true;
+        }
         await page.waitForTimeout(800);
         fix.opened = await page.evaluate(() => {
           const o = document.getElementById('sc-popup-overlay');
