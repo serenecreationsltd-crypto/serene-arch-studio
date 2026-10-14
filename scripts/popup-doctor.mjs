@@ -5,7 +5,7 @@
 import { chromium, devices } from 'playwright';
 import { mkdirSync } from 'fs';
 
-const URLS = (process.env.POPUP_URLS || 'https://www.serenecreations.org/,https://serene-arch-studio.web.app/').split(',');
+const URLS = (process.env.POPUP_URLS || 'https://www.serenecreations.org/').split(',');
 const VIEWS = [
   { name: 'desktop', opts: { viewport: { width: 1366, height: 900 } } },
   { name: 'phone', opts: { ...devices['iPhone 13'] } },
@@ -64,6 +64,7 @@ const emitAll = () => {
     // Annotations are capped at ~4 KB, so send the essentials and the details separately.
     note(r.tag + ' summary', { stage: r.stage, status: r.status, clicked: r.clicked, afterClick: r.afterClick, lc: r.lcAfterWait,
       responsive: [r.responsiveAfterLoad, r.responsiveAtEnd], longTasks: r.longTasks, hunt: r.hunt, error: r.error });
+    if (r.scPopup && r.scPopup !== 'none') note(r.tag + ' sc-popup', r.scPopup);
     note(r.tag + ' details', { errors: r.errors, failed: r.failedRequests, frames: (r.frames || []).map(f => ({ url: f.url, counts: f.counts, fns: f.fns,
       trigger: f.trigger, overlay: f.overlay })), timeline: r.timeline });
   }
@@ -145,6 +146,34 @@ for (const url of URLS) {
         });
         return out;
       }), 10000, 'hunt').catch(e => e.message);
+      // Live-site popup (#sc-popup-overlay): structure, who references it (inline and same-origin script files), and a forced-open test.
+      result.scPopup = await T(page.evaluate(async () => {
+        const o = document.getElementById('sc-popup-overlay');
+        if (!o) return 'none';
+        const out = { ids: [...o.querySelectorAll('[id]')].map(e => e.id).slice(0, 20),
+          buttons: [...o.querySelectorAll('button,a')].map(b => `${b.id || ''} "${b.textContent.trim().slice(0, 25)}" ${(b.getAttribute('onclick') || '').slice(0, 50)}`).slice(0, 8),
+          style: (o.getAttribute('style') || '').slice(0, 200), outerStart: o.outerHTML.replace(/\s+/g, ' ').slice(0, 300) };
+        out.inlineRefs = [...document.scripts].filter(s => !s.src && /sc-popup|scPopup|sc_popup/i.test(s.textContent))
+          .map(s => { const i = s.textContent.search(/sc-popup|scPopup|sc_popup/i); return s.textContent.slice(Math.max(0, i - 150), i + 250).replace(/\s+/g, ' '); }).slice(0, 3);
+        const srcs = [...document.scripts].filter(s => s.src).map(s => s.src);
+        out.externalScripts = srcs.slice(0, 15).map(s => s.replace(location.origin, '')).slice(0, 15);
+        out.externalRefs = [];
+        for (const s of srcs.filter(s => s.startsWith(location.origin)).slice(0, 10)) {
+          try { const r = await fetch(s); const t = await r.text(); const i = t.search(/sc-popup|scPopup|sc_popup/i);
+            out.externalRefs.push(`${s.replace(location.origin, '')} ${r.status} ${t.length}B ${i >= 0 ? 'MENTIONS: ' + t.slice(Math.max(0, i - 100), i + 200).replace(/\s+/g, ' ') : 'no mention'}`); }
+          catch (e) { out.externalRefs.push(`${s} fetch error ${e.message}`); }
+        }
+        try { const r = await fetch('/js/home/worker-leads.js'); out.workerLeads = `${r.status} ${(await r.text()).slice(0, 120).replace(/\s+/g, ' ')}`; } catch (e) { out.workerLeads = e.message; }
+        o.style.display = 'flex';
+        const r = o.getBoundingClientRect();
+        const top = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+        out.forcedOpen = { rect: [r.x, r.y, r.width, r.height].map(Math.round), centreInside: !!(top && o.contains(top)) };
+        return out;
+      }), 20000, 'scPopup').catch(e => e.message);
+      if (result.scPopup && result.scPopup !== 'none') {
+        await T(page.screenshot({ path: `popup-shots/${view.name}-${host}-0-forced-open.png`, timeout: 15000 }), 20000, 'shot0').catch(() => {});
+        await page.evaluate(() => { const o = document.getElementById('sc-popup-overlay'); if (o) o.style.display = ''; }).catch(() => {});
+      }
       step('shot1');
       await T(page.screenshot({ path: `popup-shots/${view.name}-${host}-1-loaded.png`, timeout: 15000 }), 20000, 'shot1').catch(e => { result.shot1 = e.message; });
 
