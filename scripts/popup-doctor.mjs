@@ -8,7 +8,7 @@ import { mkdirSync } from 'fs';
 const URLS = (process.env.POPUP_URLS || 'https://www.serenecreations.org/').split(',');
 const VIEWS = [
   { name: 'desktop', opts: { viewport: { width: 1366, height: 900 } } },
-  { name: 'phone', opts: { ...devices['iPhone 13'] } },
+  ...(process.env.POPUP_PHONE === '0' ? [] : [{ name: 'phone', opts: { ...devices['iPhone 13'] } }]),
 ];
 mkdirSync('popup-shots', { recursive: true });
 
@@ -64,7 +64,12 @@ const emitAll = () => {
     // Annotations are capped at ~4 KB, so send the essentials and the details separately.
     note(r.tag + ' summary', { stage: r.stage, status: r.status, clicked: r.clicked, afterClick: r.afterClick, lc: r.lcAfterWait,
       responsive: [r.responsiveAfterLoad, r.responsiveAtEnd], longTasks: r.longTasks, hunt: r.hunt, error: r.error });
-    if (r.scPopup && r.scPopup !== 'none') note(r.tag + ' sc-popup', r.scPopup);
+    if (r.scPopup && typeof r.scPopup === 'object') {
+      const { controllerScript, ...rest } = r.scPopup;
+      note(r.tag + ' sc-popup', { ...rest, outerStart: undefined, externalScripts: undefined });
+      if (controllerScript) note(r.tag + ' controller', controllerScript.slice(0, 1900));
+      if (controllerScript && controllerScript.length > 1900) note(r.tag + ' controller (cont)', controllerScript.slice(1900, 3800));
+    }
     note(r.tag + ' details', { errors: r.errors, failed: r.failedRequests, frames: (r.frames || []).map(f => ({ url: f.url, counts: f.counts, fns: f.fns,
       trigger: f.trigger, overlay: f.overlay })), timeline: r.timeline });
   }
@@ -164,6 +169,20 @@ for (const url of URLS) {
           catch (e) { out.externalRefs.push(`${s} fetch error ${e.message}`); }
         }
         try { const r = await fetch('/js/home/worker-leads.js'); out.workerLeads = `${r.status} ${(await r.text()).slice(0, 120).replace(/\s+/g, ' ')}`; } catch (e) { out.workerLeads = e.message; }
+        out.rootEls = { scPopupRoot: !!document.getElementById('sc-popup-root'), scsPopupRoot: !!document.getElementById('scs-popup-root') };
+        out.ancestors = [];
+        for (let p = o.parentElement; p && p !== document.documentElement; p = p.parentElement) {
+          const c = getComputedStyle(p);
+          out.ancestors.push(`${p.tagName.toLowerCase()}${p.id ? '#' + p.id : ''}${typeof p.className === 'string' && p.className ? '.' + p.className.trim().split(/\s+/).slice(0, 2).join('.') : ''} ${c.display}${c.visibility === 'hidden' ? ' hidden' : ''}${c.transform !== 'none' ? ' transform' : ''}`);
+        }
+        out.ancestors = out.ancestors.slice(0, 8);
+        out.cssRules = [];
+        for (const sh of document.styleSheets) {
+          let rules; try { rules = sh.cssRules; } catch { continue; }
+          for (const r of rules || []) if (r.selectorText && /sc-popup|sc-active/.test(r.selectorText) && out.cssRules.length < 8) out.cssRules.push(r.cssText.replace(/\s+/g, ' ').slice(0, 160));
+        }
+        const ctl = [...document.scripts].find(s => !s.src && s.textContent.includes('sc-popup-root'));
+        out.controllerScript = ctl ? ctl.textContent.replace(/\s+/g, ' ').slice(0, 2600) : null;
         o.style.display = 'flex';
         const r = o.getBoundingClientRect();
         const top = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
