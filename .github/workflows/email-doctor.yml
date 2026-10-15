@@ -1,0 +1,35 @@
+name: Email doctor
+
+# Read-only check of why automated emails from info@serenecreations.org fail:
+# DNS records, the Zoho SMTP login (one test email from info@ to info@ only),
+# and bounce / Zoho notices in the info@ inbox. Results appear as annotations
+# on the run, with every address except info@ blanked. See scripts/email-doctor.mjs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/email-doctor.yml'
+      - 'scripts/email-doctor.mjs'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  doctor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install mail libraries
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save --no-audit --no-fund nodemailer@6 imapflow@1
+      - name: Check email
+        env:
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: node scripts/email-doctor.mjs
