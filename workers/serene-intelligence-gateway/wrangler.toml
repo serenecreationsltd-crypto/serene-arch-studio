@@ -1,0 +1,8 @@
+name = "serene-intelligence-gateway"
+main = "src/index.js"
+compatibility_date = "2026-09-22"
+workers_dev = true
+keep_vars = true
+
+# Configure BACKEND_ORIGIN and GATEWAY_SERVER_TOKEN as Cloudflare secrets.
+# This new Worker does not modify the existing serene-ai-proxy Worker.
