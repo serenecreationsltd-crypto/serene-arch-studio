@@ -7,8 +7,9 @@ keep_vars = true
 # Configure BACKEND_ORIGIN and GATEWAY_SERVER_TOKEN as Cloudflare secrets.
 # This new Worker does not modify the existing serene-ai-proxy Worker.
 
-# Bind a dedicated KV namespace before deploying:
-# [[kv_namespaces]]
-# binding = "RATE_KV"
-# id = "<new dedicated namespace ID>"
+# Existing rate-limit KV namespace, shared binding name but isolated keys.
+# New gateway keys use the "serene-chat:" prefix.
+[[kv_namespaces]]
+binding = "RATE_KV"
+id = "23c4e60cf76d4deab1cfa879414ed1df"
 # KV increments are not atomic; enforce a second rate limit using Cloudflare WAF or a Durable Object.
