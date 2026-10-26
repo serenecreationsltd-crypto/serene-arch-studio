@@ -21,6 +21,8 @@
  *   DAILY_AI_CAP       (optional plain variable, default 250 Anthropic calls/day)
  */
 
+import { handleDesignProviders } from './design-providers.mjs';
+
 const FIREBASE_DB = 'https://serene-creations-default-rtdb.firebaseio.com';
 const FIREBASE_WEB_KEY = 'AIzaSyDmwc6sp35Bxs0L3csv4qUBJ2yyuP_0beo'; // public web key, used only to verify sign-in tokens
 const ACTIVEPIECES_LEAD_HOOK = 'https://cloud.activepieces.com/api/v1/webhooks/gaqpTTBjcrwCpNPukckrm';
@@ -41,6 +43,10 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
 
     try {
+      if (url.pathname.startsWith('/design/')) {
+        const isServer = !!env.SERVER_SECRET && timingSafeEqual(request.headers.get('X-Server-Secret') || '', env.SERVER_SECRET);
+        return await handleDesignProviders(request, env, cors, { isServer, allow });
+      }
       if (request.method === 'GET') {
         if (url.pathname === '/news')   return await handleNews(url, env, cors);
         if (url.pathname === '/health') return json({ ok: true, version: 4, time: new Date().toISOString() }, 200, cors);
@@ -507,3 +513,4 @@ function callClaude(env, body) {
 function json(data, status = 200, cors = {}) {
   return new Response(JSON.stringify(data), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 }
+
