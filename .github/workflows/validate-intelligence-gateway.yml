@@ -14,6 +14,8 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: node --check workers/serene-intelligence-gateway/src/index.js
+      - name: Run gateway security tests
+        run: node workers/serene-intelligence-gateway/tests/security.mjs
       - name: Check Worker bundle
         working-directory: workers/serene-intelligence-gateway
         run: npx --yes wrangler@4.139.0 deploy --dry-run
