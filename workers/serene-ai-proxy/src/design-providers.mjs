@@ -7,7 +7,19 @@ const definitions = [
   { id: 'planner5d', name: 'Planner 5D', url: 'https://planner5d.com', capability: 'Editable 2D/3D floor plans', requirement: 'Planner 5D B2B contract, API credentials and approved embed domains' },
   { id: 'nim', name: 'Nim Plan Walkthrough', url: 'https://nim.video/planwalkthrough', capability: 'Concept walkthrough from a floor plan', requirement: 'Use the provider website; Plan Walkthrough API access is unverified' },
   { id: 'firefly', name: 'Adobe Firefly', url: 'https://firefly.adobe.com', capability: 'Concept image generation', requirement: 'Adobe Firefly Services OAuth server credentials and API entitlement' },
-  { id: 'kling', name: 'Kling AI', url: 'https://kling.ai', capability: 'Animate a reference render', requirement: 'Kling API key and API credit balance' }
+  { id: 'kling', name: 'Kling AI', url: 'https://kling.ai', capability: 'Animate a reference render', requirement: 'Kling API key and API credit balance' },
+  { id: 'luma', name: 'Luma Dream Machine', url: 'https://dream-machine.lumalabs.ai', capability: 'Cinematic concept video', requirement: 'Luma API entitlement, key and current model provisioning' },
+  { id: 'pika', name: 'Pika / Pikaframes', url: 'https://creation.pika.art/apps/pikaframes', capability: 'Animate ordered reference frames', requirement: 'Pika API key and separate API billing' },
+  { id: 'hailuo', name: 'Hailuo AI', url: 'https://hailuoai.video', capability: 'Reference-led concept video', requirement: 'MiniMax API access, credentials and video model entitlement' },
+  { id: 'kaiber', name: 'Kaiber', url: 'https://kaiber.ai', capability: 'Edit and assemble promotional video', requirement: 'External workflow; public automation API not verified' },
+  { id: 'heygen', name: 'HeyGen', url: 'https://www.heygen.com', capability: 'Presenter-led service explainer', requirement: 'HeyGen API plan, credentials and an approved avatar/voice' },
+  { id: 'revid', name: 'Revid AI', url: 'https://www.revid.ai', capability: 'Script-to-video marketing clips', requirement: 'Revid API key, active plan and credits' },
+  { id: 'immersity', name: 'Immersity', url: 'https://www.immersity.ai', capability: 'Image depth and immersive motion', requirement: 'Immersity API entitlement and current account credentials' },
+  { id: 'higgsfield', name: 'Higgsfield', url: 'https://higgsfield.ai', capability: 'Creative image and cinematic video', requirement: 'Higgsfield API console access, key and model entitlement' },
+  { id: 'magnific', name: 'Magnific', url: 'https://magnific.ai', capability: 'Enhance and upscale reference imagery', requirement: 'Magnific/Freepik API access and current endpoint verification' },
+  { id: 'dzine', name: 'Dzine', url: 'https://www.dzine.ai', capability: 'Image styling, editing and enhancement', requirement: 'Dzine developer API key and entitlement' },
+  { id: 'openart', name: 'OpenArt', url: 'https://openart.ai', capability: 'Image and video concept creation', requirement: 'External workflow; official help currently states no public API' },
+  { id: 'getfloorplan', name: 'Getfloorplan', url: 'https://getfloorplan.com', capability: '2D/3D floor-plan presentation', requirement: 'Business API provisioning and approved project workflow' }
 ];
 
 export function providerCatalog() {
@@ -84,14 +96,13 @@ export async function handleDesignProviders(request, env, cors, { isServer, allo
     return reply({ providers: providerCatalog() }, 200, cors);
   // Paid actions and provider job results are never exposed to anonymous clients.
   if (!isServer) return reply({ error: 'Server authentication required' }, 401, cors);
-  const match = url.pathname.match(/^\/design\/(firefly|kling)\/(generate|status)$/);
+  const match = url.pathname.match(/^\/design\/(firefly|kling|pika|revid)\/(generate|status)$/);
   if (!match) return reply({ error: 'Route not found' }, 404, cors);
   const [, provider, action] = match;
   if (request.method !== (action === 'generate' ? 'POST' : 'GET'))
     return reply({ error: 'Method not allowed' }, 405, cors);
-  const configured = provider === 'firefly'
-    ? env.FIREFLY_SERVICES_CLIENT_ID && env.FIREFLY_SERVICES_CLIENT_SECRET
-    : env.KLING_API_KEY;
+  const configured = { firefly: env.FIREFLY_SERVICES_CLIENT_ID && env.FIREFLY_SERVICES_CLIENT_SECRET,
+    kling: env.KLING_API_KEY, pika: env.PIKA_API_KEY, revid: env.REVID_API_KEY }[provider];
   if (!configured || (action === 'generate' && env.DESIGN_GENERATION_ENABLED !== 'true'))
     return reply({ error: 'Provider setup required; generation is not enabled' }, 503, cors);
   try {
@@ -100,6 +111,12 @@ export async function handleDesignProviders(request, env, cors, { isServer, allo
       body = await readBody(request);
       body.prompt = promptOf(body);
       if (provider === 'kling') body.imageUrl = referenceUrl(body.imageUrl);
+      if (provider === 'pika') {
+        // Start with two frames and a single fixed transition to cap usage.
+        if (!Array.isArray(body.images) || body.images.length !== 2)
+          throw new ProviderError('Exactly two ordered reference image URLs are required', 400);
+        body.images = body.images.map(referenceUrl);
+      }
     } else {
       jobId = url.searchParams.get('jobId') || '';
       if (!/^[a-zA-Z0-9:_-]{1,200}$/.test(jobId)) throw new ProviderError('Invalid job ID', 400);
@@ -115,6 +132,32 @@ export async function handleDesignProviders(request, env, cors, { isServer, allo
       if (action === 'generate') {
         if (!data.jobId) throw new ProviderError('Adobe response did not include a job ID');
         return reply({ provider, jobId: data.jobId, status: 'submitted' }, 202, cors);
+      }
+      return reply({ provider, jobId, result: data }, 200, cors);
+    }
+    if (provider === 'pika' || provider === 'revid') {
+      const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+      let endpoint, payload;
+      if (provider === 'pika') {
+        headers['X-API-Key'] = env.PIKA_API_KEY;
+        endpoint = action === 'generate'
+          ? 'https://api.dev.pika.art/v1/media/pika/pikaframes/image-to-video'
+          : 'https://api.dev.pika.art/v1/media/jobs/' + encodeURIComponent(jobId);
+        if (action === 'generate') payload = { images: body.images, prompt: body.prompt, resolution: '720p', transition_duration_s: 5 };
+      } else {
+        headers.key = env.REVID_API_KEY;
+        headers['User-Agent'] = 'SereneCreations-DesignStudio/1.0';
+        endpoint = action === 'generate' ? 'https://www.revid.ai/api/public/v3/render'
+          : 'https://www.revid.ai/api/public/v3/status?pid=' + encodeURIComponent(jobId);
+        if (action === 'generate') payload = { workflow: 'script-to-video', source: { text: body.prompt } };
+      }
+      const data = await upstream(endpoint, action === 'generate'
+        ? { method: 'POST', headers, body: JSON.stringify(payload) } : { headers }, fetcher);
+      if (data.success === 0 || data.status === 'failed') throw new ProviderError('Provider rejected the job. Check the provider dashboard.');
+      if (action === 'generate') {
+        const id = provider === 'pika' ? data.id : data.pid;
+        if (!id) throw new ProviderError('Provider response did not include a job ID');
+        return reply({ provider, jobId: id, status: data.status || 'submitted' }, 202, cors);
       }
       return reply({ provider, jobId, result: data }, 200, cors);
     }
