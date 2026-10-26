@@ -10,7 +10,7 @@ Cloudflare Workers do not execute the existing Python FastAPI server. Deploy tha
 ## Security gate (must complete before deployment)
 1. Configure BACKEND_ORIGIN to the verified HTTPS FastAPI origin, with a trailing slash. Store it as a Worker secret or secure variable.
 2. Configure GATEWAY_SERVER_TOKEN as a Cloudflare Worker secret. **The FastAPI backend must validate this header before treating the gateway as trusted.** The current backend does not implement this verification; therefore the token is not yet an access-control mechanism.
-3. Configure rate limiting for /api/chat at the edge and backend. The existing proxy RATE_KV is not shared with this Worker.
+3. The gateway now binds the existing rate-limit KV namespace using an isolated serene-chat: key prefix. This is a non-atomic counter; configure an additional WAF/Durable Object limiter before public rollout.
 4. Lock down direct backend access, verify user authorization for conversation identifiers and add abuse protection before public exposure.
 5. Configure Cloudflare API token in GitHub Actions as CLOUDFLARE_API_TOKEN and verify build/drift checks. Never put tokens in the public repository.
 6. Confirm DNS routing for a new dedicated API hostname; do not redirect or replace the existing site.
