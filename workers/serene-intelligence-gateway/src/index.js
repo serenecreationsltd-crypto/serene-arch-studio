@@ -36,6 +36,7 @@ export default {
     }
     if (!ALLOWED_PATHS.has(url.pathname)) return json({ error: "Not found" }, 404, headers);
     if (origin && !ALLOWED_ORIGINS.has(origin)) return json({ error: "Forbidden origin" }, 403, headers);
+    if (url.pathname === "/api/chat" && (!env.RATE_KV || !env.RATE_KV.get || !env.RATE_KV.put)) return json({ error: "Rate limiter unavailable" }, 503, headers);
     if (url.pathname === "/api/chat" && request.method !== "POST") return json({ error: "Method not allowed" }, 405, headers);
     if (url.pathname === "/api/health" && request.method !== "GET") return json({ error: "Method not allowed" }, 405, headers);
     if (!env.BACKEND_ORIGIN || !env.GATEWAY_SERVER_TOKEN) return json({ error: "Gateway not configured" }, 503, headers);
@@ -45,6 +46,11 @@ export default {
       if (target.protocol !== "https:" || target.username || target.password || target.search || target.hash || target.pathname !== "/") throw Error("Invalid origin");
     } catch { return json({ error: "Gateway configuration invalid" }, 503, headers); }
     if (url.pathname === "/api/chat") {
+      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+      const key = "serene-chat:" + new Date().toISOString().slice(0, 13) + ":" + ip;
+      const current = Number(await env.RATE_KV.get(key) || "0");
+      if (current >= 20) return json({ error: "Hourly chat quota reached" }, 429, headers);
+      await env.RATE_KV.put(key, String(current + 1), { expirationTtl: 7200 });
       const length = Number(request.headers.get("Content-Length") || 0);
       if (length > MAX_BODY_BYTES) return json({ error: "Request too large" }, 413, headers);
       if (!request.headers.get("Content-Type")?.toLowerCase().startsWith("application/json")) return json({ error: "JSON required" }, 415, headers);
