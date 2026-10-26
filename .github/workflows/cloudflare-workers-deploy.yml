@@ -86,6 +86,10 @@ jobs:
           elif [ -f package.json ]; then npm install
           else echo "No package.json — plain Worker"; fi
 
+      - name: Test design provider adapters
+        if: matrix.worker == 'serene-ai-proxy'
+        run: node --test workers/serene-ai-proxy/test/design-providers.test.mjs
+
       - name: Build check (no upload)
         working-directory: workers/${{ matrix.worker }}
         run: npx --yes "wrangler@${WRANGLER_VERSION}" deploy --dry-run --outdir "$RUNNER_TEMP/dist"
@@ -119,3 +123,4 @@ jobs:
           workingDirectory: workers/${{ matrix.worker }}
           wranglerVersion: ${{ env.WRANGLER_VERSION }}
           command: deploy
+

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleDesignProviders } from '../src/design-providers.mjs';
 
-const env = { DESIGN_GENERATION_ENABLED: 'true', FIREFLY_SERVICES_CLIENT_ID: 'test-id', FIREFLY_SERVICES_CLIENT_SECRET: 'secret-test', KLING_API_KEY: 'kling-test', RATE_KV: {} };
+const env = { DESIGN_GENERATION_ENABLED: 'true', FIREFLY_SERVICES_CLIENT_ID: 'test-id', FIREFLY_SERVICES_CLIENT_SECRET: 'secret-test', KLING_API_KEY: 'kling-test', PIKA_API_KEY: 'pika-test', REVID_API_KEY: 'revid-test', RATE_KV: {} };
 function request(provider, body, action = 'generate') {
   return new Request('https://worker.example/design/' + provider + '/' + action,
     action === 'generate' ? { method: 'POST', body: JSON.stringify(body) } : {});
@@ -13,7 +13,7 @@ function run(req, overrides = {}, opts = {}) {
 }
 test('catalog never claims live authentication and exposes no secret values', async () => {
   const res = await run(new Request('https://worker.example/design/providers'));
-  const data = await res.json(); assert.equal(data.providers.length, 5);
+  const data = await res.json(); assert.equal(data.providers.length, 17);
   assert.ok(data.providers.every(p => p.apiVerified === false));
   assert.ok(!JSON.stringify(data).includes('secret-test'));
 });
@@ -83,4 +83,43 @@ test('provider errors never disclose response secrets and do not retry', async (
 test('timeout returns uncertain outcome warning without automatic retry', async () => {
   const res = await run(request('kling', { prompt: 'Pan', imageUrl: 'https://storage.googleapis.com/a.png' }));
   assert.equal(res.status, 504); assert.match((await res.json()).error, /Check job status before retrying/);
+});
+test('Pikaframes requires exactly two approved frame URLs', async () => {
+  assert.equal((await run(request('pika', { prompt: 'Transition', images: [] }))).status, 400);
+  assert.equal((await run(request('pika', { prompt: 'Transition', images: ['https://evil.example/a.png', 'https://storage.googleapis.com/b.png'] }))).status, 400);
+});
+test('Pikaframes uses API key header and fixed single-transition settings', async () => {
+  const res = await run(request('pika', { prompt: 'Slow transition', images: ['https://storage.googleapis.com/a.png', 'https://storage.googleapis.com/b.png'] }), {}, {
+    fetcher: async (url, options) => {
+      assert.equal(url, 'https://api.dev.pika.art/v1/media/pika/pikaframes/image-to-video');
+      assert.equal(options.headers['X-API-Key'], 'pika-test');
+      const body = JSON.parse(options.body); assert.equal(body.images.length, 2);
+      assert.equal(body.resolution, '720p'); assert.equal(body.transition_duration_s, 5);
+      return Response.json({ id: 'media_123', status: 'queued' });
+    }
+  });
+  assert.equal(res.status, 202); assert.equal((await res.json()).jobId, 'media_123');
+});
+test('Revid sends script with descriptive agent header and returns project ID', async () => {
+  const res = await run(request('revid', { prompt: 'Plan your next project with Serene Creations.' }), {}, {
+    fetcher: async (url, options) => {
+      assert.equal(url, 'https://www.revid.ai/api/public/v3/render');
+      assert.equal(options.headers.key, 'revid-test'); assert.match(options.headers['User-Agent'], /SereneCreations/);
+      const body = JSON.parse(options.body); assert.equal(body.workflow, 'script-to-video');
+      assert.match(body.source.text, /Serene/); assert.ok(!body.webhookUrl);
+      return Response.json({ pid: 'project-123', success: 1 });
+    }
+  });
+  assert.equal(res.status, 202); assert.equal((await res.json()).jobId, 'project-123');
+});
+test('Pika and Revid poll existing jobs without initiating renders', async () => {
+  for (const provider of ['pika', 'revid']) {
+    const res = await run(new Request('https://worker.example/design/' + provider + '/status?jobId=job-123'), { DESIGN_GENERATION_ENABLED: 'false' }, {
+      fetcher: async (url, options) => {
+        assert.ok(url.includes(provider === 'pika' ? '/v1/media/jobs/job-123' : '/v3/status?pid=job-123'));
+        assert.ok(!options.body); return Response.json({ status: 'ready' });
+      }
+    });
+    assert.equal(res.status, 200);
+  }
 });
