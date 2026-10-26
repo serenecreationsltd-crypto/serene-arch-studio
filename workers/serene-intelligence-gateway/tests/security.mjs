@@ -17,4 +17,7 @@ const unconfigured = await worker.fetch(new Request('https://gateway.example/api
 assert.equal(unconfigured.status, 503);
 const noRateLimiter = await worker.fetch(new Request('https://gateway.example/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}), { BACKEND_ORIGIN: 'https://backend.example/', GATEWAY_SERVER_TOKEN: 'test-token' });
 assert.equal(noRateLimiter.status, 503);
+const kvBroken = { ...env, RATE_KV: { async get() { throw Error('KV unavailable'); }, async put() {} } };
+const brokenResponse = await worker.fetch(new Request('https://gateway.example/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' }), kvBroken);
+assert.equal(brokenResponse.status, 503);
 console.log('Gateway security tests passed');
