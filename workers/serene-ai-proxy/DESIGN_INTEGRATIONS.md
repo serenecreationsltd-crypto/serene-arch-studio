@@ -1,0 +1,77 @@
+# Serene design integrations
+
+The Studio links to `/design-tools.html`, which offers five external workflows and
+a local project-brief builder. Opening a provider is not an API connection. No
+reference file or brief is automatically uploaded to a third party.
+
+## Activation status
+
+| Service | Implemented | Required for automation |
+| --- | --- | --- |
+| Coohom | External launcher and brief | Enterprise API agreement, credentials and licensed SDK documentation |
+| Planner 5D | External launcher and brief | B2B contract, provisioned REST/JS access and domain approval |
+| Nim Plan Walkthrough | External launcher and brief | Confirmed Plan Walkthrough API documentation and entitlement |
+| Adobe Firefly | Server-only asynchronous generation and job polling | Firefly Services OAuth credentials, entitlement and live validation |
+| Kling AI | Server-only image-to-video generation and job polling | Current API key, API credits and live validation |
+
+Public GET `/design/providers` intentionally reports `apiVerified: false` for all
+providers. Do not change this merely because a key exists. Replace static status
+with a verified, persisted connection record before presenting API readiness.
+
+## Firefly and Kling server setup
+
+Store secrets on the existing `serene-ai-proxy` Worker, never in HTML or Git:
+
+- `FIREFLY_SERVICES_CLIENT_ID`
+- `FIREFLY_SERVICES_CLIENT_SECRET`
+- `KLING_API_KEY` (current Bearer API key; legacy access/secret key JWTs are not implemented)
+- Existing `SERVER_SECRET` authenticates the trusted automation backend.
+
+New paid requests remain disabled unless `DESIGN_GENERATION_ENABLED=true` is set
+explicitly. A `RATE_KV` binding is also required for generation. Existing Worker
+configuration and secrets are preserved; no new deployment target is created.
+The existing rate limiter uses KV read/write counters, which are best-effort and
+not atomic. Keep provider-side spending limits; serialize automation starts. This
+is an initial server integration, not a public customer billing/credit feature.
+
+Only a trusted backend such as Activepieces may use the following routes, with
+header `X-Server-Secret`. Never put that shared secret in browser code.
+
+| Method | Route | Input |
+| --- | --- | --- |
+| POST | `/design/firefly/generate` | JSON: `prompt`, 1–1500 characters |
+| GET | `/design/firefly/status?jobId=...` | Job ID from generation |
+| POST | `/design/kling/generate` | JSON: `prompt`, `imageUrl` |
+| GET | `/design/kling/status?jobId=...` | Job ID from generation |
+
+Kling uses a 5-second, 1080p, silent single-shot request. References must be HTTPS
+URLs on serenecreations.org, www.serenecreations.org, storage.googleapis.com or
+firebasestorage.googleapis.com. Attach an approved render, not an unreviewed plan.
+Do not add new allowed hosts without reviewing where reference images are sent.
+
+Generation responds with HTTP 202 and a provider job ID. Save the ID in the
+automation's durable job record and poll status. Polling remains available when
+new generation is disabled. These routes do not implement billing, durable job
+storage, idempotent replay, customer entitlements or automatic retries. Do not
+retry a timed-out create request automatically: the provider may have accepted it.
+Check the provider dashboard first. Review results against original drawings.
+
+## Validation and release
+
+Run `node --test workers/serene-ai-proxy/test/design-providers.test.mjs`.
+The tests use mocked provider responses; they do not verify live API access.
+Before enabling automation: confirm account entitlements; configure secrets;
+run one controlled job per provider; verify status and downloaded outputs;
+record the test result; connect durable job tracking and repeat-send prevention.
+The initial PR must not be described as live provider activation.
+
+## Official references
+
+- https://www.coohom.com/enterprise/api
+- https://coohom.readme.io/reference/api
+- https://support.planner5d.com/en/articles/15189751-planner-5d-b2b-api-technical-overview
+- https://nim.video/planwalkthrough
+- https://developer.adobe.com/firefly-services/docs/firefly-api/getting-started/
+- https://developer.adobe.com/firefly-services/docs/firefly-api/guides/how-tos/using-async-apis
+- https://kling.ai/document-api/api/get-started/authentication
+- https://kling.ai/document-api/apiReference/model/imageToVideo
