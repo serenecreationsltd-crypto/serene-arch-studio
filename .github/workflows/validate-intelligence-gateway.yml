@@ -1,0 +1,21 @@
+name: Validate Serene Intelligence Gateway
+on:
+  pull_request:
+    paths:
+      - 'workers/serene-intelligence-gateway/**'
+      - '.github/workflows/validate-intelligence-gateway.yml'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: node --check workers/serene-intelligence-gateway/src/index.js
+      - name: Run gateway security tests
+        run: node workers/serene-intelligence-gateway/tests/security.mjs
+      - name: Check Worker bundle
+        working-directory: workers/serene-intelligence-gateway
+        run: npx --yes wrangler@4.139.0 deploy --dry-run
