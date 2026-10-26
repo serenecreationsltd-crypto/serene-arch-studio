@@ -48,9 +48,12 @@ export default {
     if (url.pathname === "/api/chat") {
       const ip = request.headers.get("CF-Connecting-IP") || "unknown";
       const key = "serene-chat:" + new Date().toISOString().slice(0, 13) + ":" + ip;
-      const current = Number(await env.RATE_KV.get(key) || "0");
+      let current;
+      try { current = Number(await env.RATE_KV.get(key) || "0"); }
+      catch { return json({ error: "Rate limiter unavailable" }, 503, headers); }
       if (current >= 20) return json({ error: "Hourly chat quota reached" }, 429, headers);
-      await env.RATE_KV.put(key, String(current + 1), { expirationTtl: 7200 });
+      try { await env.RATE_KV.put(key, String(current + 1), { expirationTtl: 7200 }); }
+      catch { return json({ error: "Rate limiter unavailable" }, 503, headers); }
       const length = Number(request.headers.get("Content-Length") || 0);
       if (length > MAX_BODY_BYTES) return json({ error: "Request too large" }, 413, headers);
       if (!request.headers.get("Content-Type")?.toLowerCase().startsWith("application/json")) return json({ error: "JSON required" }, 415, headers);
