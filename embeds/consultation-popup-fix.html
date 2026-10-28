@@ -1,3 +1,21 @@
+<style>
+/* Consultation modal: ensure typed email and other field values remain readable. */
+#sc-popup-overlay input[type="email"],
+#sc-popup-overlay input[type="text"],
+#sc-popup-overlay input[type="tel"],
+#sc-popup-overlay textarea {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000 !important;
+  background-color: #ffffff !important;
+}
+#sc-popup-overlay input::placeholder,
+#sc-popup-overlay textarea::placeholder {
+  color: #666666 !important;
+  opacity: 1;
+}
+</style>
+
 <!--
   Serene Creations — Free Consultation popup fix (Landingsite)
 
